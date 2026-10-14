@@ -185,3 +185,55 @@ Conclusion of the paper: lateral movement detection "remains an open problem".
 
 **First action**: open the LMDEval repository and answer: are the OpTC label files included, in what format
 (per flow? per host and time?), and how many compromised hosts per scenario.
+
+---
+
+## 13. Update after the OpTC README, errata, eCAR notes, ground-truth PDF and LMDEval README  [verified from the files, except where marked]
+
+**Data hosting and size (OpTC README)**
+- Data is on Google Drive: https://drive.google.com/drive/u/0/folders/1n3kkS3KR31KUegn42yk3-e6JkZvf0Caa
+  with three folders: `ecar-bro`, `ecar`, `bro`. "Approximately a terabyte" compressed in total.
+- `ecar-bro` holds only the eCAR FLOW-START events (annotated with the bro-id), with sub-folders `short` (events with
+  missing data), `evaluation` (red-team period) and `benign`. This is the folder that is most likely much smaller than `ecar`.
+  Whether `extract_optc.py` accepts `ecar-bro` or needs `ecar` is NOT known: check `python extract_optc.py -h`.
+- DARPA: data released "as-is", "practically guaranteed to be imperfect"; errata lists duplicate process objects,
+  missing hashes in module loads, acuity_level 0 for FLOW OPEN, and disk-device paths. None of these is about flow endpoints,
+  but they are the reason the preprocessing must be taken from LMDEval and not rewritten.
+- Data from 500 of ~1000 hosts only (no system logs for the rest).
+
+**LMDEval (README)**: `extract_optc.py` extracts FLOW START events from the raw gzipped JSON, drops irrelevant/duplicate flows,
+maps IP -> hostname with `optc_known_addresses.json` and labels with **`optc_redteam.csv`** (so the label file is in the repo;
+its format is not yet seen). `extract_lanl.py` needs `auth.txt.gz` and `redteam.txt.gz` (auth.txt.gz is not in the user's current LANL download).
+
+**What the red-team ground truth documents (my reading of the PDF; transcribe and verify against `optc_redteam.csv`)**
+
+| Day | Scenario | Documented spread | First-compromise events (approx.) | Max chain depth |
+|---|---|---|---|---|
+| 23 Sep | Plain PowerShell Empire | 0201 -> 0402 -> 0660 (WMI) -> DC1 (WMI) -> 14 workstations (WMI, 14:45) | 18 hosts (0201, 0402, 0660, DC1, +14) | 4 |
+| 24 Sep | Custom PowerShell Empire | phish 0501 and 0811; 0501 -> DC1; 0501 -> 0974 -> 0005 (RDP); DC1 -> 6 workstations (15:42) | 11 hosts | 2 |
+| 25 Sep | Malicious notepad++ upgrade | 0051 and 0351 infected independently; no lateral hop documented | 2 hosts | 0 |
+
+So: about 30 first-compromise events in total, with timestamps in the log, two scenarios with real multi-hop chains, and a third with none.
+Assumption A1 (observable first compromise) is satisfied in the documentation. The spread from DC1 is again a fan-out
+(14 and 6 targets at once), but DC1 also talks to every host legitimately, so "neighbors of a compromised host" is NOT a
+cheap oracle here: the budget (hosts flagged per window) is what separates a good scope method from BFS.
+
+**Consequences (replace the corresponding parts of Secs. 4, 5, 7 and 12)**
+1. **G0 thresholds**: "at least 30 first-compromise events in test" cannot hold for one scenario (18 / 11 / 2). Use leave-one-scenario-out
+   and pool the three folds, report bootstrap CIs over hosts, and state in the abstract that scope is evaluated on ~30 events.
+   Day 3 has no chain and is not a scope test.
+2. **A learned forward head is not trainable**: days 1-6 contain no compromise, so there is nothing for a learned
+   scope head (or the temporal self-distillation of the TRIAD plan) to learn from. Use the original locked decision of
+   `PAPER_PLAN.md`: **blast radius is a deterministic graph computation** seeded by the model's own detections,
+   BR_k(S_hat), evaluated against the documented chains (coverage of next-compromised hosts vs. size of the set).
+3. **Model** = benign-trained anomaly scorer on days 1-6 + explanation (subgraph around detections) + deterministic blast radius.
+   The 7-class supervised head, `edge_mitre` and `L_causal` are removed. This is a larger change than before, stated openly.
+4. **Novelty is modest**: the joint pipeline and its fair evaluation, not a new learned propagation head. Position it that way.
+5. **Case study for free**: the ground truth gives an end-to-end story (Day 1: 0201 -> 0402 -> 0660 -> DC1 -> 14 hosts) that can be
+   shown as a figure: detections, explanation subgraph, predicted blast radius vs. documented spread.
+
+**Immediate actions (user's side, then I write `optc_audit.py`)**
+1. Clone https://github.com/cl-anssi/LMDEval and send: the first 20 lines of `optc_redteam.csv`, the number of rows, and the output of
+   `python extract_optc.py -h` (to learn which Drive folder it needs).
+2. Open the Drive folder, and check the sizes of `ecar-bro/benign`, `ecar-bro/evaluation` (and `ecar` if needed). Start with `ecar-bro`.
+3. Decide where ~100s of GB can be stored, or use a subset of benign days for training (to be justified, not silent).
