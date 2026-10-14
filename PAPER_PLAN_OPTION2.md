@@ -139,3 +139,49 @@ self-inflicted bug). So Option 2 has a floor.
 1. Fetch `cl-anssi/LMDEval`, read its labeling policy and what OpTC labels it ships.
 2. Write `scripts/optc_audit.py` reusing `analysis/label_supply` functions; produce the G0 table.
 3. Reference check: verify all 27 references of the manuscript against DOIs (at least 8 were not found).
+
+---
+
+## 12. Update after reading Larroche (arXiv:2607.29390v1, read in full)  [verified from the PDF]
+
+**Links stated in the paper**
+- Code: https://github.com/cl-anssi/LMDEval/ (footnote 1, p.2). The paper says it releases "code implementing" its preprocessing and labeling policies. Whether the OpTC label files themselves are in the repository is NOT stated: check the repo.
+- OpTC: https://github.com/FiveDirections/OpTC-data (ref. 8). LANL: https://doi.org/10.17021/1179829 (ref. 12).
+- Majorczyk et al., "A new hope for DARPA OpTC", ACSAC Workshops 2025 (ref. 21): process-based labels (563 flows) that Larroche starts from.
+
+**OpTC facts that change the plan**
+- 9 days: 17-22 Sep benign only; 23-25 Sep one red-team scenario per day. Recommended test = last 3 days (Sec. 4.3).
+  There are no attack labels in the first six days, so a supervised model cannot train on them.
+- No system logs for half of the workstations and all servers; lateral-movement flows must be taken from
+  FLOW START system events, internal hosts only, duplicates removed, all IPs of a host mapped to one node.
+- After his preprocessing (Table 4): 897 nodes, 36,227,823 events, 1,354 malicious flows of which only
+  **244 lateral-movement flows**, over three scenarios. Host-based labeling gives ~25,000 "malicious" flows (overly broad).
+
+**LANL facts**: all labeled malicious authentications are one intrusion, almost all from host C17693; use only for
+unsupervised evaluation, or for detectors trained on another dataset (Sec. 5.2). After preprocessing: 16,159 nodes,
+369.6M events, 702 malicious. Recommended split: train on the first 41 hours, test on the rest; keep all remote LogOn events.
+
+**State of the art under a fair protocol (Tables 5-6)**: Pikachu, Euler and Argus drop sharply.
+LANL AP 0.00-0.09 %. OpTC, strictly lateral movement: AUC 43-53, AP about 0.01 %; all malicious events: AUC 80-86, AP 0.5-3.4 %.
+Conclusion of the paper: lateral movement detection "remains an open problem".
+
+**Consequences for this plan**
+1. **The 7-class supervised detection head does not apply.** The labels are binary (malicious / lateral movement) and
+   scarce. The realistic setups are (a) benign-trained anomaly scoring on days 1-6, tested on days 7-9, which is the
+   community protocol, or (b) leave-one-scenario-out over the three attack days with ~244 positives in total.
+   This is a bigger model change than "remove MITRE and fix the mask".
+2. **The temporal self-distillation idea of the TRIAD plan fits (a)**: scope can be learned without propagation labels.
+3. **The G0 thresholds in Sec. 4 are probably too high** (244 lateral-movement flows in total). Replace them by the
+   actual counts from the LMDEval labels: compromised hosts, first-compromise events per scenario, multi-hop chains
+   per scenario. Decide the thresholds only after seeing them, and write them down before any modeling.
+4. **Evaluation must follow the paper**: event-level metrics on exactly the same events for all methods, test = last 3 days,
+   report both "lateral movement only" and "all malicious" labels. Baselines: run Euler and Argus with their released code
+   through LMDEval (Pikachu, Euler, Argus are already adapted there).
+5. **The bar is low in absolute terms and high in credibility**: a method that beats these numbers under this protocol
+   would be a real result; a method that does not is still publishable only as part of an evaluation study.
+
+**Revised guesses** (replace Sec. 8): scope beats BFS/persistence ~20 %; any model beats Argus/Euler on lateral-movement-only AP
+~35 %; acceptance Q2/Q1 given a full pipeline ~35 % / ~10 %. These are guesses and should be replaced by the G0 and G1' measurements.
+
+**First action**: open the LMDEval repository and answer: are the OpTC label files included, in what format
+(per flow? per host and time?), and how many compromised hosts per scenario.
