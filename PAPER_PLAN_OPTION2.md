@@ -237,3 +237,40 @@ cheap oracle here: the budget (hosts flagged per window) is what separates a goo
    `python extract_optc.py -h` (to learn which Drive folder it needs).
 2. Open the Drive folder, and check the sizes of `ecar-bro/benign`, `ecar-bro/evaluation` (and `ecar` if needed). Start with `ecar-bro`.
 3. Decide where ~100s of GB can be stored, or use a subset of benign days for training (to be justified, not silent).
+
+---
+
+## 14. Update after optc_redteam.csv and the size of ecar-bro  [verified: computed by `optc/label_audit.py`, output in `analysis/optc/`]
+
+**Data size**: `ecar-bro` is 2 GB (reported by the user). The download is feasible on a normal machine.
+Still unknown: whether `extract_optc.py` reads `ecar-bro` or needs `ecar` (output of `python extract_optc.py -h` not yet seen).
+LMDEval requirements: pandas==3.0.3, joblib==1.5.3.
+
+**Label file**: 1,359 rows keyed by the eCAR event `id` (unique), columns `id, description, label`.
+249 "Lateral movement", 1,110 "Other". This matches Larroche's Table 3 (1,359 / 249).
+
+| kind | Lateral movement | Other |
+|---|---:|---:|
+| fan-out (one host to many targets) | 200 | 0 |
+| successful hop | 41 | 0 |
+| failed hop | 6 | 0 |
+| flows from malicious processes | 2 | 548 |
+| ping sweeps | 0 | 562 |
+
+**What this changes**
+1. **80% of lateral-movement flows are a fan-out from DC1** (140 on Day 1, 60 on Day 2). The chain itself is 41 successful and 6 failed hop flows,
+   about 10 distinct host pairs: Day 1 0201 -> 0402 -> 0660 -> DC1 (plus an SMB target 142.20.56.204); Day 2 DC1 <-> 0501, 0501 -> 0974 -> 0005 (RDP), failed attempts to 0502.
+2. **Only Days 1 and 2 have labeled rows.** Day 3 has none in this file (the 550 "flows from malicious processes" carry no day; they may include Day 3, to be checked on the flows).
+   So the evaluable scenarios are two, not three.
+3. **Scope and explanation evidence is small and star-shaped**: the targets of the DC1 fan-out are hidden behind "multiple targets" and must come from the raw flows;
+   the explanation ground truth is about 10 host pairs. These parts can only be case studies and descriptive numbers with bootstrap CIs, not significance claims.
+4. **Ping sweeps (562 flows) are "Other"**: under the lateral-movement-only protocol a detector that flags sweeps is penalised, under "all malicious" it is not.
+   Both protocols must be reported (as in Larroche).
+5. **Where the paper can still be strong**: the fair detection comparison against Euler/Argus/Pikachu (hundreds of positives at flow level), the leak tripwires,
+   and an end-to-end case study. Scope and explanation are a qualitative add-on, not the main empirical claim.
+
+**Next steps**
+1. User: output of `python extract_optc.py -h`; download `ecar-bro` (2 GB); run the extraction; send `df.shape`, `df.dtypes`, `df.head()` of the result
+   (or push the compressed output to the private repo if it is below 100 MB).
+2. Me: `optc/audit_flows.py` joining the extracted flows with the labels on `id`: timestamps, first-compromise time per host,
+   fan-out targets of DC1, nodes, windows, base rate, and the G0 table.

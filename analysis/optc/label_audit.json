@@ -1,0 +1,150 @@
+{
+  "rows": 1359,
+  "unique_ids": 1359,
+  "label_counts": {
+    "Other": 1110,
+    "Lateral movement": 249
+  },
+  "unparsed_descriptions": [],
+  "kind_by_label": {
+    "failed_hop": {
+      "Lateral movement": 6,
+      "Other": 0
+    },
+    "fanout": {
+      "Lateral movement": 200,
+      "Other": 0
+    },
+    "hop": {
+      "Lateral movement": 41,
+      "Other": 0
+    },
+    "malicious_process": {
+      "Lateral movement": 2,
+      "Other": 548
+    },
+    "ping_sweep": {
+      "Lateral movement": 0,
+      "Other": 562
+    }
+  },
+  "days_with_labeled_rows": [
+    1,
+    2
+  ],
+  "lm_flows_by_day": {
+    "1": 158,
+    "2": 89
+  },
+  "hop_edges": [
+    {
+      "day": 1.0,
+      "src": "SysClient0201",
+      "dst": "142.20.56.204",
+      "method": "SMB",
+      "kind": "hop",
+      "label": "Lateral movement",
+      "flows": 6
+    },
+    {
+      "day": 1.0,
+      "src": "SysClient0201",
+      "dst": "SysClient0402",
+      "method": "invoke_wmi",
+      "kind": "hop",
+      "label": "Lateral movement",
+      "flows": 5
+    },
+    {
+      "day": 1.0,
+      "src": "SysClient0402",
+      "dst": "SysClient0660",
+      "method": "invoke_wmi",
+      "kind": "hop",
+      "label": "Lateral movement",
+      "flows": 3
+    },
+    {
+      "day": 1.0,
+      "src": "SysClient0660",
+      "dst": "DC1",
+      "method": "invoke_wmi",
+      "kind": "hop",
+      "label": "Lateral movement",
+      "flows": 4
+    },
+    {
+      "day": 2.0,
+      "src": "DC1",
+      "dst": "SysClient0501",
+      "method": "WMI",
+      "kind": "failed_hop",
+      "label": "Lateral movement",
+      "flows": 4
+    },
+    {
+      "day": 2.0,
+      "src": "DC1",
+      "dst": "SysClient0501",
+      "method": "WMI",
+      "kind": "hop",
+      "label": "Lateral movement",
+      "flows": 10
+    },
+    {
+      "day": 2.0,
+      "src": "DC1",
+      "dst": "SysClient0502",
+      "method": "WMI",
+      "kind": "failed_hop",
+      "label": "Lateral movement",
+      "flows": 2
+    },
+    {
+      "day": 2.0,
+      "src": "SysClient0501",
+      "dst": "DC1",
+      "method": "unknown method",
+      "kind": "hop",
+      "label": "Lateral movement",
+      "flows": 9
+    },
+    {
+      "day": 2.0,
+      "src": "SysClient0501",
+      "dst": "SysClient0974",
+      "method": "RDP",
+      "kind": "hop",
+      "label": "Lateral movement",
+      "flows": 2
+    },
+    {
+      "day": 2.0,
+      "src": "SysClient0974",
+      "dst": "SysClient0005",
+      "method": "RDP",
+      "kind": "hop",
+      "label": "Lateral movement",
+      "flows": 2
+    }
+  ],
+  "lm_total": 249,
+  "lm_fanout_flows": 200,
+  "lm_fanout_share": 0.8032128514056225,
+  "lm_fanout_by_day": {
+    "1": 140,
+    "2": 60
+  },
+  "chain_depth_by_day": {
+    "1": 3,
+    "2": 3
+  },
+  "hop_sources": [
+    "DC1",
+    "SysClient0201",
+    "SysClient0402",
+    "SysClient0501",
+    "SysClient0660",
+    "SysClient0974"
+  ]
+}
