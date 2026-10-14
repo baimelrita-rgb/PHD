@@ -274,3 +274,19 @@ LMDEval requirements: pandas==3.0.3, joblib==1.5.3.
    (or push the compressed output to the private repo if it is below 100 MB).
 2. Me: `optc/audit_flows.py` joining the extracted flows with the labels on `id`: timestamps, first-compromise time per host,
    fan-out targets of DC1, nodes, windows, base rate, and the G0 table.
+
+---
+
+## 15. Update after reading LMDEval's extract_optc.py  [verified from the code]
+
+- The script expects the **`ecar/`** directory (sub-folders `benign/`, `short/`, `evaluation/` of gzipped JSON lines), not `ecar-bro/`.
+  It keeps lines that start with `{"action":"START"` and contain `"object":"FLOW"`, internal IPs only (10.*, 142.*, fe80:), drops broadcast,
+  maps IPs to hostnames, and de-duplicates flows recorded at both ends (keeps the outbound event).
+  It will therefore work on `ecar-bro` only if the lines have the same key order and the same event ids: unknown until tested.
+- Its output (`optc.csv.gz`) has relative seconds, src, dst, ports, proto and a 0/1 label. It drops the event id, the lateral-movement / other
+  distinction and the absolute time, which the audit needs.
+- **`optc/extract_labeled.py`** runs LMDEval's own functions and only replaces `process_flow` and `make_flow_list`: it keeps `id`, the category
+  (`benign` / `lm` / `other`), the absolute time and the day, and counts unparseable lines instead of crashing. Single process.
+  Tested on synthetic eCAR-style data with a logic-identical stub of LMDEval (4 tests); NOT yet run on the real data.
+- Validation target for the real run: about 1,354 malicious events, 244 of them lateral movement (Larroche, Table 4).
+  If 0 labeled events are found in `ecar-bro`, its event ids differ from the label file and the full `ecar/` folders are needed.
