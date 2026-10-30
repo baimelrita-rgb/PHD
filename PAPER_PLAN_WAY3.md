@@ -1,116 +1,145 @@
-# Paper Plan, Way 3: technique detection on real data + blast radius by Monte-Carlo simulation on real topologies
+# Work Plan: Detect -> Explain -> Predict (real data for Detect/Explain, semi-synthetic propagation for Predict)
 
-Chosen by the user on 2026-10-30. Supersedes the model plans for UNSW-NB15 and UWF-ZeekData24 as the main paper.
-Measurement work already done is reused: UNSW leak test and shortcut baselines (`STT-GNN-`, main),
-UWF-ZeekData24 Phase 0 (`STT-GNN-`, branch `claude/uwf-zeekdata24-feasibility`, `analysis_uwf/`), OpTC label audit and
-extraction wrapper (`PHD`, `optc/`).
-
-Status tags: **[measured]** = from a file in one of the repos; **[search]** = from a web-search snippet, to verify;
-**[guess]** = my estimate, to be replaced by a measurement.
+Agreed with the user on 2026-10-30. Replaces the earlier versions of this file (see git history).
+Status tags: **[measured]** = from a file in our repos; **[search]** = from a web-search snippet, to be verified;
+**[guess]** = estimate, to be replaced by a measurement. Every number in the paper must come from a file.
 
 ---
 
-## 1. The question the paper answers
+## 0. The paper in one paragraph
 
-> How good must technique-level detection be before technique evidence improves blast-radius prediction
-> (and containment decisions) over topology-only heuristics, and do real detectors reach that level?
+Analysts need to know whether an attack is happening, what the attacker is doing, and where it will go next.
+We propose a **Detect -> Explain -> Predict** pipeline. **Detect** has two channels: a technique channel
+(MITRE ATT&CK technique probabilities inferred from network flows) and a residual "unexplained behaviour" channel
+(anomaly detection), so that attacks that match no known technique are not lost. **Explain** reports each alert either
+as the techniques that triggered it or as "unexplained, possibly novel". **Predict** combines the same evidence with the
+observed reachability between hosts to rank the hosts most likely to be compromised next.
+Detect and Explain are evaluated on a real public dataset; Predict is evaluated on semi-synthetic campaigns injected into
+that dataset's real hosts and benign traffic, with an attacker model calibrated on the documented DARPA OpTC campaigns,
+and checked on OpTC's real lateral-movement chains.
 
-- **RQ1 (real data).** Can a technique-level detector be learned from public data without shortcuts (port, IP, time)?
-  Output: per-technique confusion matrices with confidence intervals, plus the shortcut baselines that bound them.
-- **RQ2 (simulation).** Given a detector with a given confusion matrix, how much does technique evidence improve
-  next-step compromise prediction and containment cost, compared with BFS, persistence and degree, on real network topologies?
-  Output: a "phase diagram" of benefit versus detector quality, topology and attacker behaviour.
-- **RQ3 (real chains).** Do the RQ2 conclusions hold on the documented real chains (OpTC days 1-2; DEDALE campaign if usable)?
+Working title: *Detect, Explain, Predict: ATT&CK-Grounded Network Detection with Novelty Awareness and Threat-Propagation Prediction*
 
-Why this is worth a paper: no public dataset combines (a) technique labels not determined by port/IP/time,
-(b) benign traffic interleaved with attacks, (c) first-compromise times [measured for UNSW, UWF, OpTC; search for others].
-Way 3 does not wait for such a dataset: it measures what real data can give (RQ1) and simulates only what no dataset gives (propagation).
-No prior work using ATT&CK techniques as a bottleneck layer for detection was found in our search [search]; this must be re-checked before writing.
+### Research questions and claims (a claim enters the abstract only if its gate passes)
+- **RQ1 Detect.** Does the two-channel detector match a black-box detector on the same features ("price of explanation"),
+  beat shortcut baselines (port, IP, time), and still detect a technique that was held out of training?
+- **RQ2 Explain.** Are the technique explanations correct (vs. ground truth), faithful (interventions on a technique change
+  the decision as expected), and honest about novelty (a held-out technique is explained as "unexplained", not as a wrong technique)?
+  How much of each decision flows through the residual channel?
+- **RQ3 Predict.** Does technique-aware propagation, fed by the RQ1 detector's real outputs, rank next-compromised hosts better
+  than BFS, persistence and degree at equal isolation budget, under several attacker models, and on OpTC's real chains?
 
-## 2. Work packages and gates
+## 1. Where things live
+- Plans and paper text: `baimelrita-rgb/PHD`, branch `claude/fervent-pasteur-ot9uly` (this file).
+- Code and data audits: `baimelrita-rgb/STT-GNN-` (private). New branch `claude/dep-paper`, new directory `dep/`.
+  The UNSW work and `analysis_uwf/` are not modified; their scripts are reused by import or copy.
+- Raw data is never committed; each download writes a manifest with SHA-256.
 
-### WP0. Data audits (week 1) - reuse the UWF Phase 0 protocol (`analysis_uwf/TASK.md`)
-Datasets, in order: DEDALE (55 machines, 28 days, flows reportedly labeled with ATT&CK tactic/technique [search]),
-Unraveled (27+ machines, 6 weeks, three attacker groups, ATT&CK labels, label inconsistencies reported [search]),
-CREMEv3 (technique and lifecycle labels, Linux, traffic logs [search]). UWF-ZeekData24 is already audited [measured].
+## 2. Network access needed (environment -> Network access -> Limited -> Allowed domains; keep "Allow package managers")
+Already reachable: GitHub (incl. raw.githubusercontent.com: MITRE ATT&CK STIX data `mitre/cti`), PyPI, datasets.uwf.edu.
 
-For each: files and SHA-256; label columns; technique x port / service / IP / time mutual information and lookup baselines;
-benign vs attack time overlap; number of hosts per technique.
+| Domain | For | Needed in |
+|---|---|---|
+| doi.org | DEDALE DOI and paper DOIs | Phase 1 |
+| entrepot.recherche.data.gouv.fr | DEDALE files (DOI 10.57745/Y5JLDG) [search] | Phase 1 |
+| dedale.inria.fr | DEDALE documentation | Phase 1 |
+| fkie-cad.github.io | COMIDDS dataset catalog (Unraveled, DEDALE descriptions) | Phase 1 |
+| zenodo.org | AIT-LDS v2, CAM-LDS; possibly Unraveled | Phase 1 |
+| speed.cs.nycu.edu.tw | CREMEv3 paper and data pointers | Phase 1 |
+| drive.google.com, drive.usercontent.google.com | DARPA OpTC (`ecar-bro`, 2 GB) | Phase 3 |
+| arxiv.org, export.arxiv.org | reading related work | all |
+| www.mdpi.com | UWF-ZeekData24 paper (paper_vs_observed) | optional |
+| api.crossref.org, api.semanticscholar.org | automatic reference/DOI check of the manuscript | Phase 6 |
+| csr.lanl.gov | LANL (topology sensitivity only) | optional |
+If a download redirects to a host not listed here, the run stops and reports the host name.
 
-**Gate G0** (decided in advance): a dataset is usable for RQ1 only if, on a split by host or by campaign,
-(i) benign and attack share days, and (ii) a dst-port lookup does NOT reach technique macro-F1 within 0.05 of the best model.
-- If at least one dataset passes: RQ1 uses it.
-- If none passes: RQ1 is reported as a negative measurement (with the evidence), and RQ2 uses a family of synthetic
-  confusion matrices (from perfect to random) instead of measured ones. The paper survives; its claim narrows.
+## 3. Phases, deliverables, gates
 
-### WP1. Technique detector on real data (weeks 2-3)
-- Splits: by host, by campaign, and cross-dataset where label sets overlap. Never by random flow, never by calendar time across a class boundary.
-- Baselines: S1-S8 of `analysis_uwf/TASK.md` (majority, IP, port, service, time, GBDT with/without IP/port/time).
-- Detector: the simplest model that beats the baselines (GBDT on window features first; a GNN only if it is needed).
-- Output: confusion matrix per technique with bootstrap CI over hosts; calibration curve.
-- **Gate G1**: the detector beats the dst-port lookup outside the CI on macro-F1. If not, its confusion matrix is still used in WP2
-  (it is a real measurement), and the paper reports that public data does not support the technique layer.
+### Phase 0. Setup (user, 10 minutes)
+Add the domains above. Confirm the target journal (affects length and figure style).
 
-### WP2. Simulator and blast-radius predictors (weeks 3-5)
-- **Topologies** (real): OpTC host graph from FLOW START events (extraction ready: `PHD/optc/extract_labeled.py`);
-  DEDALE 55 machines from its flows; LANL authentication graph (optional, needs `auth.txt.gz`).
-  Synthetic families (enterprise template, scale-free) only for sensitivity checks.
-- **Attacker model**: a technique state machine with preconditions (service reachable, credential held, privilege),
-  e.g. T1595 -> T1190/T1110 -> T1078 -> lateral movement (WMI/RDP/SMB) -> T1048.
-  Calibrated against the OpTC ground truth [measured from optc_redteam.csv and the red-team PDF]: chain depth 3-4,
-  a domain-controller fan-out to 14 and 6 hosts, failed attempts present, inter-step delays from the red-team log.
-- **Defender evidence**: each attack flow emits a technique observation drawn from the WP1 confusion matrix
-  (plus false positives on benign flows at the measured rate, plus detection delay).
-- **Predictors** of "compromised in the next window":
-  (a) persistence, BFS-k from detected hosts, degree, random;
-  (b) technique-aware Bayesian propagation (preconditions + evidence; no training);
-  (c) optional: a GNN trained on simulated campaigns, tested on held-out topologies.
-- **Metrics**: AP and AUC on next-window compromise; coverage at budget (hosts isolated per window); hosts isolated per prevented
-  compromise; time to contain.
-- **Sweeps**: detector quality (interpolate the measured confusion matrix towards identity and towards random), topology,
-  hub fan-out, attacker stealth, detection delay. 1,000+ campaigns per cell, fixed seeds.
-- **Gate G2**: the simulated campaign statistics (fan-out, chain depth, delays) reproduce the OpTC values within stated bounds.
-  If not, the attacker model is revised before any result is read.
+### Phase 1. Dataset audits and choice of D (week 1)
+Audit DEDALE and Unraveled first, CREMEv3 if obtainable, with the UWF Phase-0 protocol (`analysis_uwf/TASK.md`, items 1-7):
+files and SHA-256, schema, labels, label x port / service / IP / time mutual information, lookup baselines, benign/attack day overlap,
+hosts per technique, duplicates, paper-vs-observed.
+Deliverables: `dep/audit/<dataset>/RECON.md` and CSVs; `dep/audit/CHOICE.md` (one table, all datasets incl. UWF [measured]).
 
-### WP3. Real-chain check (week 6)
-OpTC days 1-2 (requires the OpTC extraction, ~2 GB `ecar-bro` or the full `ecar/` folder): replay the documented chains through the
-predictors with oracle evidence and with evidence degraded by the WP1 confusion matrix. DEDALE campaign if WP0 shows it is usable.
-Reported as a case study with counts, not as significance claims (about 30 first-compromise events in OpTC [measured, approx.]).
+**Gate G0 (pre-registered).** D must satisfy, on a split by host or by campaign:
+(R1) technique labels per flow or per window; (R2) a dst-port lookup does not reach the technique macro-F1 of the GBDT within 0.05;
+(R3) benign and attack flows share days; (R4) at least 4 techniques with at least 50 flows and 3 windows in every split;
+(R5) at least 20 hosts with benign traffic (room for injection).
+- Pass: D is chosen; continue.
+- Fail for all: Detect/Explain is reported as a negative measurement on all audited datasets (the audits are the evidence),
+  and the paper becomes the measurement paper (Option A) with Predict as a simulation section. Decision with the user.
 
-### WP4. Writing (weeks 7-8)
-Every number from a file; all tables generated by script; reference check against DOIs.
+### Phase 2. Detect -> Explain on D (weeks 2-3)
+- Features: per-flow Zeek fields and per-window host aggregates; IPs and time never used as features (kept only for splits and shortcut tests).
+- Technique channel: multi-label technique probabilities (GBDT first; a neural model only if it adds something).
+- Residual channel: anomaly score trained on benign traffic of the training hosts only.
+- Decision: a small, inspectable function of [technique probabilities, residual score] (logistic or shallow tree).
+- Baselines: S1-S8 of the UWF task (majority, IP, port, service, time lookups; GBDT with/without IP/port/time); a black-box GBDT
+  on the same features (for the price of explanation).
+- Leave-one-technique-out (LOTO): for each technique, retrain without it; measure its detection recall at fixed FPR, the share of
+  its detections that come from the residual channel, and how often it is explained as another technique.
+- Explanation tests: technique accuracy vs ground truth; intervention test (set a technique probability to 0/1, measure decision change);
+  residual share of all decisions.
+- Seeds 42-46; bootstrap CIs over hosts.
+**Gate G1 (pre-registered).** Technique channel beats the dst-port lookup outside the CI (macro-F1); the two-channel detector is
+within 0.05 AP of the black box; LOTO recall above the residual-only baseline for at least half of the techniques.
+Each failed condition is reported and its claim is removed from the abstract; the phase is not repeated with new tuning on test.
 
-## 3. Validity guards (apply to every result)
-- Leak tripwires from the UNSW work: constant / permuted / zeroed channels; label-only lookup baselines.
-- Shortcut baselines from the UWF task on every real-data result.
-- Simulation: seeds fixed and reported; simulator code released; the realism check of G2 reported in the paper.
-- No claim in the abstract that is not supported by a gate that passed.
+### Phase 3. Propagation generator (weeks 3-5)
+- Calibration targets from OpTC [measured from optc_redteam.csv and the red-team PDF; timings need the OpTC flows]:
+  chain depth 3-4; domain-controller fan-out to 14 hosts (day 1) and 6 hosts (day 2); failed attempts; methods WMI, RDP, SMB;
+  inter-step delays (to be measured from the extracted OpTC flows with `PHD/optc/extract_labeled.py`).
+- Attacker models (the generator is NOT known to the predictors): (M1) OpTC-like with hub fan-out; (M2) chain-only, no hub;
+  (M3) stealthy, low-and-slow on benign-looking services; (M4) misspecified: random walk ignoring preconditions.
+- Injection: for each campaign step, sample real attack flows of the matching technique from D, re-address them to the simulated
+  source/target hosts of D and re-time them into D's benign traffic.
+- **Gate G2.** (a) Artifact test: a classifier separating injected attack flows from original attack flows of D has AUC <= 0.60
+  (otherwise fix the injection). (b) Calibration: M1 reproduces the OpTC targets within the bounds stated before running.
 
-## 4. Predictions before running anything  [guess]
+### Phase 4. Predict (weeks 5-6)
+- Input: the outputs of the Phase 2 detector on the injected data (never the labels).
+- Predictors: random, degree, persistence, BFS-k from detected hosts; technique-aware Bayesian propagation (preconditions + evidence,
+  no training); optional GNN trained on M1/M2 and tested on M3/M4.
+- Metrics: AP/AUC on next-window compromise; coverage at budget (hosts isolated per window); hosts isolated per prevented compromise;
+  time to contain. 1,000+ campaigns per cell; seeds fixed.
+- Sweeps: attacker model; detection quality (Phase 2 detector vs. degraded vs. oracle); budget; topology size (subsets of D).
+
+### Phase 5. Real-chain check on OpTC (week 6-7)
+Extract OpTC days 1-2 (LMDEval preprocessing + our wrapper); map the documented hops to techniques from the red-team report
+(table published in the appendix); run the predictors with oracle evidence and with evidence degraded by the Phase 2 confusion matrix.
+Reported as a case study with raw counts (about 30 first-compromise events [measured, approx.]).
+
+### Phase 6. Writing and checks (weeks 8-10)
+All tables/figures generated by scripts from files; references verified through Crossref/Semantic Scholar; the real vs semi-synthetic
+status stated in the abstract, in every table caption and in the limitations; code and generator released.
+
+## 4. Roles
+- Claude: code, runs, audit reports, tables, drafts; stops at each gate with a factual report.
+- User: decisions at gates G0-G2, domain expertise (attacker models, SOC framing), co-author coordination, final writing.
+
+## 5. Risks and mitigations
+| Risk | Mitigation |
+|---|---|
+| No dataset passes G0 | Pre-defined fallback (Option A + simulation section); audits are already a contribution |
+| Residual channel absorbs everything (explanations meaningless) | Measure residual share; report; constrain or regularise the residual |
+| Injection artifacts | Gate G2a; ID2T-style checks |
+| Circularity between generator and predictor | Misspecified attacker models (M3, M4); predictors do not see the generator |
+| Reviewers: "synthetic propagation" | Calibration table (G2b), OpTC real-chain check, open generator, explicit labelling of what is synthetic |
+| References | Automatic DOI check before submission |
+
+## 6. Predictions [guess], replaced by measurements at each gate
 | Event | Probability |
 |---|---|
-| At least one of DEDALE / Unraveled / CREMEv3 passes G0 | ~50% |
-| A real detector beats the port lookup outside the CI (G1) | ~40% |
-| Technique-aware propagation beats BFS at equal budget for good-enough detectors (exists a positive region in the phase diagram) | ~75% |
-| The measured real detector lies inside that positive region | ~35% |
-| Acceptance Q2 / Q1 with WP0-WP3 done | ~45% / ~20% |
+| DEDALE or Unraveled passes G0 | ~45% |
+| G1 passes in full | ~35% |
+| G2 passes after at most one revision of the injection | ~70% |
+| Technique-aware propagation beats BFS at equal budget under M1 | ~60% |
+| ... and under M3/M4 | ~35% |
+| Acceptance Q2 / Q1 if Phases 1-5 complete | ~45-55% / ~15-25% |
 
-The paper is publishable in both outcomes of the fourth line: either "real detectors are good enough here" or
-"they need to reach X, today they reach Y". This is the main reason for choosing Way 3.
-
-## 5. Outline
-1. Introduction: detection, explanation and containment are coupled; how much explanation is enough?
-2. Related work: technique-level detection (RADAR, UWF, CREME), lateral-movement detection and its evaluation
-   (Euler, Argus, Jbeil, Larroche 2026), attack simulation (CybORG/CAGE, ID2T), datasets (Sec. 1 table).
-3. Data audits and the technique detector (RQ1).
-4. Simulator, attacker model, calibration (G2).
-5. Phase diagram and containment results (RQ2).
-6. Real-chain case study (RQ3).
-7. Limitations (simulation, single real topology families, small real chains).
-
-## 6. Immediate next steps
-1. User: allow these hosts in the environment's network settings (Limited -> Allowed domains), then I download and audit:
-   `doi.org`, `entrepot.recherche.data.gouv.fr`, `dedale.inria.fr` (DEDALE); `zenodo.org` (AIT-LDS, CAM-LDS);
-   `drive.google.com`, `drive.usercontent.google.com` (OpTC, for WP2 topology and WP3); `csr.lanl.gov` (optional LANL).
-   GitHub is already reachable (Unraveled, if hosted there).
-2. Me: WP0 audit of DEDALE with the UWF protocol, then Unraveled.
+## 7. Immediate next steps
+1. User: add the Phase 1 domains (first block of the table in Sec. 2) and say "done".
+2. Claude: download and audit DEDALE (`dep/audit/dedale/`), then Unraveled; write `CHOICE.md`; stop at G0 with a factual report.
