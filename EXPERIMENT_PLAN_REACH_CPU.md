@@ -23,8 +23,8 @@ Companion to `ARCHITECTURE_REACH.md`. Written 2026-10-31.
 ## 2. Data roles (fixed now; test data are not opened before their gate)
 | Use | L1 / L2 | L3 |
 |---|---|---|
-| Development | ATLASv2-EDR (Windows, 10 attacks, 1 GB loaded); CARBANAKv2-EDR (6.6 GB loaded) | LANL red-team events of days 1-29 |
-| Test | OpTC h201, h501, h051 (Windows, PIDSMaker ground truth; 6.7-9 GB loaded each, one at a time) | LANL red-team events of days 30-58; OpTC day 1 / day 2 chains (case study) |
+| Development | ATLASv2-EDR (Windows, 10 attacks, 1 GB loaded); CARBANAKv2-EDR (6.6 GB loaded) | LANL red-team events of days 2-12 (194 first compromises) |
+| Test | OpTC h201, h501, h051 (Windows, PIDSMaker ground truth; 6.7-9 GB loaded each, one at a time) | LANL red-team events of days 13-30 (107 first compromises); OpTC day 1 / day 2 chains (case study) |
 
 ## 3. Phases, gates and time
 **Phase 0 — feasibility (about 1 day).**
@@ -72,3 +72,8 @@ Companion to `ARCHITECTURE_REACH.md`. Written 2026-10-31.
 - Disk: one OpTC host at a time (compressed + restored = up to 11 GB).
 - LANL red-team labels are compromise events, not full attack graphs; L3 measures next-host ranking only.
 - Odds [guess]: F0 70%; G1 parity 45-55%; G2 50%; G3 40-50%.
+
+## Deviations
+- 2026-10-31, before any L3 run: the LANL red-team events span days 2-30 only (per-day counts in `redteam.txt.gz`),
+  so the planned split (days 1-29 / 30-58) would leave one test event. New split: development = days 2-12,
+  test = days 13-30. 701 of 749 events originate from one computer (C17693).
