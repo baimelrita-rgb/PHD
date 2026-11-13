@@ -57,5 +57,5 @@ Rules kept: every number from code; each script under 10 minutes; no tuning on t
 ## Step E: final reports
 
 - Professional report for the paper: `paper_report.md` (methods in `paper_report_methods.md`).
-- Plain-language process report with diagrams: a Hebrew web page (artifact link in the chat).
+- Plain-language process report with diagrams (Hebrew): https://claude.ai/artifact/UuRGHk2nuWXgwp7g9D1HE5 ; beginner explainer: https://claude.ai/artifact/G1HnjmCZb98W2pX8fnp5gE
 - Final assessment (judgement): IEEE TSG about 61 %, IJEPES about 75 %. Main remaining weaknesses: one test day, empirical error bounds, modest gains over the classic detector.
