@@ -11,12 +11,16 @@ from pathlib import Path
 
 ROOT_DEFAULT = Path(__file__).resolve().parents[2] / "data" / "raw" / "01-Basic" / "01-Basic"
 ROOT_SEMI = Path(__file__).resolve().parents[2] / "data" / "raw" / "02-Semiurban" / "02-Semiurban"
+ROOT_RURAL = Path(__file__).resolve().parents[2] / "data" / "raw" / "03-Rural" / "03-Rural"
+ROOTS = {"semiurban": ROOT_SEMI, "rural": ROOT_RURAL}
 
 
-def root() -> Path:
-    """Dataset root for the active grid: 02-Semiurban for grid 'semiurban', else 01-Basic."""
-    from . import envelope as E
-    return ROOT_SEMI if E.grid().name == "semiurban" else ROOT_DEFAULT
+def root(name=None) -> Path:
+    """Dataset root for a grid (default: the active grid): 02-Semiurban, 03-Rural, else 01-Basic."""
+    if name is None:
+        from . import envelope as E
+        name = E.grid().name
+    return ROOTS.get(name, ROOT_DEFAULT)
 
 
 def file_tree(root: Path):

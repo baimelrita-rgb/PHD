@@ -59,3 +59,11 @@ Rules kept: every number from code; each script under 10 minutes; no tuning on t
 - Professional report for the paper: `paper_report.md` (methods in `paper_report_methods.md`).
 - Plain-language process report with diagrams (Hebrew): https://claude.ai/artifact/UuRGHk2nuWXgwp7g9D1HE5 ; beginner explainer: https://claude.ai/artifact/G1HnjmCZb98W2pX8fnp5gE
 - Final assessment (judgement): IEEE TSG about 61 %, IJEPES about 75 %. Main remaining weaknesses: one test day, empirical error bounds, modest gains over the classic detector.
+
+## WP3: 03-Rural (owner approved the download)
+
+- Download 03-Rural.zip (1.87 GB) with md5 check; extract without pcaps, control-center notifications and host logs (same as 02-Semiurban).
+- Disk: deleted the already extracted and md5-verified 02-Semiurban.zip (6.4 GB); it can be downloaded again with `scripts/00b_download_semiurban.sh`.
+- Plan: apply the 02-Semiurban pipeline unchanged where possible (identify additions to the SimBench base from data, validate the reconstruction, envelope, SE-BDD, ML, on-demand certified library, comparison). Every deviation is logged here.
+- **Code generalised for SimBench-based grids** (`semiurban_model.SPECS`, `envelope` grid `rural`, `sherlock_io.root(name)`, `--grid` in scripts 15a, 15b and 16a). Index offsets (new buses, switches, transformers) are now derived from the SimBench base, not hard-coded. Regression check: the Semiurban model check reproduces exactly (voltage mean 2.80e-04, max 9.96e-04 pu).
+- Expected Rural base: SimBench 1-MV-rural--2-sw (99 buses, 101 lines, 96 loads, 102 sgen, 90 storage, 204 switches), to be confirmed from the data.

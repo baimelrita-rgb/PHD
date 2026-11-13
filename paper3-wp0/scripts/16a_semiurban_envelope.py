@@ -30,9 +30,10 @@ def main():
     ap.add_argument("--noise-tol", type=float, default=1e-3)
     ap.add_argument("--settle-s", type=float, default=60.0)
     ap.add_argument("--step", type=int, default=5)
+    ap.set_defaults(grid="semiurban")
     a = ap.parse_args()
-    net = SU.base_net()
-    root = S.ROOT_SEMI
+    net = SU.base_net(a.grid)
+    root = S.root(a.grid)
     p_nom = np.abs(net.load.p_mw.values); q_nom = net.load.q_mvar.values
     g_nom = net.sgen.sn_mva.values; b_nom = np.abs(net.storage.p_mw.values)
     lsw = {}
@@ -101,7 +102,7 @@ def main():
            "load_q_bounds": [[float(qlo[i]) - a.load_margin, float(qhi[i]) + a.load_margin] for i in range(len(qlo))],
            "topologies": topologies,
            "observed_train": {"load_lo": lo.tolist(), "load_hi": hi.tolist()}}
-    E.SEMI_ENV_PATH.write_text(json.dumps(env, indent=2))
+    E._sb_env_path(a.grid).write_text(json.dumps(env, indent=2))
 
     # coverage on benign test records
     ev = S.load_events(root, "test")
@@ -128,7 +129,7 @@ def main():
         ok = ~np.isfinite(r) | ((r >= blo - a.noise_tol) & (r <= bhi + a.noise_tol))   # unmonitored: not checkable
         n_cont += int(np.all(ok))
     free = int(np.sum(np.r_[hi - lo + 2 * a.load_margin, np.ones(len(net.sgen)), 2 * np.ones(len(net.storage))] > 1e-9))
-    body = "# WP2-b: 02-Semiurban benign envelope from train data\n\n"
+    body = f"# Sherlock {a.grid}: benign envelope from train data\n\n"
     body += C.md_table(["quantity", "value"], [
         ["continuous parameters (loads / sgen / storage)", f"{len(net.load)} / {len(net.sgen)} / {len(net.storage)}, {free} free"],
         ["unmonitored elements (no telemetry): loads / sgen / storage", f"{len(unmon)} / {int(sum(1 for j in net.sgen.index if f'sgen.{j}:active_power' not in first))} / {int(sum(1 for k in net.storage.index if f'storage.{k}:active_power' not in first))}"],
@@ -147,7 +148,7 @@ def main():
     if unseen:
         body += "\nBenign test topologies outside the envelope (lines out, records):\n\n"
         body += C.md_table(["lines out", "benign test records"], [[("outside: non-line switch open" if t is None else ", ".join(map(str, t)) or "none"), v] for t, v in unseen.most_common(10)])
-    C.write_report("semiurban_envelope_semiurban.md", body)
+    C.write_report(f"{a.grid}_envelope_{a.grid}.md", body)
     print(f"load_q {load_q}; topologies {len(topologies)}; test benign topo coverage {n_topo}/{n_ben}; continuous {n_cont}/{n_ben}; unseen {len(unseen)}")
 
 

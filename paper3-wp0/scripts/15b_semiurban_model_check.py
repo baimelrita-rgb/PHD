@@ -16,23 +16,25 @@ import pandapower as pp
 from p3 import common as C
 from p3 import semiurban_model as SU
 
-ROOT = C.ROOT / "data" / "raw" / "02-Semiurban" / "02-Semiurban"
+from p3 import sherlock_io as S
 
 
 def main():
     ap = C.parser(__doc__)
     ap.add_argument("--n", type=int, default=100)
     ap.add_argument("--split", default="train")
+    ap.set_defaults(grid="semiurban")
     a = ap.parse_args()
+    ROOT = S.root(a.grid)
     t0 = time.time()
     z = zipfile.ZipFile(ROOT / "raw" / a.split / "physical.zip")
     names = sorted(x for x in z.namelist() if x.startswith("physical/") and x.endswith(".json"))
     pick = np.random.default_rng(a.seed + 1).choice(len(names), a.n, replace=False)
-    net = SU.base_net()
+    net = SU.base_net(a.grid)
     ev, ep, et, nf, nonconv = [], [], [], [], 0
     for k in pick:
         v = json.loads(z.read(names[k]))["values"]
-        SU.build(v, net)
+        SU.build(v, net, a.grid)
         try:
             pp.runpp(net)
         except pp.LoadflowNotConverged:
@@ -47,9 +49,9 @@ def main():
         live = [l for l in net.line.index if v[f"line.{l}.MEASUREMENT.current_from"] > 0.5 and v[f"line.{l}.MEASUREMENT.current_to"] > 0.5]
         nf.append(max(abs(v[f"line.{l}.MEASUREMENT.voltage_from"] - v[f"bus.{int(net.line.from_bus.at[l])}.MEASUREMENT.voltage"]) for l in live))
     ev, ep, et = (np.concatenate(x) for x in (ev, ep, et))
-    p = SU.new_trafo_params()
-    body = f"# WP2 step 2: 02-Semiurban model check ({a.split})\n\n"
-    body += ("Reconstruction: SimBench 1-MV-semiurb--2-sw plus the 56 identified bus / transformer / switch / DER and "
+    p = SU.new_trafo_params(a.grid)
+    body = f"# Sherlock {a.grid}: model check ({a.split})\n\n"
+    body += (f"Reconstruction: SimBench {SU.SPECS[a.grid]['code']} plus the {len(SU.structure(a.grid)['structures'])} identified bus / transformer / switch / DER and "
              f"storage groups (`semiurban_identify.md`); new transformers: Sn {p['sn_mva']:.3f} MVA, vk {p['vk_percent']:.3f} %, "
              f"vkr {p['vkr_percent']:.3f} %, pfe {p['pfe_kw']:.2f} kW, i0 {p['i0_percent']:.3f} % (median fit). Inputs from each "
              f"ground-truth snapshot; one AC power flow each. Wall time {time.time() - t0:.0f} s.\n\n")
@@ -62,7 +64,7 @@ def main():
         ["line active power, from end", "MW", f"{ep.mean():.2e}", f"{np.percentile(ep, 95):.2e}", f"{ep.max():.2e}"],
         ["transformer active power, HV side", "MW", f"{et.mean():.2e}", f"{np.percentile(et, 95):.2e}", f"{et.max():.2e}"],
     ])
-    C.write_report(f"semiurban_model_check_{a.split}.md", body)
+    C.write_report(f"semiurban_model_check_{a.split}.md" if a.grid == "semiurban" else f"{a.grid}_model_check_{a.split}.md", body)
     print(f"vm mean {ev.mean():.2e} max {ev.max():.2e}; p max {ep.max():.2e}; trafo max {et.max():.2e}; noise {max(nf):.2e}; nonconv {nonconv}")
 
 

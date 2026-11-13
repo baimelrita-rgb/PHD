@@ -140,21 +140,19 @@ def fixed_switch_states():
     """Known state of switches without telemetry (constant in the recording): 02-Semiurban only,
     read once from the first train ground-truth snapshot (planning records)."""
     from . import envelope as E
-    if E.grid().name != "semiurban":
-        return None
-    global _FIXED
-    try:
-        return _FIXED
-    except NameError:
-        pass
     from . import sherlock_io as S
-    z, idx = S.physical_index(S.ROOT_SEMI, "train")
-    v = S.read_snapshot(z, idx[0][1])["values"]
-    _FIXED = {int(k.split(".")[1]): bool(val) for k, val in v.items() if k.startswith("switch.") and k.endswith("MEASUREMENT.is_closed")}
-    return _FIXED
+    g = E.grid().name
+    if g not in S.ROOTS:
+        return None
+    if g not in _FIXED:
+        z, idx = S.physical_index(S.ROOTS[g], "train")
+        v = S.read_snapshot(z, idx[0][1])["values"]
+        _FIXED[g] = {int(k.split(".")[1]): bool(val) for k, val in v.items() if k.startswith("switch.") and k.endswith("MEASUREMENT.is_closed")}
+    return _FIXED[g]
 
 
 _NETCACHE = {}
+_FIXED = {}
 
 
 def record_measurements(state: dict, names, net) -> "np.ndarray":

@@ -1,4 +1,4 @@
-"""Reconstructed Sherlock 02-Semiurban grid.
+"""Reconstructed Sherlock grids built on SimBench MV grids: 02-Semiurban and 03-Rural.
 
 Base: SimBench 1-MV-semiurb--2-sw (switch, line, load, sgen, storage indices as in SimBench).
 Additions identified from data (scripts/15a, rules/semiurban_structure.json): 56 new buses
@@ -15,29 +15,53 @@ from pathlib import Path
 import numpy as np
 import pandapower as pp
 
-STRUCT_PATH = Path(__file__).resolve().parents[2] / "rules" / "semiurban_structure.json"
+RULES = Path(__file__).resolve().parents[2] / "rules"
 LV_KV = 0.4
+# Sherlock datasets built on SimBench MV grids (same reconstruction method for each)
+SPECS = {"semiurban": {"code": "1-MV-semiurb--2-sw", "struct": "semiurban_structure.json"},
+         "rural": {"code": "1-MV-rural--2-sw", "struct": "rural_structure.json"}}
+STRUCT_PATH = RULES / SPECS["semiurban"]["struct"]
 
 
-@lru_cache(maxsize=1)
-def structure():
-    if not STRUCT_PATH.exists():
-        raise SystemExit(f"missing {STRUCT_PATH}: run scripts/15a_semiurban_identify.py first")
-    return json.loads(STRUCT_PATH.read_text())
+def _name(name=None):
+    if name:
+        return name
+    from . import envelope as E
+    g = E.grid().name
+    return g if g in SPECS else "semiurban"
 
 
-def new_trafo_params():
-    tp = structure()["trafo"]
-    keys = ("sn_mva", "vk_percent", "vkr_percent", "pfe_kw", "i0_percent")
-    return {k: float(np.median([tp[str(t)][k] for t in range(2, 58)])) for k in keys}
+@lru_cache(maxsize=None)
+def structure(name=None):
+    path = RULES / SPECS[_name(name)]["struct"]
+    if not path.exists():
+        raise SystemExit(f"missing {path}: run scripts/15a_semiurban_identify.py --grid {_name(name)} first")
+    return json.loads(path.read_text())
 
 
-def base_net():
+@lru_cache(maxsize=None)
+def simbench_base(name=None):
     import simbench as sb
-    net = sb.get_simbench_net("1-MV-semiurb--2-sw")
+    return sb.get_simbench_net(SPECS[_name(name)]["code"])
+
+
+def new_trafo_params(name=None):
+    st = structure(name)
+    tp = st["trafo"]
+    new = [s["trafo"] for s in st["structures"]]
+    keys = ("sn_mva", "vk_percent", "vkr_percent", "pfe_kw", "i0_percent")
+    return {k: float(np.median([tp[str(t)][k] for t in new])) for k in keys}
+
+
+def base_net(name=None):
+    import copy
+    name = _name(name)
+    net = copy.deepcopy(simbench_base(name))
+    n_sw0, n_tr0 = len(net.switch), len(net.trafo)
     net.profiles = {}     # profiles are not used; injections come from data or the envelope
-    p = new_trafo_params()
-    for s in sorted(structure()["structures"], key=lambda s: s["trafo"]):
+    p = new_trafo_params(name)
+    structs = structure(name)["structures"]
+    for s in sorted(structs, key=lambda s: s["trafo"]):
         b = pp.create_bus(net, vn_kv=LV_KV, name=f"new bus {s['new_bus']}", index=s["new_bus"])
         assert b == s["new_bus"]
         t = pp.create_transformer_from_parameters(
@@ -53,14 +77,15 @@ def base_net():
             getattr(net, kind).at[int(i), "bus"] = b
     net.switch.sort_index(inplace=True)
     net.trafo.sort_index(inplace=True)
-    assert list(net.switch.index) == list(range(360)) and list(net.trafo.index) == list(range(58))
+    assert list(net.switch.index) == list(range(n_sw0 + 2 * len(structs)))
+    assert list(net.trafo.index) == list(range(n_tr0 + len(structs)))
     return net
 
 
-def build(snap, net=None):
+def build(snap, net=None, name=None):
     """Set a recorded physical snapshot (W, var; pu; degrees) on the reconstructed grid."""
     v = snap
-    net = base_net() if net is None else net
+    net = base_net(name) if net is None else net
     net.ext_grid.at[0, "vm_pu"] = v["bus.0.MEASUREMENT.voltage"]
     net.ext_grid.at[0, "va_degree"] = v["bus.0.MEASUREMENT.voltage_angle"]
     for kind in ("load", "sgen", "storage"):

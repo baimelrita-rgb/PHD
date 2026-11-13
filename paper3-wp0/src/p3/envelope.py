@@ -97,35 +97,47 @@ def _sherlock_taps():
 SEMI_ENV_PATH = ROOT / "rules" / "semiurban_envelope.json"
 
 
-def _semi_builder():
-    from . import semiurban_model as SU
-    net = SU.base_net()
-    net.switch["closed"] = True     # topology is expressed by lines out of service
-    return net
+def _sb_env_path(name):
+    return ROOT / "rules" / f"{name}_envelope.json"
 
 
-def _semi_json():
-    if not SEMI_ENV_PATH.exists():
-        raise SystemExit(f"missing {SEMI_ENV_PATH}: run scripts/16a_semiurban_envelope.py first")
-    return json.loads(SEMI_ENV_PATH.read_text())
+def _sb_builder(name):
+    def f():
+        from . import semiurban_model as SU
+        net = SU.base_net(name)
+        net.switch["closed"] = True     # topology is expressed by lines out of service
+        return net
+    return f
 
 
-def _semi_envelopes():
-    d = _semi_json()
-    tup = lambda xs: tuple(tuple(b) for b in xs)
-    return {"full": Envelope("full", tup(d["load"]), tup(d["sgen"]), tup(d["storage"]), tup(d.get("load_q_bounds", ())))}
+def _sb_json(name):
+    p = _sb_env_path(name)
+    if not p.exists():
+        raise SystemExit(f"missing {p}: run scripts/16a_semiurban_envelope.py --grid {name} first")
+    return json.loads(p.read_text())
 
 
-def _semi_configs():
-    d = _semi_json()
-    return tuple(Config((), None if not t else (int(t[0]) if len(t) == 1 else tuple(int(x) for x in t)), ()) for t in d["topologies"])
+def _sb_envelopes(name):
+    def f():
+        d = _sb_json(name)
+        tup = lambda xs: tuple(tuple(b) for b in xs)
+        return {"full": Envelope("full", tup(d["load"]), tup(d["sgen"]), tup(d["storage"]), tup(d.get("load_q_bounds", ())))}
+    return f
+
+
+def _sb_configs(name):
+    def f():
+        d = _sb_json(name)
+        return tuple(Config((), None if not t else (int(t[0]) if len(t) == 1 else tuple(int(x) for x in t)), ()) for t in d["topologies"])
+    return f
 
 
 GRIDS = {
     "cigre_pv_wind": lambda: GridSpec("cigre_pv_wind", _cigre_builder, _cigre_envelopes),
     "sherlock": lambda: GridSpec("sherlock", _sherlock_builder, _sherlock_envelopes, max_outages=2,
                                  tap_options=_sherlock_taps(), load_q="fixed", max_loops=1),
-    "semiurban": lambda: GridSpec("semiurban", _semi_builder, _semi_envelopes, load_q="free", configs_fn=_semi_configs),
+    "semiurban": lambda: GridSpec("semiurban", _sb_builder("semiurban"), _sb_envelopes("semiurban"), load_q="free", configs_fn=_sb_configs("semiurban")),
+    "rural": lambda: GridSpec("rural", _sb_builder("rural"), _sb_envelopes("rural"), load_q="free", configs_fn=_sb_configs("rural")),
 }
 _GRID = GRIDS["cigre_pv_wind"]()
 
