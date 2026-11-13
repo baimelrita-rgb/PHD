@@ -68,6 +68,7 @@ def main():
         return pl / p_nom, ql / np.where(q_nom == 0, 1, q_nom), pg / g_nom, pb / np.where(b_nom == 0, 1, b_nom)
 
     lo = hi = None
+    qlo = qhi = None
     q_fixed_dev, q_pf_dev = 0.0, 0.0
     tcount = collections.Counter()
     first = None
@@ -76,6 +77,8 @@ def main():
         if i % a.step:
             continue
         rl, rq, rg, rb = ratios(rec["state"])
+        qlo = rq if qlo is None else np.fmin(qlo, rq)
+        qhi = rq if qhi is None else np.fmax(qhi, rq)
         lo = rl if lo is None else np.fmin(lo, rl)
         hi = rl if hi is None else np.fmax(hi, rl)
         q_fixed_dev = max(q_fixed_dev, float(np.nanmax(np.abs(rq - 1.0))))
@@ -88,11 +91,14 @@ def main():
     for i in unmon:
         grp = [j for j in range(len(lo)) if prof[j] == prof[i] and np.isfinite(lo[j])]
         lo[i], hi[i] = min(lo[j] for j in grp), max(hi[j] for j in grp)
+        qlo[i], qhi[i] = min(qlo[j] for j in grp), max(qhi[j] for j in grp)
+    load_q = "free"   # load Q follows its own profile in this dataset (see deviations in the report)
     topologies = [list(t) for t, _ in tcount.most_common() if t is not None]
     env = {"source": "scripts/16a_semiurban_envelope.py (train IPAL state)", "load_q": load_q,
            "load": [[float(lo[i]) - a.load_margin, float(hi[i]) + a.load_margin] for i in range(len(lo))],
            "sgen": [[0.0, 1.0] for _ in net.sgen.index],
            "storage": [[-1.0, 1.0] for _ in net.storage.index],
+           "load_q_bounds": [[float(qlo[i]) - a.load_margin, float(qhi[i]) + a.load_margin] for i in range(len(qlo))],
            "topologies": topologies,
            "observed_train": {"load_lo": lo.tolist(), "load_hi": hi.tolist()}}
     E.SEMI_ENV_PATH.write_text(json.dumps(env, indent=2))
@@ -128,7 +134,7 @@ def main():
         ["unmonitored elements (no telemetry): loads / sgen / storage", f"{len(unmon)} / {int(sum(1 for j in net.sgen.index if f'sgen.{j}:active_power' not in first))} / {int(sum(1 for k in net.storage.index if f'storage.{k}:active_power' not in first))}"],
         ["unmonitored switches", f"{sum(1 for s_ in net.switch.index if f'switch.{s_}:is_closed' not in first)} (state fixed in the recording, taken from the first train ground-truth snapshot as known configuration)"],
         ["unmonitored load bounds", "taken from monitored loads with the same SimBench profile (train spread within a profile at most 0.0035 of nominal)"],
-        ["load Q model chosen from data", f"{load_q} (max deviation: fixed {q_fixed_dev:.4f}, following P {q_pf_dev:.4f})"],
+        ["load Q model", f"own parameter per load (Q / nominal Q deviates from both a fixed value ({q_fixed_dev:.4f}) and from following P ({q_pf_dev:.4f})); bounds from train, unmonitored loads from their profile group"],
         ["topologies (distinct line-outage sets seen in train)", len(topologies)],
         ["train records sampled", f"every {a.step}th, {sum(tcount.values())} records"],
         [f"benign test records sampled (more than {a.settle_s:.0f} s from attacks)", n_ben],

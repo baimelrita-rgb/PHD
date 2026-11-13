@@ -48,3 +48,13 @@ if [ -d data/raw/01-Basic/01-Basic ]; then
   python scripts/14_consolidation.py --seed "$SEED"
 fi
 pip freeze > reports/env.txt
+# WP2: 02-Semiurban (needs data/raw/02-Semiurban, scripts/00b_download_semiurban.sh)
+if [ -d data/raw/02-Semiurban/02-Semiurban ]; then
+  python scripts/15a_semiurban_identify.py --seed "$SEED"
+  python scripts/15b_semiurban_model_check.py --seed "$SEED" --split train
+  python scripts/15b_semiurban_model_check.py --seed "$SEED" --split test
+  python scripts/16a_semiurban_envelope.py --seed "$SEED"
+  python scripts/17_se_bdd.py --seed "$SEED"
+  python scripts/18_semiurban_consolidation.py --seed "$SEED"
+fi
+pip freeze > reports/env.txt

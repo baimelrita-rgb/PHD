@@ -10,7 +10,8 @@ Grids (see GRIDS, select with use_grid(name); default "cigre_pv_wind"):
                    Topologies: connected with at most one closed loop (Sherlock operates meshed after
                    maintenance), up to two lines out. Taps: positions observed in train.
 
-Continuous parameters x = [load P scaling (n_load), DER scaling (n_der), storage scaling (n_sto)];
+Continuous parameters x = [load P scaling (n_load), DER scaling (n_der), storage scaling (n_sto),
+load Q scaling (n_load, only for grids with load_q = "free")];
 injections are affine in x (injection_maps()).
 
 A sampled state is benign iff the AC power flow converges and
@@ -46,6 +47,7 @@ class Envelope:
     load_scale: tuple = (0.2, 1.2)     # (lo, hi) for all loads, or a tuple of per-load (lo, hi)
     der_scale: tuple = (0.0, 1.0)
     sto_scale: tuple = (0.0, 1.0)
+    lq_scale: tuple = ()               # load Q / nominal bounds (grids with load_q = "free")
     allow_reconfiguration: bool = True
 
 
@@ -58,7 +60,7 @@ class GridSpec:
     tap_options: tuple = ((),)      # tuples of tap positions per transformer; () keeps the model's own
     max_loops: int = 0              # 0: radial only; 1: connected with at most one closed loop
     configs_fn: Callable | None = None   # explicit configuration list (large grids: topologies from data)
-    load_q: str = "pf"              # "pf": q scales with p; "fixed": q stays nominal
+    load_q: str = "pf"              # "pf": q scales with p; "fixed": q stays nominal; "free": own parameter
 
 
 def _cigre_builder():
@@ -111,7 +113,7 @@ def _semi_json():
 def _semi_envelopes():
     d = _semi_json()
     tup = lambda xs: tuple(tuple(b) for b in xs)
-    return {"full": Envelope("full", tup(d["load"]), tup(d["sgen"]), tup(d["storage"]))}
+    return {"full": Envelope("full", tup(d["load"]), tup(d["sgen"]), tup(d["storage"]), tup(d.get("load_q_bounds", ())))}
 
 
 def _semi_configs():
@@ -123,7 +125,7 @@ GRIDS = {
     "cigre_pv_wind": lambda: GridSpec("cigre_pv_wind", _cigre_builder, _cigre_envelopes),
     "sherlock": lambda: GridSpec("sherlock", _sherlock_builder, _sherlock_envelopes, max_outages=2,
                                  tap_options=_sherlock_taps(), load_q="fixed", max_loops=1),
-    "semiurban": lambda: GridSpec("semiurban", _semi_builder, _semi_envelopes, load_q="fixed", configs_fn=_semi_configs),
+    "semiurban": lambda: GridSpec("semiurban", _semi_builder, _semi_envelopes, load_q="free", configs_fn=_semi_configs),
 }
 _GRID = GRIDS["cigre_pv_wind"]()
 
@@ -245,6 +247,8 @@ def topology_graph(net) -> nx.Graph:
         g.add_edge(int(net.trafo.at[ti, "hv_bus"]), int(net.trafo.at[ti, "lv_bus"]), kind="trafo", idx=int(ti))
     for li in active_lines(net):
         g.add_edge(int(net.line.at[li, "from_bus"]), int(net.line.at[li, "to_bus"]), kind="line", idx=li)
+    for si in net.switch.index[(net.switch.et == "b") & net.switch.closed]:      # closed bus-bus couplers
+        g.add_edge(int(net.switch.at[si, "bus"]), int(net.switch.at[si, "element"]), kind="coupler", idx=int(si))
     return g
 
 
@@ -293,17 +297,18 @@ class Dims:
     n_load: int
     n_der: int
     n_sto: int = 0
+    n_lq: int = 0
 
     @property
     def n_cont(self) -> int:
-        return self.n_load + self.n_der + self.n_sto
+        return self.n_load + self.n_der + self.n_sto + self.n_lq
 
 
 @lru_cache(maxsize=1)
 def dims() -> Dims:
     net = _base_net()
     n_sto = len(net.storage) if "storage" in net and len(net.storage) else 0
-    return Dims(len(net.load), len(net.sgen), n_sto)
+    return Dims(len(net.load), len(net.sgen), n_sto, len(net.load) if _GRID.load_q == "free" else 0)
 
 
 def _expand(b, n):
@@ -316,7 +321,8 @@ def _expand(b, n):
 def cont_bounds(env: Envelope | None = None) -> list[tuple[float, float]]:
     env = full() if env is None else env
     d = dims()
-    return _expand(env.load_scale, d.n_load) + _expand(env.der_scale, d.n_der) + (_expand(env.sto_scale, d.n_sto) if d.n_sto else [])
+    return (_expand(env.load_scale, d.n_load) + _expand(env.der_scale, d.n_der) + (_expand(env.sto_scale, d.n_sto) if d.n_sto else [])
+            + (_expand(env.lq_scale, d.n_lq) if d.n_lq else []))
 
 
 def sample_lhs(env: Envelope | None, n: int, seed: int = SEED, configs=None):
@@ -338,7 +344,7 @@ def sample_lhs(env: Envelope | None, n: int, seed: int = SEED, configs=None):
 def split_x(x):
     d = dims()
     x = np.asarray(x)
-    return x[: d.n_load], x[d.n_load: d.n_load + d.n_der], x[d.n_load + d.n_der: d.n_cont]
+    return x[: d.n_load], x[d.n_load: d.n_load + d.n_der], x[d.n_load + d.n_der: d.n_load + d.n_der + d.n_sto]
 
 
 @dataclass
@@ -366,6 +372,8 @@ def injection_maps() -> InjectionMaps:
         Apl[i, i] = net.load.p_mw.values[i]
         if _GRID.load_q == "pf":
             Aql[i, i] = net.load.q_mvar.values[i]
+        elif _GRID.load_q == "free":
+            Aql[i, d.n_load + d.n_der + d.n_sto + i] = net.load.q_mvar.values[i]
         else:
             cql[i] = net.load.q_mvar.values[i]
     Apg = np.zeros((d.n_der, n))

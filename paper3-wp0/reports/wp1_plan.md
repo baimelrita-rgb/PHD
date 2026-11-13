@@ -10,7 +10,7 @@ CPS-security conference) with the paper's main claim intact.
 | --- | --- | --- |
 | WP0 feasibility | done | `feasibility_report.md` |
 | WP1-a physics visibility of Sherlock attacks | done | `physics_residual_sherlock.md`: 0.00059 false alarms per benign record; control-and-freeze 5/5, drift-off 3/4, industroyer 2/7 |
-| WP2-b 02-Semiurban pipeline (in progress) | blocked by two findings | `wp2b_status.md`: about 40 % of elements have no telemetry; train topologies cover only 16 % of benign test time. Proposed: state estimation and on-demand per-topology certification |
+| WP2-b 02-Semiurban: state estimation and on-demand certification | done | `wp2b_summary.md`: SE-BDD detector (0 false alarms); all 13 test topologies certified on demand in 5 to 11 s; certified library with persistence catches control-and-freeze 4/5, drift-off 6/9 (detector 3/5, 4/9) at 0.004 false alarms |
 | WP2-a 02-Semiurban grid reconstruction | done | `semiurban_identify.md`, `semiurban_model_check_*.md`: SimBench 1-MV-semiurb--2-sw plus 56 identified DER-and-storage transformer groups; voltage error mean 2.8e-4, max 1.0e-3 pu on train and test |
 | WP1-d detectors (ML) and self-consolidation loop | done | `wp1d_summary.md`: physics-informed autoencoder works (raw-feature ML fails); label-free loop: library catches drift-off 4/4, control-and-freeze 4/5, industroyer 2/7 from earlier alerts, including 2 attacks the detectors missed |
 | WP1-c rule synthesis from alerts | done | `wp1c_summary.md`: certified rules for drift-off 3/4, control-and-freeze 3/5, industroyer 3/7; false alarms at most 0.0003 per benign test record; 2 plausible rules correctly refuted |
@@ -57,7 +57,12 @@ automatically, is not built yet, and the "certified" claim rests on an empirical
 
 ## Risks
 
-Update after WP2-b findings: estimate for IEEE TSG held at **about 57 %**, with more spread. If state estimation and
+Update after WP2-b: estimate for IEEE TSG **about 61 %** (about 75 % for IJEPES). Both proposed designs work on the
+178-bus, partially observable grid: state estimation gives a detector with no false alarms, and on-demand
+certification covers every benign test topology. Not higher: the Semiurban certificate is search-based only, the
+library's false alarms are above the detector's, and a baseline comparison table is still missing.
+
+Earlier update after WP2-b findings: estimate for IEEE TSG held at **about 57 %**, with more spread. If state estimation and
 on-demand certification work on Semiurban, the paper gains realism that reviewers value (partial observability,
 unseen benign reconfigurations), about 63 to 65 %. If they do not, the Semiurban part shrinks to a limitation
 section, about 50 %.
@@ -75,8 +80,9 @@ section, about 50 %.
 | Balance rules not certifiable in the exact layer | resolved in WP1-b2 (R3 certified with the linearised AC model and a rule-specific bound) | was medium | done |
 | Error bounds are empirical (adversarial search), not proven | "certified" questioned | medium | State it plainly; report search budget and safety factor; optional future work: Lipschitz or interval bounds on the linearisation remainder |
 | Detector stand-in (residual) instead of ML | resolved in WP1-d: autoencoder (physics-informed) and Isolation Forest; raw-feature ML fails, reported as a finding | was medium | done |
-| Partial observability on the large grid (about 40 % of elements unmonitored) | Residual detector, invariants and oracle need every injection | high (measured) | State estimation with pseudo-measurements for loads; bad-data detection residual as detector and as baseline |
-| Benign test topologies unseen in train (16 % coverage on Semiurban) | Data-driven topology envelope fails on a large grid | high (measured) | Structural envelope (connected, at most one loop) and on-demand certification per new topology |
+| Partial observability on the large grid (about 40 % of elements unmonitored) | resolved in WP2-b: state estimation with pseudo-measurements and Gauss-Newton correction | was high | done |
+| Benign test topologies unseen in train (16 % coverage on Semiurban) | resolved in WP2-b: on-demand certification, all 13 test topologies certified in 5 to 11 s | was high | done |
+| Semiurban certificate is search-based only (iterated residual is not linear) | weaker claim on the large grid | medium | State it plainly; future work: linearise the SE residual around the estimate for an exact layer |
 | Learning and evaluation on the same test day | Optimistic generalisation | medium | WP2: learn on one Sherlock scenario, evaluate on another; 02-Semiurban gives a second grid |
 | Few attack instances (3 types, 4 to 7 each) | Weak statistics | medium | Report per instance; 02-Semiurban adds industroyer 9, drift-off 9, control-and-freeze 5 |
 | Benign procedures cause short residual transients | False alarms | low (0.00059 per record) | Persistence filter calibrated on train; procedure-aware suppression in WP1-c |

@@ -104,7 +104,7 @@ class Encoder:
         self._t = (lambda c: c * c) if self.m.squared else (lambda c: c)
         d = E.dims()
         self.z = ([z3.Real(f"s{i}") for i in range(d.n_load)] + [z3.Real(f"g{j}") for j in range(d.n_der)]
-                  + [z3.Real(f"b{k}") for k in range(d.n_sto)])
+                  + [z3.Real(f"b{k}") for k in range(d.n_sto)] + [z3.Real(f"q{i}") for i in range(d.n_lq)])
         self.bounds = E.cont_bounds(env)
         net = E.apply_config(E.base_net(), cfg)
         self.sw = net.switch.closed.values.astype(float)

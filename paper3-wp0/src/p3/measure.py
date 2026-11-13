@@ -40,6 +40,8 @@ def names() -> tuple[str, ...]:
     n += [f"sgen_p.{j}" for j in net.sgen.index]
     if E.dims().n_sto:
         n += [f"storage_p.{k}" for k in net.storage.index]
+    if E.dims().n_lq:
+        n += [f"load_q.{i}" for i in net.load.index]
     if _has_taps():
         n += [f"tap.{t}" for t in net.trafo.index]
     return tuple(n)
@@ -66,6 +68,7 @@ def vector_from_fast(r: dict, cfg: E.Config) -> np.ndarray:
     return np.concatenate([
         r["vm_pu"], r["line_loading_percent"], r["line_p_from_mw"], r["trafo_p_hv_mw"],
         r["trafo_loading_percent"], sw, lin, r["p_load"], r["p_sgen"], r["p_sto"],
+        r["q_load"] if E.dims().n_lq else np.zeros(0),
         np.asarray(cfg.taps, float) if _has_taps() else np.zeros(0),
     ])
 
@@ -84,6 +87,7 @@ def vector_from_net(net) -> np.ndarray:
         net.load.p_mw.values,
         net.sgen.p_mw.values,
         net.storage.p_mw.values if E.dims().n_sto else np.zeros(0),
+        net.load.q_mvar.values if E.dims().n_lq else np.zeros(0),
         net.trafo.tap_pos.values.astype(float) if _has_taps() else np.zeros(0),
     ])
 

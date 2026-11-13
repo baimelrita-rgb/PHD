@@ -136,11 +136,51 @@ def base_net():
     return net
 
 
+def fixed_switch_states():
+    """Known state of switches without telemetry (constant in the recording): 02-Semiurban only,
+    read once from the first train ground-truth snapshot (planning records)."""
+    from . import envelope as E
+    if E.grid().name != "semiurban":
+        return None
+    global _FIXED
+    try:
+        return _FIXED
+    except NameError:
+        pass
+    from . import sherlock_io as S
+    z, idx = S.physical_index(S.ROOT_SEMI, "train")
+    v = S.read_snapshot(z, idx[0][1])["values"]
+    _FIXED = {int(k.split(".")[1]): bool(val) for k, val in v.items() if k.startswith("switch.") and k.endswith("MEASUREMENT.is_closed")}
+    return _FIXED
+
+
+_NETCACHE = {}
+
+
 def record_measurements(state: dict, names, net) -> "np.ndarray":
     """IPAL state record -> measurement vector in the order of measure.names().
     Line loading is recomputed from the reported end currents (IPAL has no line loading field)."""
-    imax_a = (net.line.max_i_ka * net.line.df * net.line.parallel).values * 1e3
+    key = id(net)
+    if key not in _NETCACHE:
+        ls = {}
+        for s_, et, el in zip(net.switch.index, net.switch.et.values, net.switch.element.values):
+            if et == "l":
+                ls.setdefault(int(el), []).append(int(s_))
+        _NETCACHE[key] = ((net.line.max_i_ka * net.line.df * net.line.parallel).values * 1e3, ls)
+    imax_a, line_sw = _NETCACHE[key]
     out = np.zeros(len(names))
+    nan = float("nan")
+    fixed = fixed_switch_states()
+    _st = state
+
+    class _S(dict):          # unmonitored values read as NaN; unmonitored switches use their fixed state
+        def __missing__(self, k):
+            if k.startswith("switch.") and k.endswith(":is_closed") and fixed is not None:
+                return fixed.get(int(k.split(".")[1].split(":")[0]), True)
+            if k.endswith(":is_closed"):
+                return True
+            return nan
+    state = _S(_st)
     for j, n in enumerate(names):
         kind, i = n.split(".")
         i = int(i)
@@ -157,8 +197,7 @@ def record_measurements(state: dict, names, net) -> "np.ndarray":
         elif kind == "sw":
             out[j] = float(bool(state[f"switch.{i}:is_closed"]))
         elif kind == "line_in":
-            sw = [s_ for s_ in net.switch.index[(net.switch.et == "l") & (net.switch.element == i)]]
-            out[j] = float(all(bool(state[f"switch.{s_}:is_closed"]) for s_ in sw))
+            out[j] = float(all(bool(state[f"switch.{s_}:is_closed"]) for s_ in line_sw.get(i, ())))
         elif kind == "tap":
             p_ = state[f"trafo.{i}:tap_position"]
             out[j] = float(p_ - 256 if p_ > 127 else p_)
@@ -166,6 +205,8 @@ def record_measurements(state: dict, names, net) -> "np.ndarray":
             out[j] = state[f"load.{i}:active_power"] / 1e6
         elif kind == "sgen_p":
             out[j] = state[f"sgen.{i}:active_power"] / 1e6
+        elif kind == "load_q":
+            out[j] = state[f"load.{i}:reactive_power"] / 1e6
         elif kind == "storage_p":
             out[j] = state[f"storage.{i}:active_power"] / 1e6
         else:

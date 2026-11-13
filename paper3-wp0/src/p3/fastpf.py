@@ -65,6 +65,7 @@ class FastAC:
         self.imax_ka = (net.line.max_i_ka * net.line.df * net.line.parallel).values
         self.inj = E.injection_maps()
         self._V0 = ppc["bus"][:, 7].real * np.exp(1j * np.deg2rad(ppc["bus"][:, 8].real))
+        self._V0 = np.where(np.isfinite(self._V0), self._V0, 1.0 + 0j)   # isolated buses: NaN in pandapower's result
 
     def injections(self, x):
         pl, ql, pg, pb = self.inj(x)
@@ -83,6 +84,8 @@ class FastAC:
         pvpq = pq  # no PV buses in this grid
         Y = self.Ybus
         conv = False
+        if self.nb > 60:                       # large grids: sparse Newton-Raphson
+            return self._solve_sparse(Sbus, V, pq), {"p_load": pl, "q_load": ql, "p_sgen": pg, "p_sto": pb}
         for _ in range(MAX_IT):
             mis = V * np.conj(Y @ V) - Sbus
             F = np.r_[mis[pvpq].real, mis[pq].imag]
@@ -107,6 +110,31 @@ class FastAC:
             if not np.all(np.isfinite(V)):
                 break
         return Solution(conv, V if conv else None), {"p_load": pl, "q_load": ql, "p_sgen": pg, "p_sto": pb}
+
+    def _solve_sparse(self, Sbus, V, pq):
+        import scipy.sparse as sp
+        from scipy.sparse.linalg import spsolve
+        from pandapower.pypower.dSbus_dV import dSbus_dV
+        if not hasattr(self, "_Ysp"):
+            self._Ysp = sp.csr_matrix(self.Ybus)
+        Y = self._Ysp
+        for _ in range(MAX_IT):
+            mis = V * np.conj(Y @ V) - Sbus
+            F = np.r_[mis[pq].real, mis[pq].imag]
+            if np.max(np.abs(F)) < TOL:
+                return Solution(True, V)
+            dVm, dVa = dSbus_dV(Y, V)
+            A, B = dVa[pq][:, pq], dVm[pq][:, pq]
+            J = sp.vstack([sp.hstack([A.real, B.real]), sp.hstack([A.imag, B.imag])], format="csc")
+            dx = spsolve(J, -F)
+            Va, Vm = np.angle(V), np.abs(V)
+            n = len(pq)
+            Va[pq] += dx[:n]
+            Vm[pq] += dx[n:]
+            V = Vm * np.exp(1j * Va)
+            if not np.all(np.isfinite(V)):
+                break
+        return Solution(False, None)
 
     def results(self, V):
         """pandapower-equivalent result quantities from a converged voltage vector."""
