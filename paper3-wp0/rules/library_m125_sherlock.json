@@ -1,0 +1,126 @@
+{
+  "S-line 2 out+line 3 out+load_p.2 to zero+load_p.3 to zero+load_p.4 to zero+sgen_p.1 to zero+sgen_p.2 to zero+sgen_p.3 to zero+sgen_p.9 to zero+storage_p.0 to zero": {
+    "name": "S-line 2 out+line 3 out+load_p.2 to zero+load_p.3 to zero+load_p.4 to zero+sgen_p.1 to zero+sgen_p.2 to zero+sgen_p.3 to zero+sgen_p.9 to zero+storage_p.0 to zero",
+    "family": "S",
+    "atoms": [
+      {
+        "type": "discrete",
+        "meas": "line_in.2",
+        "value": 0.0
+      },
+      {
+        "type": "discrete",
+        "meas": "line_in.3",
+        "value": 0.0
+      },
+      {
+        "type": "threshold",
+        "meas": "load_p.2",
+        "op": "<",
+        "value": 0.0043165,
+        "scale": 0.0043165
+      },
+      {
+        "type": "threshold",
+        "meas": "load_p.3",
+        "op": "<",
+        "value": 0.007275,
+        "scale": 0.007275
+      },
+      {
+        "type": "threshold",
+        "meas": "load_p.4",
+        "op": "<",
+        "value": 0.005480499999999999,
+        "scale": 0.005480499999999999
+      },
+      {
+        "type": "threshold",
+        "meas": "sgen_p.1",
+        "op": "<",
+        "value": 0.0002,
+        "scale": 0.001
+      },
+      {
+        "type": "threshold",
+        "meas": "sgen_p.2",
+        "op": "<",
+        "value": 0.0003,
+        "scale": 0.001
+      },
+      {
+        "type": "threshold",
+        "meas": "sgen_p.3",
+        "op": "<",
+        "value": 0.0003,
+        "scale": 0.001
+      },
+      {
+        "type": "threshold",
+        "meas": "sgen_p.9",
+        "op": "<",
+        "value": 0.00033,
+        "scale": 0.001
+      },
+      {
+        "type": "threshold",
+        "meas": "storage_p.0",
+        "op": "<",
+        "value": 0.006,
+        "scale": 0.006
+      }
+    ]
+  },
+  "S-load_p.9 to zero+load_p.17 to zero": {
+    "name": "S-load_p.9 to zero+load_p.17 to zero",
+    "family": "S",
+    "atoms": [
+      {
+        "type": "threshold",
+        "meas": "load_p.9",
+        "op": "<",
+        "value": 0.0020855,
+        "scale": 0.0020855
+      },
+      {
+        "type": "threshold",
+        "meas": "load_p.17",
+        "op": "<",
+        "value": 0.0033150000000000002,
+        "scale": 0.0033150000000000002
+      }
+    ]
+  },
+  "S-line 3 out+load_p.3 to zero+sgen_p.2 to zero+sgen_p.9 to zero": {
+    "name": "S-line 3 out+load_p.3 to zero+sgen_p.2 to zero+sgen_p.9 to zero",
+    "family": "S",
+    "atoms": [
+      {
+        "type": "discrete",
+        "meas": "line_in.3",
+        "value": 0.0
+      },
+      {
+        "type": "threshold",
+        "meas": "load_p.3",
+        "op": "<",
+        "value": 0.007275,
+        "scale": 0.007275
+      },
+      {
+        "type": "threshold",
+        "meas": "sgen_p.2",
+        "op": "<",
+        "value": 0.0003,
+        "scale": 0.001
+      },
+      {
+        "type": "threshold",
+        "meas": "sgen_p.9",
+        "op": "<",
+        "value": 0.00033,
+        "scale": 0.001
+      }
+    ]
+  }
+}
