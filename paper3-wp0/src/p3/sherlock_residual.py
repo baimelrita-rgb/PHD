@@ -79,6 +79,8 @@ class ResidualModel:
         vm_rep = np.array([v[f"bus.{b}.MEASUREMENT.voltage"] for b in net.bus.index])
         p_rep = np.array([v[f"line.{l}.MEASUREMENT.active_power_from"] / 1e6 for l in net.line.index])
         t_rep = np.array([v[f"trafo.{t}.MEASUREMENT.active_power_hv"] / 1e6 for t in net.trafo.index])
+        if getattr(self, "want_vectors", False):
+            self.last_vectors = np.r_[vm - vm_rep, pl - p_rep, pt - t_rep]
         return {"conv": True,
                 "vm": float(np.max(np.abs(vm - vm_rep))),
                 "p_line": float(np.max(np.abs(pl - p_rep))),

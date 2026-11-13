@@ -212,3 +212,61 @@ def _cfg_by_label(label):
         if c.label == label:
             return c
     raise KeyError(label)
+
+
+def synthesize_grid_invariants(cfg, noise, budget, seed):
+    """Family G: one rule for topology cfg with a clause pair per bus voltage and per line flow,
+    each with its own margin 1.5 x max(oracle AC residual bound, train noise). Fires when ANY
+    quantity is inconsistent with the metered injections, so it generalises across elements."""
+    net = E._base_net()
+    slack = int(net.ext_grid.bus.iloc[0])
+    clauses, parts = [], []
+    k = 0
+    for kind, items, scale in (("vm", [b for b in net.bus.index if b != slack], 0.01), ("p", list(net.line.index), 0.1)):
+        for i in items:
+            if kind == "p" and not LA.model(cfg).line_active[i]:
+                continue
+            coeffs, c = invariant(cfg, kind, i)
+            b = ac_bound(cfg, coeffs, c, budget, seed + 13 * k)
+            k += 1
+            margin = MARGIN_FACTOR * max(noise.get((kind, i), 0.0), b)
+            r = invariant_rule(cfg, coeffs, c, margin, "", scale)
+            clauses += r["any_of"]
+            parts.append({"quantity": f"{'vm_pu' if kind == 'vm' else 'p_from'}.{i}", "coeffs": coeffs, "const": c,
+                          "ac_bound": b, "margin": margin, "scale": scale})
+    rule = {"name": f"G@{cfg.label}", "family": "G", "topology": cfg.label, "any_of": clauses}
+    return Candidate("G", rule, {"parts": parts})
+
+
+def _grid_rule(cfg, parts, name):
+    clauses = []
+    for p in parts:
+        clauses += invariant_rule(cfg, p["coeffs"], p["const"], p["margin"], "", p["scale"])["any_of"]
+    return {"name": name, "family": "G", "topology": cfg.label, "any_of": clauses}
+
+
+def certify_grid(cand: Candidate, cfgs, delta, budget, seed, max_rounds=5):
+    """Certify a family G rule. Every part gets its rule-specific bound; a search counterexample
+    raises the margin of the part it violates (CEGIS)."""
+    cfg = _cfg_by_label(cand.rule["topology"])
+    parts = copy.deepcopy(cand.info["parts"])
+    trace = []
+    for rnd in range(1, max_rounds + 1):
+        rule = _grid_rule(cfg, parts, cand.rule["name"])
+        d = copy.deepcopy(delta)
+        d.setdefault("linear_atoms", {})
+        for p in parts:
+            d["linear_atoms"][X.atom_key(p["coeffs"])] = BOUND_SAFETY * p["ac_bound"]
+        S_ = O.stage_b(rule, cfgs, budget=budget, seed=seed + rnd)
+        ex = X.solve(rule, cfgs, delta=d, model="linac")
+        trace.append({"round": rnd, "search_cex": S_.found, "exact": ex.status})
+        if not S_.found and ex.status == "unsat":
+            return {"verdict": "certified", "rule": rule, "trace": trace, "parts": parts}
+        if not S_.found:
+            break
+        for p in parts:   # raise every part the counterexample violates
+            r = abs(residual(p["coeffs"], p["const"], S_.cex.m))
+            if r > p["margin"]:
+                p["ac_bound"] = max(p["ac_bound"], r)
+                p["margin"] = 1.1 * r
+    return {"verdict": "refuted (search)" if trace[-1]["search_cex"] else "inconclusive", "rule": rule, "trace": trace, "parts": parts}
