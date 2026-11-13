@@ -41,3 +41,4 @@ Rules kept: every number from code; each script under 10 minutes; no tuning on t
 - **Semiurban combinations:** the autoencoder's 14.9 % false alarms dominate any union that includes it, so the table reports "SE-BDD or library" and "SE-BDD or AE or library" side by side. Which alert sources are acceptable is a deployment choice; the table shows its cost.
 - **Seed 8, 01-Basic physics-informed autoencoder:** identical to seed 7 (control-and-freeze 4/5, drift-off 3/4, industroyer 2/7, false alarms 0.00100).
 - **Seed 8, 01-Basic consolidation:** identical per-type library detection (drift-off 4/4, control-and-freeze 4/5, industroyer 2/7) and false alarms 0.00165.
+- **Seed 8, Semiurban on-demand library:** identical to seed 7 (with persistence: control-and-freeze 4/5, drift-off 6/9; false alarms 0.00401). The margins are dominated by train noise, not by the search seed.
