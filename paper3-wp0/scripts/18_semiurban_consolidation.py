@@ -81,6 +81,8 @@ def main():
     ap.add_argument("--settle-s", type=float, default=60.0)
     ap.add_argument("--tag", default="")
     ap.add_argument("--noise-from", default=None, help="grid whose per-kind noise floors are transferred (grids without a train day)")
+    ap.add_argument("--noise-mode", default="perkind", choices=["perkind", "global"],
+                    help="with --noise-from: perkind = transferred per-kind floors; global = every margin at least the transferred SE-BDD threshold")
     ap.add_argument("--margin-factor", type=float, default=MARGIN_FACTOR)
     ap.set_defaults(grid="semiurban")
     a = C.init(ap.parse_args())
@@ -96,6 +98,9 @@ def main():
         s_p999 = np.nanpercentile(np.abs(src["train_R"]), 99.9, axis=0)
         floor = {k: float(np.nanmedian(s_p999[s_obs == k])) for k in set(s_obs)}
         noise = np.array([floor.get(k, max(floor.values())) for k in kinds])
+        if a.noise_mode == "global":     # margin_i >= transferred global threshold theta
+            noise = np.full(len(kinds), float(src["th"]) / MARGIN_FACTOR)
+            floor = {"all kinds (theta / margin factor)": float(src["th"]) / MARGIN_FACTOR}
     else:
         noise = np.nanmax(np.abs(Rtr), axis=0)
         noise = np.where(np.isfinite(noise), noise, np.nanmax(noise))

@@ -47,7 +47,7 @@ def physics_features(split):
 def features(split, kind="physics"):
     names, net = M.names(), E._base_net()
     idx = M.index()
-    semi = E.grid().name == "semiurban"
+    semi = E.grid().name in ("semiurban", "rural")
     keep = [n for n in names if n.split(".")[0] in ("vm_pu", "p_from", "trafo_p_hv", "load_p", "sgen_p", "storage_p", "line_in", "tap", "load_q")]
     scale = np.ones(len(keep))
     for j, n in enumerate(keep):
@@ -144,7 +144,7 @@ def main():
         alarms[name] = al
         calib[name] = (th, L)
     # D1 physics-residual detector, for comparison and for the ensemble
-    if E.grid().name == "semiurban":
+    if E.grid().name in ("semiurban", "rural"):
         se = np.load(C.interim("se_residuals.npz"), allow_pickle=True)
         assert np.allclose(se["test_t"], Tte)
         phys_name, d1_al = "SE-BDD", se["alarm"].astype(bool)
