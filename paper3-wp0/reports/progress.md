@@ -59,3 +59,9 @@
 - Two findings change the design (`wp2b_status.md`): partial observability (about 40 % of elements unmonitored) and train topologies covering only 16 % of benign test time.
 - Explainer page for non-specialists (Hebrew) published as an artifact (link in the chat).
 - WP2-b done (`wp2b_summary.md`): state estimation under partial observability (pseudo-measurements, Gauss-Newton against AC), SE-BDD detector with 0 false alarms, on-demand certification of all 13 test topologies (5 to 11 s each), certified library with persistence catches control-and-freeze 4/5 and drift-off 6/9.
+
+## WP2-c and autonomous phase
+
+- Comparison of all methods on both grids, seeds 7 to 9, persistence and margin ablations: `comparison.md`.
+- Every attempt and decision: `decision_log.md`.
+- Final professional report: `paper_report.md`.

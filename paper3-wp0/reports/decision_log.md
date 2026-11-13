@@ -52,3 +52,10 @@ Rules kept: every number from code; each script under 10 minutes; no tuning on t
 - **Margin factor 2.0, Semiurban:** {'arp-spoof:arp-spoof-dos': [6, 1, 2, 2, 2], 'control-and-freeze:control-and-freeze': [5, 3, 5, 4, 4], 'drift-off:drift-off': [9, 4, 7, 6, 6], 'industroyer:industroyer': [9, 0, 7, 0, 0]} library FA 0.00837 with persistence 0.00174 detector FA 0.00000 142s
 - Chain finished: all 14 steps returned 0. Next: rerun the main 01-Basic loop to save per-rule firings (strict library evaluation), then the final comparison.
 - **Decision on the margin factor:** 2.0 lowers Semiurban false alarms (0.00174 against 0.00401 with persistence) with the same detection, and on 01-Basic gives the same detection with 0.00150 against 0.00165. The default stays 1.5: it was fixed before these runs, and switching after seeing test results would be tuning on test. The paper reports the sensitivity and the lower bound (the margin factor must exceed the 1.25 bound safety factor).
+- **Strict library evaluation after the main rerun** (`comparison.md`, 01-Basic): the library alone, counting only rules learned before each attack, catches control-and-freeze 4/5, drift-off 4/4, industroyer 2/7, mean delay 102 s. Counting rules active at the time, industroyer is 3/7 and the delay 70 s. Both are reported.
+
+## Step E: final reports
+
+- Professional report for the paper: `paper_report.md` (methods in `paper_report_methods.md`).
+- Plain-language process report with diagrams: a Hebrew web page (artifact link in the chat).
+- Final assessment (judgement): IEEE TSG about 61 %, IJEPES about 75 %. Main remaining weaknesses: one test day, empirical error bounds, modest gains over the classic detector.

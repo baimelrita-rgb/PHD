@@ -1,5 +1,7 @@
 # Paper 3, WP0: physics oracle feasibility
 
+Final report for the paper: `reports/paper_report.md`. Comparison tables: `reports/comparison.md`. Decision log: `reports/decision_log.md`.
+
 Plan: `WP0_FEASIBILITY_PLAN.md`. Results: `reports/feasibility_report.md`. Next stages, estimates, risks: `reports/wp1_plan.md`.
 
 ```
