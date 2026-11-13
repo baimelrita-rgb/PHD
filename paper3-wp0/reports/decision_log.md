@@ -25,3 +25,12 @@ Rules kept: every number from code; each script under 10 minutes; no tuning on t
 5. **Persistence ablation (L = 1, 3, 5)** is computed from saved single-record firings, without rerunning the oracle.
 6. **The comparison table** (`scripts/19_comparison.py`) is computed only from saved per-record alarms, so every number in it can be traced.
 7. **Run order** (`scripts/night_runs.sh`): Semiurban ML; both main loops again (to save firings); seeds 8 and 9; margin factor 1.25 and 2.0. Sequential, because parallel runs slowed each other in earlier steps.
+
+## Results as they arrive
+
+- **Semiurban ML, SE-residual features** (`ml_detectors_physics_semiurban.md`):
+  - autoencoder: 14.9 % false alarms per benign record (61 episodes); detects drift-off 6/9, control-and-freeze 4/5, industroyer 7/9;
+  - Isolation Forest: 0.3 % false alarms, drift-off 4/9;
+  - SE-BDD: 0 false alarms.
+
+  Interpretation: even physics-informed ML, calibrated on one train day, degrades under the test day's unseen topologies. Decision: keep the autoencoder as an alert source in the comparison table, but report its false alarms plainly. Its threshold is not tuned on test.
