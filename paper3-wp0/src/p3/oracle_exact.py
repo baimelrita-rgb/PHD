@@ -242,7 +242,22 @@ class Encoder:
         raise ValueError(a)
 
     def rule(self, rule):
-        return z3.Or([z3.And([self.atom(a) for a in c]) for c in R.clauses(rule)])
+        """Clauses whose discrete atoms are false in this configuration are dropped before any
+        linear expression is built (exact; a clause with a false atom can never hold)."""
+        live = []
+        for c in R.clauses(rule):
+            ok = True
+            for a in c:
+                if a["type"] == "discrete":
+                    _, const = self.linear_meas(a["meas"])
+                    if abs(const - a["value"]) >= 1e-9:
+                        ok = False
+                        break
+            if ok:
+                live.append(c)
+        if not live:
+            return z3.BoolVal(False)
+        return z3.Or([z3.And([self.atom(a) for a in c if a["type"] != "discrete"] or [z3.BoolVal(True)]) for c in live])
 
 
 def _model_x(model, z):

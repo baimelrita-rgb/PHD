@@ -54,8 +54,17 @@ def clauses(rule) -> list[list[dict]]:
 
 
 def margin(rule, m: np.ndarray, idx=None) -> float:
+    """max over clauses of min over atoms. A clause with a false discrete atom gets -1 (an upper
+    bound of its exact value, so whether the rule fires is unchanged) without evaluating the rest."""
     idx = M.index() if idx is None else idx
-    return max(min(atom_margin(a, m, idx) for a in c) for c in clauses(rule))
+    best = -np.inf
+    for c in clauses(rule):
+        if any(a["type"] == "discrete" and abs(m[idx[a["meas"]]] - a["value"]) >= 1e-9 for a in c):
+            v = -1.0
+        else:
+            v = min(atom_margin(a, m, idx) for a in c)
+        best = max(best, v)
+    return best
 
 
 def fires(rule, m: np.ndarray, idx=None) -> bool:

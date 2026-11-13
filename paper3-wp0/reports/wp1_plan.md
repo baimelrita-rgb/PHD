@@ -10,6 +10,7 @@ CPS-security conference) with the paper's main claim intact.
 | --- | --- | --- |
 | WP0 feasibility | done | `feasibility_report.md` |
 | WP1-a physics visibility of Sherlock attacks | done | `physics_residual.md`: 0.00059 false alarms per benign record; control-and-freeze 5/5, drift-off 3/4, industroyer 2/7 |
+| WP1-d detectors (ML) and self-consolidation loop | done | `wp1d_summary.md`: physics-informed autoencoder works (raw-feature ML fails); label-free loop: library catches drift-off 4/4, control-and-freeze 4/5, industroyer 2/7 from earlier alerts, including 2 attacks the detectors missed |
 | WP1-c rule synthesis from alerts | done | `wp1c_summary.md`: certified rules for drift-off 3/4, control-and-freeze 3/5, industroyer 3/7; false alarms at most 0.0003 per benign test record; 2 plausible rules correctly refuted |
 | WP1-b2 exact layer for meshed configurations | done | `wp1b2_summary.md`: linearised AC, worst error 0.00708 / 0.00834 pu (G6 passes on the worst case); R1 refuted, R2 and R3 certified on all 336 Sherlock configurations |
 | WP1-b oracle on the Sherlock grid | done | `wp1b_summary.md`: envelope covers all train and 99.86 % of benign test topologies; mined threshold refuted; context rule R2 certified (radial part, robust) |
@@ -22,6 +23,11 @@ than 15 buses (02-Semiurban, 178 buses, addresses this), comparison with baselin
 an ML detector), and precise claims. Backup: **International Journal of Electrical Power & Energy Systems** (Q1,
 broader scope, more accepting). Alternative: IEEE Transactions on Industrial Informatics (Q1, more CPS/IT oriented).
 Estimates below are for the primary target; for the backup add roughly 15 to 20 points.
+
+Estimate after WP1-d, for IEEE TSG: **about 57 %** (about 70 to 75 % for IJEPES). The full pipeline now runs
+without labels: ML and physics detectors raise alerts, the oracle certifies synthesized rules, and the library catches
+later attacks, some the detectors miss. The raw-feature ML failure is a useful result. Still missing for TSG: a
+second, larger grid (02-Semiurban), a baseline comparison table, and statistics over more than one day.
 
 Estimate after WP1-c, for IEEE TSG: **about 52 %** (about 65 to 70 % for IJEPES). The paper's core now exists:
 alerts become certified rules with near-zero false alarms, for all three process attack types. Not higher yet: rules
@@ -44,7 +50,7 @@ automatically, is not built yet, and the "certified" claim rests on an empirical
 | WP1-b | Oracle on the Sherlock grid | done (`wp1b_summary.md`) | TSG about 40 % |
 | WP1-b2 | Exact layer for meshed configurations | done (`wp1b2_summary.md`) | TSG about 45 % |
 | WP1-c | Rule synthesis from alerts | done (`wp1c_summary.md`) | TSG about 52 % |
-| WP1-d | Self-consolidation loop: replay the test timeline; the anomaly signal (here the D1 residual detector as stand-in, later an ML detector) triggers synthesis; certified rules enter the library | Detection and false alarms of the rule library over time against the detector alone | TSG about 55 % |
+| WP1-d | Detectors (ML) and self-consolidation loop | done (`wp1d_summary.md`) | TSG about 57 % |
 | WP2 | 02-Semiurban (approved, downloaded and md5-verified) and an ML detector. First look: SimBench `1-MV-semiurb--2-sw` matches loads 122, sgen 123, storage 114, lines 126; Sherlock adds 56 DER step-up transformers (178 buses, 58 transformers, 360 switches) to be identified from data as for 01-Basic | Results hold on the 178-bus grid; baselines compared | TSG about 60 to 65 % |
 
 ## Risks
@@ -61,7 +67,8 @@ automatically, is not built yet, and the "certified" claim rests on an empirical
 | Sherlock grid reconstructed, not given | Model doubts | low | Validation at the noise floor is documented (`sherlock_model_check.md`, `sherlock_taps.md`) |
 | Balance rules not certifiable in the exact layer | resolved in WP1-b2 (R3 certified with the linearised AC model and a rule-specific bound) | was medium | done |
 | Error bounds are empirical (adversarial search), not proven | "certified" questioned | medium | State it plainly; report search budget and safety factor; optional future work: Lipschitz or interval bounds on the linearisation remainder |
-| Detector stand-in (residual) instead of ML | Reviewers expect ML alerts | medium | WP2 adds an ML detector; the pipeline only needs an alert time and asset list |
+| Detector stand-in (residual) instead of ML | resolved in WP1-d: autoencoder (physics-informed) and Isolation Forest; raw-feature ML fails, reported as a finding | was medium | done |
+| Learning and evaluation on the same test day | Optimistic generalisation | medium | WP2: learn on one Sherlock scenario, evaluate on another; 02-Semiurban gives a second grid |
 | Few attack instances (3 types, 4 to 7 each) | Weak statistics | medium | Report per instance; 02-Semiurban adds industroyer 9, drift-off 9, control-and-freeze 5 |
 | Benign procedures cause short residual transients | False alarms | low (0.00059 per record) | Persistence filter calibrated on train; procedure-aware suppression in WP1-c |
 

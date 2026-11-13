@@ -109,6 +109,27 @@ def ac_bound(cfg, coeffs, c, budget, seed):
     return max(0.0, float(st["best"]))
 
 
+def live_configs(rule, cfgs):
+    """Configurations in which at least one clause's discrete atoms can hold (others cannot fire)."""
+    names = M.index()
+    out = []
+    for c in cfgs:
+        sw, lin = M._discrete(c)
+        vals = {}
+        net = E._base_net()
+        for s_, v in zip(net.switch.index, sw):
+            vals[f"sw.{s_}"] = v
+        for l, v in zip(net.line.index, lin):
+            vals[f"line_in.{l}"] = v
+        for t, v in enumerate(c.taps):
+            vals[f"tap.{t}"] = float(v)
+        for cl in R.clauses(rule):
+            if all(abs(vals.get(a["meas"], np.nan) - a["value"]) < 1e-9 for a in cl if a["type"] == "discrete"):
+                out.append(c)
+                break
+    return tuple(out)
+
+
 @dataclass
 class Candidate:
     family: str
@@ -181,7 +202,7 @@ def certify(cand: Candidate, cfgs, delta, budget, seed, max_rounds=5):
             # rule-specific bound: the linear model value of the expression is the constant c,
             # so |linear - AC| is the AC residual itself, bounded by the oracle search
             d.setdefault("linear_atoms", {})[X.atom_key(cand.info["coeffs"])] = BOUND_SAFETY * cand.info["ac_bound"]
-        S_ = O.stage_b(rule, cfgs, budget=budget, seed=seed + rnd)
+        S_ = O.stage_b(rule, live_configs(rule, cfgs) or cfgs, budget=budget, seed=seed + rnd)
         ex = X.solve(rule, cfgs, delta=d, model="linac")
         n_sat = sum(p[1] == "sat" for p in ex.per_cfg)
         trace.append({"round": rnd, "search_cex": S_.found, "search_best": S_.best_margin, "exact": ex.status, "exact_sat": n_sat})
@@ -189,10 +210,11 @@ def certify(cand: Candidate, cfgs, delta, budget, seed, max_rounds=5):
             return {"verdict": "certified", "rule": rule, "trace": trace}
         if cand.family != "P" or not S_.found:
             break
-        # CEGIS: margin just above the counterexample residual
+        # CEGIS: the counterexample raises the AC residual bound; the margin follows the synthesis
+        # rule (1.5 x max(noise, bound)) so it stays above the rule-specific error bound
         r_cex = abs(residual(cand.info["coeffs"], cand.info["const"], S_.cex.m))
-        new_m = 1.1 * r_cex
         cand.info["ac_bound"] = max(cand.info["ac_bound"], r_cex)
+        new_m = MARGIN_FACTOR * max(cand.info.get("noise", 0.0), cand.info["ac_bound"])
         cand.info["margin"] = new_m
         rule = invariant_rule(_cfg_by_label(cand.rule["topology"]), cand.info["coeffs"], cand.info["const"], new_m,
                               cand.rule["name"], rule["any_of"][0][-1]["scale"])
@@ -233,7 +255,7 @@ def synthesize_grid_invariants(cfg, noise, budget, seed):
             r = invariant_rule(cfg, coeffs, c, margin, "", scale)
             clauses += r["any_of"]
             parts.append({"quantity": f"{'vm_pu' if kind == 'vm' else 'p_from'}.{i}", "coeffs": coeffs, "const": c,
-                          "ac_bound": b, "margin": margin, "scale": scale})
+                          "ac_bound": b, "noise": noise.get((kind, i), 0.0), "margin": margin, "scale": scale})
     rule = {"name": f"G@{cfg.label}", "family": "G", "topology": cfg.label, "any_of": clauses}
     return Candidate("G", rule, {"parts": parts})
 
@@ -257,7 +279,7 @@ def certify_grid(cand: Candidate, cfgs, delta, budget, seed, max_rounds=5):
         d.setdefault("linear_atoms", {})
         for p in parts:
             d["linear_atoms"][X.atom_key(p["coeffs"])] = BOUND_SAFETY * p["ac_bound"]
-        S_ = O.stage_b(rule, cfgs, budget=budget, seed=seed + rnd)
+        S_ = O.stage_b(rule, live_configs(rule, cfgs) or cfgs, budget=budget, seed=seed + rnd)
         ex = X.solve(rule, cfgs, delta=d, model="linac")
         trace.append({"round": rnd, "search_cex": S_.found, "exact": ex.status})
         if not S_.found and ex.status == "unsat":
@@ -268,5 +290,5 @@ def certify_grid(cand: Candidate, cfgs, delta, budget, seed, max_rounds=5):
             r = abs(residual(p["coeffs"], p["const"], S_.cex.m))
             if r > p["margin"]:
                 p["ac_bound"] = max(p["ac_bound"], r)
-                p["margin"] = 1.1 * r
+                p["margin"] = MARGIN_FACTOR * max(p["noise"], p["ac_bound"])
     return {"verdict": "refuted (search)" if trace[-1]["search_cex"] else "inconclusive", "rule": rule, "trace": trace, "parts": parts}

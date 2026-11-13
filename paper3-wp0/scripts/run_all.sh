@@ -42,5 +42,9 @@ if [ -d data/raw/01-Basic/01-Basic ]; then
   # WP1-c: attack anatomy and rule synthesis from alerts
   python scripts/11_attack_anatomy.py --seed "$SEED"
   python scripts/12_synthesize.py --seed "$SEED"
+  # WP1-d: ML detectors (physics-informed and raw features) and the consolidation loop
+  python scripts/13_ml_detectors.py --seed "$SEED" --features physics
+  python scripts/13_ml_detectors.py --seed "$SEED" --features raw
+  python scripts/14_consolidation.py --seed "$SEED"
 fi
 pip freeze > reports/env.txt

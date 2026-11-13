@@ -40,3 +40,9 @@
 - Attack anatomy against a benign control baseline (`attack_anatomy.md`).
 - Rule synthesis from alerts (`src/p3/synthesis.py`, `scripts/12_synthesize.py`): physical-invariant and state families, certified by search and the robust exact layer.
 - Certified rules for drift-off 3/4, control-and-freeze 3/5, industroyer 3/7; false alarms at most 0.0003 per benign test record. `wp1c_summary.md`.
+
+## WP1-d
+
+- ML detectors (`scripts/13_ml_detectors.py`): autoencoder and Isolation Forest, raw and physics-informed features. Raw autoencoder alarms on 99.99 % of benign records; physics-informed autoencoder 0.001 false alarms; Isolation Forest never alarms (score saturation).
+- Consolidation loop (`scripts/14_consolidation.py`), alerts from D1 or AE only: 22 episodes, 9 covered by the library, final library 10 rules; library catches drift-off 4/4, control-and-freeze 4/5, industroyer 2/7 from earlier alerts. `wp1d_summary.md`.
+- Fixed: search concentrated on the rule's topology; CEGIS margin update consistent with the robust error bound.
