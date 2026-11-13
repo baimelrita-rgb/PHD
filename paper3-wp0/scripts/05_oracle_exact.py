@@ -62,6 +62,8 @@ def main():
         if mode == "robust":
             if res.status == "unsat":
                 v = "certified relative to LinDistFlow with the validated error bound delta"
+                if res.note:
+                    v += f" on the radial configurations only ({res.note}; those rely on the search layer)"
             elif confirmed[name]:
                 v = "refuted: a SAT model (nominal or robust) is a confirmed benign AC counterexample"
             else:

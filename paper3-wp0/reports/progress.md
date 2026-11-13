@@ -19,3 +19,11 @@
 - D5 done: robust exact layer with validated error bounds (`rules/model_error_bounds.json`); verdicts R1 refuted, R2 refuted, R3 inconclusive in the exact layer. `oracle_exact.md`, `lindistflow_error.md`.
 - D6 done: transformer loading limit added (1929 of 2000 benign); N-1 reconfigurations kept, all 4 Sherlock reconfigurations inside the envelope. `envelope_smoke.md`.
 - WP1-a done: physics residual detector on Sherlock telemetry, 0.00059 false alarms per benign record; control-and-freeze 5/5, drift-off 3/4, industroyer 2/7. `physics_residual.md`.
+
+## WP1-b
+
+- G2 relaxed to 3 types (owner): pass. Venue: IEEE TSG primary, IJEPES backup.
+- 02-Semiurban downloaded (md5 verified), extracted without pcaps and logs; SimBench 1-MV-semiurb--2-sw identified as base, 56 extra DER transformers noted.
+- Grid abstraction; reference grid results reproduce exactly.
+- Sherlock envelope from train: 336 configurations (170 radial); coverage train 100 %, benign test topology 99.86 %, continuous 100 %.
+- Sherlock oracle: R1 refuted and refined into uselessness (tau 0.89998); R2 certified (robust, radial part); R3 no counterexample by search, exact inconclusive. `wp1b_summary.md`.

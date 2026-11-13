@@ -22,3 +22,13 @@ else
   echo "Sherlock data missing: run scripts/00_download_sherlock.sh first (T1, T7 skipped)"
 fi
 pip freeze > reports/env.txt
+# WP1-b: oracle on the reconstructed Sherlock grid (needs Sherlock data and rules/sherlock_grid_params.json)
+if [ -d data/raw/01-Basic/01-Basic ]; then
+  python scripts/10a_sherlock_envelope.py --seed "$SEED"
+  python scripts/10b_sherlock_rules.py --seed "$SEED"
+  python scripts/03_oracle_search.py --seed "$SEED" --grid sherlock --budget 32000
+  python scripts/04_lindistflow_error.py --seed "$SEED" --grid sherlock --adv-budget 500
+  python scripts/05_oracle_exact.py --seed "$SEED" --grid sherlock
+  python scripts/06_cegis_demo.py --seed "$SEED" --grid sherlock
+fi
+pip freeze > reports/env.txt
