@@ -28,17 +28,19 @@ from p3 import sherlock_io as S
 def main():
     ap = C.parser(__doc__)
     ap.add_argument("--n", type=int, default=300, help="train snapshots used")
+    ap.add_argument("--split", default=None, help="split to identify from (default: train if present, else test)")
     ap.set_defaults(grid="semiurban")
     a = ap.parse_args()
     ROOT = S.root(a.grid)
     OUT = SU.RULES / SU.SPECS[a.grid]["struct"]
     base = SU.simbench_base(a.grid)
     NB0, NSW0 = len(base.bus), len(base.switch)
-    dpm = json.loads((ROOT / "raw" / "train" / "data-point-map.json").read_text())
+    split = a.split or ("train" if (ROOT / "raw" / "train").exists() else "test")
+    dpm = json.loads((ROOT / "raw" / split / "data-point-map.json").read_text())
     groups = collections.defaultdict(set)
     for ioa, d in dpm.items():
         groups[ioa.split(".")[0]].add(d["element"])
-    z = zipfile.ZipFile(ROOT / "raw" / "train" / "physical.zip")
+    z = zipfile.ZipFile(ROOT / "raw" / split / "physical.zip")
     names = sorted(x for x in z.namelist() if x.startswith("physical/") and x.endswith(".json"))
     pick = np.random.default_rng(a.seed).choice(len(names), a.n, replace=False)
     snaps = [json.loads(z.read(names[k]))["values"] for k in pick]
@@ -105,21 +107,26 @@ def main():
     body += C.md_table(["quantity", "value"], [
         ["RTU groups with a new bus", len(structs)],
         ["elements on each new bus", ", ".join(f"{k} {v}" for k, v in collections.Counter(tuple(sorted(e.split('.')[0] for e in s["elements"])) for s in structs).items())],
-        ["max power balance error over all new buses and snapshots, MW", f"{max_err:.2e}"],
+        ["split used", split],
+        ["max power balance error over all new buses and snapshots, MW", f"{max_err:.2e}" if structs else "no new buses"],
         ["transformer HV voltage closer to the MV bus than to the new bus", f"{sum(s['hv_is_mv'] for s in structs)} of {len(structs)} (the rest are within measurement noise; the model puts HV on the MV bus, the physical 20 kV side)"],
-        ["max HV voltage match error, pu", f"{max(s['hv_match_err'] for s in structs):.2e}"],
+        ["max HV voltage match error, pu", f"{max(s['hv_match_err'] for s in structs):.2e}" if structs else "no new transformers"],
         ["snapshots used", f"{a.n} (seed {a.seed})"],
     ])
     rows = []
-    for t in sorted({0, 1, 2, 3, n_tr // 2, n_tr - 1}):
+    for t in sorted(t_ for t_ in {0, 1, 2, 3, n_tr // 2, n_tr - 1} if t_ < n_tr):
         p = tparams[t]
         rows.append([t, f"{p['sn_mva']:.3f}", f"{p['vk_percent']:.3f}", f"{p['vkr_percent']:.3f}", f"{p['pfe_kw']:.2f}",
                      f"{p['i0_percent']:.3f}", f"{p['loss_resid_kw']:.3f}", f"{p['loading_range'][0]:.1f} to {p['loading_range'][1]:.1f}"])
     body += f"\nFitted transformer parameters (sample; all {n_tr} in `rules/{OUT.name}`):\n\n"
     body += C.md_table(["trafo", "Sn MVA", "vk %", "vkr %", "pfe kW", "i0 %", "max P-loss residual kW", "loading % range"], rows)
     sn_new = np.array([tparams[s_["trafo"]]["sn_mva"] for s_ in structs])
-    body += (f"\nNew transformers 2..57: Sn from {np.nanmin(sn_new):.3f} to {np.nanmax(sn_new):.3f} MVA. SimBench's own "
-             "transformers 0 and 1 are 40 MVA, vk 16.2 %, vkr 0.34 %, pfe 18 kW, i0 0.05 %.\n")
+    if len(sn_new):
+        body += f"\nNew transformers: Sn from {np.nanmin(sn_new):.3f} to {np.nanmax(sn_new):.3f} MVA.\n"
+    bt = base.trafo
+    body += ("\nSimBench's own transformers (for comparison with the fit): " + "; ".join(
+        f"{t}: {bt.sn_mva.at[t]:.1f} MVA, vk {bt.vk_percent.at[t]:.2f} %, vkr {bt.vkr_percent.at[t]:.3f} %, pfe {bt.pfe_kw.at[t]:.1f} kW, i0 {bt.i0_percent.at[t]:.3f} %"
+        for t in bt.index) + ".\n")
     C.write_report("semiurban_identify.md" if a.grid == "semiurban" else f"{a.grid}_identify.md", body)
     print(f"structures {len(structs)}, balance err {max_err:.2e}")
     for r in rows:

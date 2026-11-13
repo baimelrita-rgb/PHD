@@ -80,6 +80,7 @@ def main():
     ap.add_argument("--iters", type=int, default=1)
     ap.add_argument("--settle-s", type=float, default=60.0)
     ap.add_argument("--tag", default="")
+    ap.add_argument("--noise-from", default=None, help="grid whose per-kind noise floors are transferred (grids without a train day)")
     ap.add_argument("--margin-factor", type=float, default=MARGIN_FACTOR)
     ap.set_defaults(grid="semiurban")
     a = C.init(ap.parse_args())
@@ -88,14 +89,21 @@ def main():
     d = np.load(C.interim("se_residuals.npz"), allow_pickle=True)
     obs = list(d["obs"]); obs_pos = {n: k for k, n in enumerate(obs)}
     Ttr, Rtr, Tte, Rte, det = d["train_t"], d["train_R"], d["test_t"], d["test_R"], d["alarm"]
-    noise = np.nanmax(np.abs(Rtr), axis=0)
-    noise = np.where(np.isfinite(noise), noise, np.nanmax(noise))
-    # noise floor per measurement kind: a measurement idle in every train topology (for example a
-    # line without flow) has train noise 0, but carries ordinary noise once a new topology loads it
-    p999 = np.nanpercentile(np.abs(Rtr), 99.9, axis=0)
     kinds = np.array([n.split(".")[0] for n in obs])
-    floor = {k: float(np.nanmedian(p999[kinds == k])) for k in set(kinds)}
-    noise = np.maximum(noise, np.array([floor[k] for k in kinds]))
+    if a.noise_from:      # no train day: per-kind noise floors transferred from another grid of the same dataset
+        src = np.load(C.INTERIM / f"se_residuals_{a.noise_from}.npz", allow_pickle=True)
+        s_obs = np.array([n.split(".")[0] for n in src["obs"]])
+        s_p999 = np.nanpercentile(np.abs(src["train_R"]), 99.9, axis=0)
+        floor = {k: float(np.nanmedian(s_p999[s_obs == k])) for k in set(s_obs)}
+        noise = np.array([floor.get(k, max(floor.values())) for k in kinds])
+    else:
+        noise = np.nanmax(np.abs(Rtr), axis=0)
+        noise = np.where(np.isfinite(noise), noise, np.nanmax(noise))
+        # noise floor per measurement kind: a measurement idle in every train topology (for example a
+        # line without flow) has train noise 0, but carries ordinary noise once a new topology loads it
+        p999 = np.nanpercentile(np.abs(Rtr), 99.9, axis=0)
+        floor = {k: float(np.nanmedian(p999[kinds == k])) for k in set(kinds)}
+        noise = np.maximum(noise, np.array([floor[k] for k in kinds]))
     # topology of each test record, recomputed from the telemetry (same as scripts/17)
     from p3 import sherlock_model as SM
     names, net, idx = M.names(), E._base_net(), M.index()
@@ -155,8 +163,10 @@ def main():
         rows.append([e["id"], e["description"], "yes" if dh else "no", "yes" if lh else "no", "yes" if lph else "no"])
     body = "# WP2-b: on-demand certification and rule library on 02-Semiurban\n\n"
     body += (f"Rule per topology: some monitored measurement's state-estimation residual exceeds its margin "
-             f"({MARGIN_FACTOR} x max(train noise, oracle bound)); train noise of a measurement is its train maximum, floored at "
-             "the median over its measurement kind of the train 99.9th percentile (" + ", ".join(f"{k} {v:.2f}" for k, v in sorted(floor.items())) + "). Oracle: {a.n_samples} sampled benign AC states plus "
+             f"({MARGIN_FACTOR} x max(train noise, oracle bound)); " + (
+                 f"noise per measurement = per-kind floor transferred from {a.noise_from} (" if a.noise_from else
+                 "train noise of a measurement is its train maximum, floored at the median over its measurement kind of the train 99.9th percentile (")
+             + ", ".join(f"{k} {v:.2f}" for k, v in sorted(floor.items())) + "). Oracle: {a.n_samples} sampled benign AC states plus "
              f"differential evolution ({a.budget} evaluations per round, at most 3 rounds of CEGIS on the margins). The residual "
              "needs AC power flows, so only the search layer applies (AC-validated, not a formal certificate). Topologies are "
              f"certified on demand when they first appear in the test telemetry (every {step} s). Wall time {wall:.0f} s.\n\n")

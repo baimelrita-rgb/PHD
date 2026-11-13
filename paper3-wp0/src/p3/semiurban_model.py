@@ -50,6 +50,8 @@ def new_trafo_params(name=None):
     tp = st["trafo"]
     new = [s["trafo"] for s in st["structures"]]
     keys = ("sn_mva", "vk_percent", "vkr_percent", "pfe_kw", "i0_percent")
+    if not new:
+        return {k: float("nan") for k in keys}
     return {k: float(np.median([tp[str(t)][k] for t in new])) for k in keys}
 
 

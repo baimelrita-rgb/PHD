@@ -26,6 +26,8 @@ def main():
     ap.set_defaults(grid="semiurban")
     a = ap.parse_args()
     ROOT = S.root(a.grid)
+    if not (ROOT / "raw" / a.split).exists():
+        raise SystemExit(f"no {a.split} split for {a.grid}")
     t0 = time.time()
     z = zipfile.ZipFile(ROOT / "raw" / a.split / "physical.zip")
     names = sorted(x for x in z.namelist() if x.startswith("physical/") and x.endswith(".json"))

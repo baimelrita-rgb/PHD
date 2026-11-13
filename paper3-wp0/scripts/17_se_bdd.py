@@ -44,6 +44,7 @@ def main():
     ap.add_argument("--settle-s", type=float, default=60.0)
     ap.add_argument("--step", type=int, default=5, help="use every step-th 1 Hz record")
     ap.add_argument("--iters", type=int, default=1, help="Gauss-Newton corrections against the AC model")
+    ap.add_argument("--calib-from", default=None, help="grid whose train calibration (theta, L) is transferred (grids without a train day)")
     ap.set_defaults(grid="semiurban")
     a = C.init(ap.parse_args())
     t0 = time.time()
@@ -54,7 +55,8 @@ def main():
     pos = {n: k for k, n in enumerate(obs)}
     data = {}
     n_cfg = collections.Counter()
-    for split in ("train", "test"):
+    has_train = (S.root() / "raw" / "train").exists() or any(S.root().glob("train.*.state.gz"))
+    for split in (("train", "test") if has_train else ("test",)):
         T, Rv, cfgs_seen, skipped = [], [], [], 0
         for i_rec, rec in enumerate(S.iter_state(S.root(), split)):
             if i_rec % a.step:
@@ -76,6 +78,8 @@ def main():
             T.append(rec["timestamp"]); Rv.append(r); cfgs_seen.append(cfg.label)
             n_cfg[(split, cfg.label)] += 1
         data[split] = (np.array(T), np.array(Rv, dtype=np.float32), cfgs_seen, skipped)
+    if not has_train:
+        data["train"] = (np.zeros(0), np.zeros((0, len(obs)), dtype=np.float32), [], 0)
     Ttr, Rtr, ctr, sk_tr = data["train"]
     Tte, Rte, cte, sk_te = data["test"]
     # residuals are against the AC model and normalised by the measurement noise sigma: no re-standardisation
@@ -83,8 +87,12 @@ def main():
     score = lambda Rx: np.nanmax(np.abs(Rx), axis=1) if Rx.size else np.zeros(0)
     s_tr, s_te = score(Rtr), score(Rte)
     s_tr = np.nan_to_num(s_tr); s_te = np.nan_to_num(s_te)
-    th = a.k * np.percentile(s_tr, 99.9)
-    L = max(3, int(np.ceil(a.run_safety * runs(s_tr > th).max())))
+    if a.calib_from:     # transferred calibration (no data of this grid used)
+        src = np.load(C.INTERIM / f"se_residuals_{a.calib_from}.npz", allow_pickle=True)
+        th, L = float(src["th"]), int(src["L"])
+    else:
+        th = a.k * np.percentile(s_tr, 99.9)
+        L = max(3, int(np.ceil(a.run_safety * runs(s_tr > th).max())))
     alarm = runs(s_te > th) >= L
     np.savez_compressed(C.interim("se_residuals.npz"), train_t=Ttr, test_t=Tte, train_R=Rtr, test_R=Rte,
                         med=med, mad=mad, alarm=alarm, th=th, L=L, obs=np.array(obs))
@@ -117,7 +125,7 @@ def main():
         ["records train / test", f"{len(Ttr)} / {len(Tte)}"],
         ["records skipped (a non-line switch open) train / test", f"{sk_tr} / {sk_te}"],
         ["topologies train / test / test topologies unseen in train", f"{len({c for (sp, c) in n_cfg if sp == 'train'})} / {len({c for (sp, c) in n_cfg if sp == 'test'})} / {len(unseen)}"],
-        ["theta, L", f"{th:.2f}, {L}"],
+        ["theta, L", f"{th:.2f}, {L}" + (f" (transferred from {a.calib_from}; no data of this grid used)" if a.calib_from else "")],
         ["false alarm rate, benign test records", f"{alarm[benign].mean():.5f}"],
         ["benign test records in topologies unseen in train / false alarm rate there", f"{int(fa_unseen.sum())} / {alarm[fa_unseen].mean() if fa_unseen.any() else 0:.5f}"],
     ])

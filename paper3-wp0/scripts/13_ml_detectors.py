@@ -98,11 +98,18 @@ def main():
     ap.add_argument("--settle-s", type=float, default=60.0)
     ap.add_argument("--features", default="physics", choices=["physics", "raw"])
     ap.add_argument("--tag", default="", help="suffix for output files (robustness runs)")
+    ap.add_argument("--prefix-s", type=float, default=1800.0, help="grids without a train day: train on the first prefix-s seconds of test")
     ap.set_defaults(grid="sherlock")
     a = C.init(ap.parse_args())
     t0 = time.time()
-    Ttr, Ftr, keep = features("train", a.features)
-    Tte, Fte, _ = features("test", a.features)
+    has_train = any(S.root().glob("train.*.state.gz"))
+    if has_train:
+        Ttr, Ftr, keep = features("train", a.features)
+        Tte, Fte, _ = features("test", a.features)
+    else:   # no train day (03-Rural): fit and calibrate on the attack-free prefix of the test day, evaluate after it
+        Tte, Fte, keep = features("test", a.features)
+        pre = Tte < Tte[0] + a.prefix_s
+        Ttr, Ftr = Tte[pre], Fte[pre]
     n_fit = int(0.75 * len(Ftr))
     mu, sd = np.nanmean(Ftr[:n_fit], 0), np.nanstd(Ftr[:n_fit], 0)
     mu = np.nan_to_num(mu)
@@ -124,6 +131,8 @@ def main():
     for e in att:
         near |= (Tte >= e["start"] - a.settle_s) & (Tte <= e.get("recovery", e["end"]) + a.settle_s)
     benign = ~near
+    if not has_train:
+        benign &= Tte >= Tte[0] + a.prefix_s       # training prefix is not evaluated
     ben_ev = [e for e in ev if "benign" in e["id"]]
 
     alarms, calib, rows_t = {}, {}, []

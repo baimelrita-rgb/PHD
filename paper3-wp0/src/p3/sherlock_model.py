@@ -145,7 +145,8 @@ def fixed_switch_states():
     if g not in S.ROOTS:
         return None
     if g not in _FIXED:
-        z, idx = S.physical_index(S.ROOTS[g], "train")
+        split = "train" if (S.ROOTS[g] / "raw" / "train").exists() else "test"   # Rural has no train day: initial configuration
+        z, idx = S.physical_index(S.ROOTS[g], split)
         v = S.read_snapshot(z, idx[0][1])["values"]
         _FIXED[g] = {int(k.split(".")[1]): bool(val) for k, val in v.items() if k.startswith("switch.") and k.endswith("MEASUREMENT.is_closed")}
     return _FIXED[g]
