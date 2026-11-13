@@ -108,7 +108,8 @@ class Encoder:
         self.bounds = E.cont_bounds(env)
         net = E.apply_config(E.base_net(), cfg)
         self.sw = net.switch.closed.values.astype(float)
-        self.lin = net.line.in_service.values.astype(float)
+        self.lin = np.zeros(len(net.line)); self.lin[E.active_lines(net)] = 1.0
+        self.taps = np.asarray(cfg.taps, float)
         self.inj = E.injection_maps()
         self.theta = 2 * np.pi * np.arange(K) / K
 
@@ -192,6 +193,10 @@ class Encoder:
             return np.zeros(n), self.sw[i]
         if kind == "line_in":
             return np.zeros(n), self.lin[i]
+        if kind == "tap":
+            return np.zeros(n), self.taps[i]
+        if kind == "vm_pu" and not self.m.squared:   # voltage magnitude is affine in the linearised AC model
+            return self.m.Av[i], self.m.vc[i]
         raise NotExpressible(name)
 
     def atom(self, a):
@@ -224,7 +229,7 @@ class Encoder:
         if a["type"] == "linear":
             coef = np.zeros(len(self.z)); const = 0.0; slack = 0.0
             for k, w in a["coeffs"].items():
-                if k.split(".")[0] in ("vm_pu", "loading", "trafo_loading"):
+                if k.split(".")[0] in ("loading", "trafo_loading") or (k.startswith("vm_pu.") and self.m.squared):
                     raise NotExpressible(k)
                 ck, cc = self.linear_meas(k)
                 coef += w * ck; const += w * cc

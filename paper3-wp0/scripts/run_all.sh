@@ -39,5 +39,8 @@ if [ -d data/raw/01-Basic/01-Basic ]; then
   python scripts/04b_atom_bounds.py --seed "$SEED" --grid sherlock --model linac
   python scripts/05_oracle_exact.py --seed "$SEED" --grid sherlock --model linac
   python scripts/06_cegis_demo.py --seed "$SEED" --grid sherlock --model linac
+  # WP1-c: attack anatomy and rule synthesis from alerts
+  python scripts/11_attack_anatomy.py --seed "$SEED"
+  python scripts/12_synthesize.py --seed "$SEED"
 fi
 pip freeze > reports/env.txt

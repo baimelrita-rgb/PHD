@@ -1,0 +1,2123 @@
+{
+  "0:S-line 2 out+line 3 out+load_p.2 to zero+load_p.3 to zero+load_p.4 to zero+sgen_p.1 to zero+sgen_p.2 to zero+sgen_p.3 to zero+sgen_p.9 to zero+storage_p.0 to zero": {
+    "name": "S-line 2 out+line 3 out+load_p.2 to zero+load_p.3 to zero+load_p.4 to zero+sgen_p.1 to zero+sgen_p.2 to zero+sgen_p.3 to zero+sgen_p.9 to zero+storage_p.0 to zero",
+    "family": "S",
+    "atoms": [
+      {
+        "type": "discrete",
+        "meas": "line_in.2",
+        "value": 0.0
+      },
+      {
+        "type": "discrete",
+        "meas": "line_in.3",
+        "value": 0.0
+      },
+      {
+        "type": "threshold",
+        "meas": "load_p.2",
+        "op": "<",
+        "value": 0.0043165,
+        "scale": 0.0043165
+      },
+      {
+        "type": "threshold",
+        "meas": "load_p.3",
+        "op": "<",
+        "value": 0.007275,
+        "scale": 0.007275
+      },
+      {
+        "type": "threshold",
+        "meas": "load_p.4",
+        "op": "<",
+        "value": 0.005480499999999999,
+        "scale": 0.005480499999999999
+      },
+      {
+        "type": "threshold",
+        "meas": "sgen_p.1",
+        "op": "<",
+        "value": 0.0002,
+        "scale": 0.001
+      },
+      {
+        "type": "threshold",
+        "meas": "sgen_p.2",
+        "op": "<",
+        "value": 0.0003,
+        "scale": 0.001
+      },
+      {
+        "type": "threshold",
+        "meas": "sgen_p.3",
+        "op": "<",
+        "value": 0.0003,
+        "scale": 0.001
+      },
+      {
+        "type": "threshold",
+        "meas": "sgen_p.9",
+        "op": "<",
+        "value": 0.00033,
+        "scale": 0.001
+      },
+      {
+        "type": "threshold",
+        "meas": "storage_p.0",
+        "op": "<",
+        "value": 0.006,
+        "scale": 0.006
+      }
+    ]
+  },
+  "1:P-vm10@ties=none;out=none;tap=0,0": {
+    "name": "P-vm10@ties=none;out=none;tap=0,0",
+    "family": "P",
+    "topology": "ties=none;out=none;tap=0,0",
+    "margin": 0.007220134662817068,
+    "const": 0.9870648091449086,
+    "any_of": [
+      [
+        {
+          "type": "discrete",
+          "meas": "line_in.0",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.1",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.2",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.3",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.4",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.5",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.6",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.7",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.8",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.9",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.10",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.11",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.12",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.13",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.14",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.0",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.1",
+          "value": 0.0
+        },
+        {
+          "type": "linear",
+          "coeffs": {
+            "vm_pu.10": 1.0,
+            "load_p.0": 0.0005121735380327542,
+            "load_p.1": 0.010741659547160306,
+            "load_p.2": 0.01080627203173296,
+            "load_p.3": 0.010850526890867742,
+            "load_p.4": 0.01090396744933606,
+            "load_p.5": 0.012482944434823841,
+            "load_p.6": 0.013978388947603337,
+            "load_p.7": 0.013987198411102127,
+            "load_p.10": 0.0005121735380327544,
+            "load_p.11": 0.010741659547160307,
+            "load_p.12": 0.012347650657828004,
+            "load_p.13": 0.012924883434054471,
+            "load_p.14": 0.013978388947603343,
+            "sgen_p.0": -0.010741659547160306,
+            "sgen_p.1": -0.01080627203173296,
+            "sgen_p.2": -0.010850526890867742,
+            "sgen_p.3": -0.010903967449336057,
+            "sgen_p.4": -0.01248294443482384,
+            "sgen_p.5": -0.012924883434054475,
+            "sgen_p.6": -0.013978388947603344,
+            "sgen_p.7": -0.013987198411102129,
+            "sgen_p.8": -0.012347650657828009,
+            "sgen_p.9": -0.010850526890867742,
+            "sgen_p.10": -0.012924883434054468,
+            "sgen_p.11": -0.012924883434054475,
+            "sgen_p.12": -0.013978388947603343,
+            "storage_p.0": 0.01085052689086774,
+            "storage_p.1": 0.013978388947603346
+          },
+          "op": ">",
+          "value": 0.9942849438077257,
+          "scale": 0.01
+        }
+      ],
+      [
+        {
+          "type": "discrete",
+          "meas": "line_in.0",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.1",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.2",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.3",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.4",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.5",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.6",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.7",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.8",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.9",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.10",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.11",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.12",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.13",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.14",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.0",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.1",
+          "value": 0.0
+        },
+        {
+          "type": "linear",
+          "coeffs": {
+            "vm_pu.10": -1.0,
+            "load_p.0": -0.0005121735380327542,
+            "load_p.1": -0.010741659547160306,
+            "load_p.2": -0.01080627203173296,
+            "load_p.3": -0.010850526890867742,
+            "load_p.4": -0.01090396744933606,
+            "load_p.5": -0.012482944434823841,
+            "load_p.6": -0.013978388947603337,
+            "load_p.7": -0.013987198411102127,
+            "load_p.10": -0.0005121735380327544,
+            "load_p.11": -0.010741659547160307,
+            "load_p.12": -0.012347650657828004,
+            "load_p.13": -0.012924883434054471,
+            "load_p.14": -0.013978388947603343,
+            "sgen_p.0": 0.010741659547160306,
+            "sgen_p.1": 0.01080627203173296,
+            "sgen_p.2": 0.010850526890867742,
+            "sgen_p.3": 0.010903967449336057,
+            "sgen_p.4": 0.01248294443482384,
+            "sgen_p.5": 0.012924883434054475,
+            "sgen_p.6": 0.013978388947603344,
+            "sgen_p.7": 0.013987198411102129,
+            "sgen_p.8": 0.012347650657828009,
+            "sgen_p.9": 0.010850526890867742,
+            "sgen_p.10": 0.012924883434054468,
+            "sgen_p.11": 0.012924883434054475,
+            "sgen_p.12": 0.013978388947603343,
+            "storage_p.0": -0.01085052689086774,
+            "storage_p.1": -0.013978388947603346
+          },
+          "op": ">",
+          "value": -0.9798446744820914,
+          "scale": 0.01
+        }
+      ]
+    ]
+  },
+  "4:P-vm14@ties=none;out=none;tap=0,0": {
+    "name": "P-vm14@ties=none;out=none;tap=0,0",
+    "family": "P",
+    "topology": "ties=none;out=none;tap=0,0",
+    "margin": 0.002093896178368304,
+    "const": 1.006381954888475,
+    "any_of": [
+      [
+        {
+          "type": "discrete",
+          "meas": "line_in.0",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.1",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.2",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.3",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.4",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.5",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.6",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.7",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.8",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.9",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.10",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.11",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.12",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.13",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.14",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.0",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.1",
+          "value": 0.0
+        },
+        {
+          "type": "linear",
+          "coeffs": {
+            "vm_pu.14": 1.0,
+            "load_p.8": 0.00045821000592605253,
+            "load_p.9": 0.01062840032096407,
+            "load_p.15": 0.00045821000592605237,
+            "load_p.16": 0.0067573610711488576,
+            "load_p.17": 0.010628400320964067
+          },
+          "op": ">",
+          "value": 1.0084758510668432,
+          "scale": 0.01
+        }
+      ],
+      [
+        {
+          "type": "discrete",
+          "meas": "line_in.0",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.1",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.2",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.3",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.4",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.5",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.6",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.7",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.8",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.9",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.10",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.11",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.12",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.13",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.14",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.0",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.1",
+          "value": 0.0
+        },
+        {
+          "type": "linear",
+          "coeffs": {
+            "vm_pu.14": -1.0,
+            "load_p.8": -0.00045821000592605253,
+            "load_p.9": -0.01062840032096407,
+            "load_p.15": -0.00045821000592605237,
+            "load_p.16": -0.0067573610711488576,
+            "load_p.17": -0.010628400320964067
+          },
+          "op": ">",
+          "value": -1.0042880587101066,
+          "scale": 0.01
+        }
+      ]
+    ]
+  },
+  "4:P-p11@ties=none;out=none;tap=0,0": {
+    "name": "P-p11@ties=none;out=none;tap=0,0",
+    "family": "P",
+    "topology": "ties=none;out=none;tap=0,0",
+    "margin": 0.006437297481435789,
+    "const": -0.0002602415126002344,
+    "any_of": [
+      [
+        {
+          "type": "discrete",
+          "meas": "line_in.0",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.1",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.2",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.3",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.4",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.5",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.6",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.7",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.8",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.9",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.10",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.11",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.12",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.13",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.14",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.0",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.1",
+          "value": 0.0
+        },
+        {
+          "type": "linear",
+          "coeffs": {
+            "p_from.11": 1.0,
+            "load_p.8": 1.8778466544670457e-07,
+            "load_p.9": -1.00279409716262,
+            "load_p.15": 1.8778466540561712e-07,
+            "load_p.16": -7.538386676534457e-06,
+            "load_p.17": -1.0027940971626201
+          },
+          "op": ">",
+          "value": 0.006177055968835554,
+          "scale": 0.1
+        }
+      ],
+      [
+        {
+          "type": "discrete",
+          "meas": "line_in.0",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.1",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.2",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.3",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.4",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.5",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.6",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.7",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.8",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.9",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.10",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.11",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.12",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.13",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.14",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.0",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.1",
+          "value": 0.0
+        },
+        {
+          "type": "linear",
+          "coeffs": {
+            "p_from.11": -1.0,
+            "load_p.8": -1.8778466544670457e-07,
+            "load_p.9": 1.00279409716262,
+            "load_p.15": -1.8778466540561712e-07,
+            "load_p.16": 7.538386676534457e-06,
+            "load_p.17": 1.0027940971626201
+          },
+          "op": ">",
+          "value": 0.006697538994036023,
+          "scale": 0.1
+        }
+      ]
+    ]
+  },
+  "4:S-load_p.9 to zero+load_p.17 to zero": {
+    "name": "S-load_p.9 to zero+load_p.17 to zero",
+    "family": "S",
+    "atoms": [
+      {
+        "type": "threshold",
+        "meas": "load_p.9",
+        "op": "<",
+        "value": 0.0020855,
+        "scale": 0.0020855
+      },
+      {
+        "type": "threshold",
+        "meas": "load_p.17",
+        "op": "<",
+        "value": 0.0033150000000000002,
+        "scale": 0.0033150000000000002
+      }
+    ]
+  },
+  "7:S-line 3 out+load_p.3 to zero+sgen_p.2 to zero+sgen_p.9 to zero": {
+    "name": "S-line 3 out+load_p.3 to zero+sgen_p.2 to zero+sgen_p.9 to zero",
+    "family": "S",
+    "atoms": [
+      {
+        "type": "discrete",
+        "meas": "line_in.3",
+        "value": 0.0
+      },
+      {
+        "type": "threshold",
+        "meas": "load_p.3",
+        "op": "<",
+        "value": 0.007275,
+        "scale": 0.007275
+      },
+      {
+        "type": "threshold",
+        "meas": "sgen_p.2",
+        "op": "<",
+        "value": 0.0003,
+        "scale": 0.001
+      },
+      {
+        "type": "threshold",
+        "meas": "sgen_p.9",
+        "op": "<",
+        "value": 0.00033,
+        "scale": 0.001
+      }
+    ]
+  },
+  "9:P-vm3@ties=S1+S2;out=L4+L11;tap=0,0": {
+    "name": "P-vm3@ties=S1+S2;out=L4+L11;tap=0,0",
+    "family": "P",
+    "topology": "ties=S1+S2;out=L4+L11;tap=0,0",
+    "margin": 0.007120257290166021,
+    "const": 0.9845451824355769,
+    "any_of": [
+      [
+        {
+          "type": "discrete",
+          "meas": "line_in.0",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.1",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.2",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.3",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.4",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.5",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.6",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.7",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.8",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.9",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.10",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.11",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.12",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.13",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.14",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.0",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.1",
+          "value": 0.0
+        },
+        {
+          "type": "linear",
+          "coeffs": {
+            "vm_pu.3": 1.0,
+            "load_p.0": 0.0005261069183606434,
+            "load_p.1": 0.010993480261740187,
+            "load_p.2": 0.011038105776082087,
+            "load_p.3": 0.011063404435417555,
+            "load_p.4": 0.011079916734289425,
+            "load_p.5": 0.011137480356553807,
+            "load_p.6": 0.011204618271196676,
+            "load_p.7": 0.011212016976479354,
+            "load_p.9": 0.011189550020130702,
+            "load_p.10": 0.0005261069183606438,
+            "load_p.11": 0.01099348026174018,
+            "load_p.12": 0.01107143242737218,
+            "load_p.13": 0.01116044922521264,
+            "load_p.14": 0.011204618271196676,
+            "load_p.17": 0.011189550020130695,
+            "sgen_p.0": -0.010993480261740176,
+            "sgen_p.1": -0.011038105776082087,
+            "sgen_p.2": -0.011063404435417555,
+            "sgen_p.3": -0.01107991673428942,
+            "sgen_p.4": -0.011137480356553792,
+            "sgen_p.5": -0.011160449225212638,
+            "sgen_p.6": -0.011204618271196681,
+            "sgen_p.7": -0.011212016976479347,
+            "sgen_p.8": -0.011071432427372178,
+            "sgen_p.9": -0.011063404435417555,
+            "sgen_p.10": -0.011160449225212641,
+            "sgen_p.11": -0.011160449225212636,
+            "sgen_p.12": -0.011204618271196681,
+            "storage_p.0": 0.011063404435417559,
+            "storage_p.1": 0.011204618271196684
+          },
+          "op": ">",
+          "value": 0.991665439725743,
+          "scale": 0.01
+        }
+      ],
+      [
+        {
+          "type": "discrete",
+          "meas": "line_in.0",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.1",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.2",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.3",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.4",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.5",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.6",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.7",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.8",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.9",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.10",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.11",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.12",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.13",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.14",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.0",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.1",
+          "value": 0.0
+        },
+        {
+          "type": "linear",
+          "coeffs": {
+            "vm_pu.3": -1.0,
+            "load_p.0": -0.0005261069183606434,
+            "load_p.1": -0.010993480261740187,
+            "load_p.2": -0.011038105776082087,
+            "load_p.3": -0.011063404435417555,
+            "load_p.4": -0.011079916734289425,
+            "load_p.5": -0.011137480356553807,
+            "load_p.6": -0.011204618271196676,
+            "load_p.7": -0.011212016976479354,
+            "load_p.9": -0.011189550020130702,
+            "load_p.10": -0.0005261069183606438,
+            "load_p.11": -0.01099348026174018,
+            "load_p.12": -0.01107143242737218,
+            "load_p.13": -0.01116044922521264,
+            "load_p.14": -0.011204618271196676,
+            "load_p.17": -0.011189550020130695,
+            "sgen_p.0": 0.010993480261740176,
+            "sgen_p.1": 0.011038105776082087,
+            "sgen_p.2": 0.011063404435417555,
+            "sgen_p.3": 0.01107991673428942,
+            "sgen_p.4": 0.011137480356553792,
+            "sgen_p.5": 0.011160449225212638,
+            "sgen_p.6": 0.011204618271196681,
+            "sgen_p.7": 0.011212016976479347,
+            "sgen_p.8": 0.011071432427372178,
+            "sgen_p.9": 0.011063404435417555,
+            "sgen_p.10": 0.011160449225212641,
+            "sgen_p.11": 0.011160449225212636,
+            "sgen_p.12": 0.011204618271196681,
+            "storage_p.0": -0.011063404435417559,
+            "storage_p.1": -0.011204618271196684
+          },
+          "op": ">",
+          "value": -0.9774249251454108,
+          "scale": 0.01
+        }
+      ]
+    ]
+  },
+  "11:S-load_p.16 to zero": {
+    "name": "S-load_p.16 to zero",
+    "family": "S",
+    "atoms": [
+      {
+        "type": "threshold",
+        "meas": "load_p.16",
+        "op": "<",
+        "value": 0.00034,
+        "scale": 0.001
+      }
+    ]
+  },
+  "13:P-vm6@ties=S1+S2;out=L4+L11;tap=0,0": {
+    "name": "P-vm6@ties=S1+S2;out=L4+L11;tap=0,0",
+    "family": "P",
+    "topology": "ties=S1+S2;out=L4+L11;tap=0,0",
+    "margin": 0.007320591290380651,
+    "const": 0.9814061137652988,
+    "any_of": [
+      [
+        {
+          "type": "discrete",
+          "meas": "line_in.0",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.1",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.2",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.3",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.4",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.5",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.6",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.7",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.8",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.9",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.10",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.11",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.12",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.13",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.14",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.0",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.1",
+          "value": 0.0
+        },
+        {
+          "type": "linear",
+          "coeffs": {
+            "vm_pu.6": 1.0,
+            "load_p.0": 0.00052876670832132,
+            "load_p.1": 0.011049058980461825,
+            "load_p.2": 0.011093910103878423,
+            "load_p.3": 0.01111933666329992,
+            "load_p.4": 0.015358149972537252,
+            "load_p.5": 0.012914451021021674,
+            "load_p.6": 0.01299082355975022,
+            "load_p.7": 0.012999239509251652,
+            "load_p.9": 0.012973938949950855,
+            "load_p.10": 0.0005287667083213206,
+            "load_p.11": 0.011049058980461823,
+            "load_p.12": 0.015031168731694267,
+            "load_p.13": 0.012940578784774105,
+            "load_p.14": 0.01299082355975023,
+            "load_p.17": 0.012973938949950843,
+            "sgen_p.0": -0.01104905898046182,
+            "sgen_p.1": -0.01109391010387842,
+            "sgen_p.2": -0.011119336663299922,
+            "sgen_p.3": -0.015358149972537248,
+            "sgen_p.4": -0.012914451021021638,
+            "sgen_p.5": -0.012940578784774098,
+            "sgen_p.6": -0.012990823559750229,
+            "sgen_p.7": -0.012999239509251626,
+            "sgen_p.8": -0.015031168731694277,
+            "sgen_p.9": -0.01111933666329992,
+            "sgen_p.10": -0.012940578784774118,
+            "sgen_p.11": -0.012940578784774087,
+            "sgen_p.12": -0.012990823559750248,
+            "storage_p.0": 0.01111933666329992,
+            "storage_p.1": 0.012990823559750224
+          },
+          "op": ">",
+          "value": 0.9887267050556795,
+          "scale": 0.01
+        }
+      ],
+      [
+        {
+          "type": "discrete",
+          "meas": "line_in.0",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.1",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.2",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.3",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.4",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.5",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.6",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.7",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.8",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.9",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.10",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.11",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.12",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.13",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.14",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.0",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.1",
+          "value": 0.0
+        },
+        {
+          "type": "linear",
+          "coeffs": {
+            "vm_pu.6": -1.0,
+            "load_p.0": -0.00052876670832132,
+            "load_p.1": -0.011049058980461825,
+            "load_p.2": -0.011093910103878423,
+            "load_p.3": -0.01111933666329992,
+            "load_p.4": -0.015358149972537252,
+            "load_p.5": -0.012914451021021674,
+            "load_p.6": -0.01299082355975022,
+            "load_p.7": -0.012999239509251652,
+            "load_p.9": -0.012973938949950855,
+            "load_p.10": -0.0005287667083213206,
+            "load_p.11": -0.011049058980461823,
+            "load_p.12": -0.015031168731694267,
+            "load_p.13": -0.012940578784774105,
+            "load_p.14": -0.01299082355975023,
+            "load_p.17": -0.012973938949950843,
+            "sgen_p.0": 0.01104905898046182,
+            "sgen_p.1": 0.01109391010387842,
+            "sgen_p.2": 0.011119336663299922,
+            "sgen_p.3": 0.015358149972537248,
+            "sgen_p.4": 0.012914451021021638,
+            "sgen_p.5": 0.012940578784774098,
+            "sgen_p.6": 0.012990823559750229,
+            "sgen_p.7": 0.012999239509251626,
+            "sgen_p.8": 0.015031168731694277,
+            "sgen_p.9": 0.01111933666329992,
+            "sgen_p.10": 0.012940578784774118,
+            "sgen_p.11": 0.012940578784774087,
+            "sgen_p.12": 0.012990823559750248,
+            "storage_p.0": -0.01111933666329992,
+            "storage_p.1": -0.012990823559750224
+          },
+          "op": ">",
+          "value": -0.9740855224749182,
+          "scale": 0.01
+        }
+      ]
+    ]
+  },
+  "13:P-p1@ties=S1+S2;out=L4+L11;tap=0,0": {
+    "name": "P-p1@ties=S1+S2;out=L4+L11;tap=0,0",
+    "family": "P",
+    "topology": "ties=S1+S2;out=L4+L11;tap=0,0",
+    "margin": 0.15341574558054977,
+    "const": -0.012950598342887254,
+    "any_of": [
+      [
+        {
+          "type": "discrete",
+          "meas": "line_in.0",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.1",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.2",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.3",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.4",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.5",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.6",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.7",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.8",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.9",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.10",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.11",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.12",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.13",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.14",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.0",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.1",
+          "value": 0.0
+        },
+        {
+          "type": "linear",
+          "coeffs": {
+            "p_from.1": 1.0,
+            "load_p.0": -5.253061439275792e-05,
+            "load_p.1": -1.0250583082169658,
+            "load_p.2": -1.026250760233696,
+            "load_p.3": -1.0269302081782163,
+            "load_p.4": -1.027204105705477,
+            "load_p.5": -1.0288023124890846,
+            "load_p.6": -1.0305786830592607,
+            "load_p.7": -1.0307731654252612,
+            "load_p.9": -1.030947651492865,
+            "load_p.10": -5.253061439284165e-05,
+            "load_p.11": -1.0250583082169658,
+            "load_p.12": -1.0269757793586345,
+            "load_p.13": -1.0294088195391835,
+            "load_p.14": -1.0305786830592603,
+            "load_p.17": -1.030947651492867,
+            "sgen_p.0": 1.025058308216965,
+            "sgen_p.1": 1.026250760233695,
+            "sgen_p.2": 1.026930208178217,
+            "sgen_p.3": 1.0272041057054764,
+            "sgen_p.4": 1.028802312489086,
+            "sgen_p.5": 1.0294088195391857,
+            "sgen_p.6": 1.0305786830592614,
+            "sgen_p.7": 1.030773165425264,
+            "sgen_p.8": 1.0269757793586345,
+            "sgen_p.9": 1.026930208178216,
+            "sgen_p.10": 1.0294088195391835,
+            "sgen_p.11": 1.0294088195391848,
+            "sgen_p.12": 1.0305786830592596,
+            "storage_p.0": -1.0269302081782155,
+            "storage_p.1": -1.0305786830592611
+          },
+          "op": ">",
+          "value": 0.1404651472376625,
+          "scale": 0.1
+        }
+      ],
+      [
+        {
+          "type": "discrete",
+          "meas": "line_in.0",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.1",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.2",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.3",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.4",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.5",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.6",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.7",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.8",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.9",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.10",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.11",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.12",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.13",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.14",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.0",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.1",
+          "value": 0.0
+        },
+        {
+          "type": "linear",
+          "coeffs": {
+            "p_from.1": -1.0,
+            "load_p.0": 5.253061439275792e-05,
+            "load_p.1": 1.0250583082169658,
+            "load_p.2": 1.026250760233696,
+            "load_p.3": 1.0269302081782163,
+            "load_p.4": 1.027204105705477,
+            "load_p.5": 1.0288023124890846,
+            "load_p.6": 1.0305786830592607,
+            "load_p.7": 1.0307731654252612,
+            "load_p.9": 1.030947651492865,
+            "load_p.10": 5.253061439284165e-05,
+            "load_p.11": 1.0250583082169658,
+            "load_p.12": 1.0269757793586345,
+            "load_p.13": 1.0294088195391835,
+            "load_p.14": 1.0305786830592603,
+            "load_p.17": 1.030947651492867,
+            "sgen_p.0": -1.025058308216965,
+            "sgen_p.1": -1.026250760233695,
+            "sgen_p.2": -1.026930208178217,
+            "sgen_p.3": -1.0272041057054764,
+            "sgen_p.4": -1.028802312489086,
+            "sgen_p.5": -1.0294088195391857,
+            "sgen_p.6": -1.0305786830592614,
+            "sgen_p.7": -1.030773165425264,
+            "sgen_p.8": -1.0269757793586345,
+            "sgen_p.9": -1.026930208178216,
+            "sgen_p.10": -1.0294088195391835,
+            "sgen_p.11": -1.0294088195391848,
+            "sgen_p.12": -1.0305786830592596,
+            "storage_p.0": 1.0269302081782155,
+            "storage_p.1": 1.0305786830592611
+          },
+          "op": ">",
+          "value": 0.16636634392343702,
+          "scale": 0.1
+        }
+      ]
+    ]
+  },
+  "14:P-vm2@ties=S1+S2;out=L4+L11;tap=0,0": {
+    "name": "P-vm2@ties=S1+S2;out=L4+L11;tap=0,0",
+    "family": "P",
+    "topology": "ties=S1+S2;out=L4+L11;tap=0,0",
+    "margin": 0.005508311933423937,
+    "const": 0.9963707704701441,
+    "any_of": [
+      [
+        {
+          "type": "discrete",
+          "meas": "line_in.0",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.1",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.2",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.3",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.4",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.5",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.6",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.7",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.8",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.9",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.10",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.11",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.12",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.13",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.14",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.0",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.1",
+          "value": 0.0
+        },
+        {
+          "type": "linear",
+          "coeffs": {
+            "vm_pu.2": 1.0,
+            "load_p.0": 0.0005112290944912606,
+            "load_p.1": 0.004830453158406047,
+            "load_p.2": 0.004853702413848238,
+            "load_p.3": 0.004866878440979819,
+            "load_p.4": 0.004875686359072435,
+            "load_p.5": 0.004905602550532278,
+            "load_p.6": 0.004940602084394371,
+            "load_p.7": 0.004944460654582228,
+            "load_p.9": 0.00493180530012471,
+            "load_p.10": 0.0005112290944912607,
+            "load_p.11": 0.004830453158406044,
+            "load_p.12": 0.004871268136791301,
+            "load_p.13": 0.004917577897009895,
+            "load_p.14": 0.004940602084394372,
+            "load_p.17": 0.0049318053001247055,
+            "sgen_p.0": -0.00483045315840604,
+            "sgen_p.1": -0.004853702413848239,
+            "sgen_p.2": -0.0048668784409798185,
+            "sgen_p.3": -0.004875686359072433,
+            "sgen_p.4": -0.004905602550532269,
+            "sgen_p.5": -0.004917577897009892,
+            "sgen_p.6": -0.004940602084394374,
+            "sgen_p.7": -0.004944460654582223,
+            "sgen_p.8": -0.004871268136791299,
+            "sgen_p.9": -0.0048668784409798185,
+            "sgen_p.10": -0.004917577897009896,
+            "sgen_p.11": -0.004917577897009892,
+            "sgen_p.12": -0.004940602084394375,
+            "storage_p.0": 0.004866878440979823,
+            "storage_p.1": 0.004940602084394375
+          },
+          "op": ">",
+          "value": 1.0018790824035682,
+          "scale": 0.01
+        }
+      ],
+      [
+        {
+          "type": "discrete",
+          "meas": "line_in.0",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.1",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.2",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.3",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.4",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.5",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.6",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.7",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.8",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.9",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.10",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.11",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.12",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.13",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.14",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.0",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.1",
+          "value": 0.0
+        },
+        {
+          "type": "linear",
+          "coeffs": {
+            "vm_pu.2": -1.0,
+            "load_p.0": -0.0005112290944912606,
+            "load_p.1": -0.004830453158406047,
+            "load_p.2": -0.004853702413848238,
+            "load_p.3": -0.004866878440979819,
+            "load_p.4": -0.004875686359072435,
+            "load_p.5": -0.004905602550532278,
+            "load_p.6": -0.004940602084394371,
+            "load_p.7": -0.004944460654582228,
+            "load_p.9": -0.00493180530012471,
+            "load_p.10": -0.0005112290944912607,
+            "load_p.11": -0.004830453158406044,
+            "load_p.12": -0.004871268136791301,
+            "load_p.13": -0.004917577897009895,
+            "load_p.14": -0.004940602084394372,
+            "load_p.17": -0.0049318053001247055,
+            "sgen_p.0": 0.00483045315840604,
+            "sgen_p.1": 0.004853702413848239,
+            "sgen_p.2": 0.0048668784409798185,
+            "sgen_p.3": 0.004875686359072433,
+            "sgen_p.4": 0.004905602550532269,
+            "sgen_p.5": 0.004917577897009892,
+            "sgen_p.6": 0.004940602084394374,
+            "sgen_p.7": 0.004944460654582223,
+            "sgen_p.8": 0.004871268136791299,
+            "sgen_p.9": 0.0048668784409798185,
+            "sgen_p.10": 0.004917577897009896,
+            "sgen_p.11": 0.004917577897009892,
+            "sgen_p.12": 0.004940602084394375,
+            "storage_p.0": -0.004866878440979823,
+            "storage_p.1": -0.004940602084394375
+          },
+          "op": ">",
+          "value": -0.9908624585367202,
+          "scale": 0.01
+        }
+      ]
+    ]
+  },
+  "17:P-p1@ties=S1+S2;out=L4+L11;tap=0,0": {
+    "name": "P-p1@ties=S1+S2;out=L4+L11;tap=0,0",
+    "family": "P",
+    "topology": "ties=S1+S2;out=L4+L11;tap=0,0",
+    "margin": 0.09149608707915001,
+    "const": -0.012950598342887254,
+    "any_of": [
+      [
+        {
+          "type": "discrete",
+          "meas": "line_in.0",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.1",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.2",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.3",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.4",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.5",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.6",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.7",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.8",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.9",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.10",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.11",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.12",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.13",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.14",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.0",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.1",
+          "value": 0.0
+        },
+        {
+          "type": "linear",
+          "coeffs": {
+            "p_from.1": 1.0,
+            "load_p.0": -5.253061439275792e-05,
+            "load_p.1": -1.0250583082169658,
+            "load_p.2": -1.026250760233696,
+            "load_p.3": -1.0269302081782163,
+            "load_p.4": -1.027204105705477,
+            "load_p.5": -1.0288023124890846,
+            "load_p.6": -1.0305786830592607,
+            "load_p.7": -1.0307731654252612,
+            "load_p.9": -1.030947651492865,
+            "load_p.10": -5.253061439284165e-05,
+            "load_p.11": -1.0250583082169658,
+            "load_p.12": -1.0269757793586345,
+            "load_p.13": -1.0294088195391835,
+            "load_p.14": -1.0305786830592603,
+            "load_p.17": -1.030947651492867,
+            "sgen_p.0": 1.025058308216965,
+            "sgen_p.1": 1.026250760233695,
+            "sgen_p.2": 1.026930208178217,
+            "sgen_p.3": 1.0272041057054764,
+            "sgen_p.4": 1.028802312489086,
+            "sgen_p.5": 1.0294088195391857,
+            "sgen_p.6": 1.0305786830592614,
+            "sgen_p.7": 1.030773165425264,
+            "sgen_p.8": 1.0269757793586345,
+            "sgen_p.9": 1.026930208178216,
+            "sgen_p.10": 1.0294088195391835,
+            "sgen_p.11": 1.0294088195391848,
+            "sgen_p.12": 1.0305786830592596,
+            "storage_p.0": -1.0269302081782155,
+            "storage_p.1": -1.0305786830592611
+          },
+          "op": ">",
+          "value": 0.07854548873626276,
+          "scale": 0.1
+        }
+      ],
+      [
+        {
+          "type": "discrete",
+          "meas": "line_in.0",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.1",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.2",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.3",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.4",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.5",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.6",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.7",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.8",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.9",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.10",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.11",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.12",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.13",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "line_in.14",
+          "value": 1.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.0",
+          "value": 0.0
+        },
+        {
+          "type": "discrete",
+          "meas": "tap.1",
+          "value": 0.0
+        },
+        {
+          "type": "linear",
+          "coeffs": {
+            "p_from.1": -1.0,
+            "load_p.0": 5.253061439275792e-05,
+            "load_p.1": 1.0250583082169658,
+            "load_p.2": 1.026250760233696,
+            "load_p.3": 1.0269302081782163,
+            "load_p.4": 1.027204105705477,
+            "load_p.5": 1.0288023124890846,
+            "load_p.6": 1.0305786830592607,
+            "load_p.7": 1.0307731654252612,
+            "load_p.9": 1.030947651492865,
+            "load_p.10": 5.253061439284165e-05,
+            "load_p.11": 1.0250583082169658,
+            "load_p.12": 1.0269757793586345,
+            "load_p.13": 1.0294088195391835,
+            "load_p.14": 1.0305786830592603,
+            "load_p.17": 1.030947651492867,
+            "sgen_p.0": -1.025058308216965,
+            "sgen_p.1": -1.026250760233695,
+            "sgen_p.2": -1.026930208178217,
+            "sgen_p.3": -1.0272041057054764,
+            "sgen_p.4": -1.028802312489086,
+            "sgen_p.5": -1.0294088195391857,
+            "sgen_p.6": -1.0305786830592614,
+            "sgen_p.7": -1.030773165425264,
+            "sgen_p.8": -1.0269757793586345,
+            "sgen_p.9": -1.026930208178216,
+            "sgen_p.10": -1.0294088195391835,
+            "sgen_p.11": -1.0294088195391848,
+            "sgen_p.12": -1.0305786830592596,
+            "storage_p.0": 1.0269302081782155,
+            "storage_p.1": 1.0305786830592611
+          },
+          "op": ">",
+          "value": 0.10444668542203726,
+          "scale": 0.1
+        }
+      ]
+    ]
+  }
+}

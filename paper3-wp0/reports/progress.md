@@ -34,3 +34,9 @@
 - Worst error found: 0.00708 pu (reference), 0.00834 pu (Sherlock, all 336 configurations): G6 passes on the worst case.
 - Box-implied constraint pruning (exact, 10 to 25 times faster); rule-specific error bounds (`scripts/04b_atom_bounds.py`).
 - Verdicts: reference R1 R2 refuted, R3 certified; Sherlock R1 refuted, R2 R3 certified on all configurations. `wp1b2_summary.md`.
+
+## WP1-c
+
+- Attack anatomy against a benign control baseline (`attack_anatomy.md`).
+- Rule synthesis from alerts (`src/p3/synthesis.py`, `scripts/12_synthesize.py`): physical-invariant and state families, certified by search and the robust exact layer.
+- Certified rules for drift-off 3/4, control-and-freeze 3/5, industroyer 3/7; false alarms at most 0.0003 per benign test record. `wp1c_summary.md`.

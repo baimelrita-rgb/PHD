@@ -7,7 +7,8 @@ Names:
   trafo_p_hv.<trafo>     transformer active power at HV side, MW
   trafo_loading.<trafo>  transformer loading_percent (pandapower definition)
   sw.<switch>            switch state, 1 closed, 0 open
-  line_in.<line>         line in service, 1 or 0
+  line_in.<line>         line active (in service and all its switches closed), 1 or 0
+  tap.<trafo>            transformer tap position (grids with a tap changer only)
   load_p.<load>          metered load active power, MW   (added: needed by R2, R3)
   sgen_p.<sgen>          metered DER active power, MW    (added: needed by R3)
   storage_p.<storage>    metered storage active power, MW, positive = charging (grids with storage)
@@ -39,7 +40,13 @@ def names() -> tuple[str, ...]:
     n += [f"sgen_p.{j}" for j in net.sgen.index]
     if E.dims().n_sto:
         n += [f"storage_p.{k}" for k in net.storage.index]
+    if _has_taps():
+        n += [f"tap.{t}" for t in net.trafo.index]
     return tuple(n)
+
+
+def _has_taps():
+    return any(len(t) for t in E.grid().tap_options)
 
 
 @lru_cache(maxsize=1)
@@ -50,7 +57,8 @@ def index() -> dict[str, int]:
 @lru_cache(maxsize=None)
 def _discrete(cfg: E.Config):
     net = E.apply_config(E.base_net(), cfg)
-    return net.switch.closed.values.astype(float), net.line.in_service.values.astype(float)
+    act = np.zeros(len(net.line)); act[E.active_lines(net)] = 1.0
+    return net.switch.closed.values.astype(float), act
 
 
 def vector_from_fast(r: dict, cfg: E.Config) -> np.ndarray:
@@ -58,11 +66,13 @@ def vector_from_fast(r: dict, cfg: E.Config) -> np.ndarray:
     return np.concatenate([
         r["vm_pu"], r["line_loading_percent"], r["line_p_from_mw"], r["trafo_p_hv_mw"],
         r["trafo_loading_percent"], sw, lin, r["p_load"], r["p_sgen"], r["p_sto"],
+        np.asarray(cfg.taps, float) if _has_taps() else np.zeros(0),
     ])
 
 
 def vector_from_net(net) -> np.ndarray:
     lin = net.line.in_service.values
+    act = np.zeros(len(net.line)); act[E.active_lines(net)] = 1.0
     return np.concatenate([
         net.res_bus.vm_pu.values,
         np.where(lin, net.res_line.loading_percent.values, 0.0),
@@ -70,10 +80,11 @@ def vector_from_net(net) -> np.ndarray:
         net.res_trafo.p_hv_mw.values,
         net.res_trafo.loading_percent.values,
         net.switch.closed.values.astype(float),
-        lin.astype(float),
+        act,
         net.load.p_mw.values,
         net.sgen.p_mw.values,
         net.storage.p_mw.values if E.dims().n_sto else np.zeros(0),
+        net.trafo.tap_pos.values.astype(float) if _has_taps() else np.zeros(0),
     ])
 
 

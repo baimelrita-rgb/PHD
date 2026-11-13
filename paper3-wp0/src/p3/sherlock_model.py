@@ -157,7 +157,11 @@ def record_measurements(state: dict, names, net) -> "np.ndarray":
         elif kind == "sw":
             out[j] = float(bool(state[f"switch.{i}:is_closed"]))
         elif kind == "line_in":
-            out[j] = 1.0
+            sw = [s_ for s_ in net.switch.index[(net.switch.et == "l") & (net.switch.element == i)]]
+            out[j] = float(all(bool(state[f"switch.{s_}:is_closed"]) for s_ in sw))
+        elif kind == "tap":
+            p_ = state[f"trafo.{i}:tap_position"]
+            out[j] = float(p_ - 256 if p_ > 127 else p_)
         elif kind == "load_p":
             out[j] = state[f"load.{i}:active_power"] / 1e6
         elif kind == "sgen_p":
