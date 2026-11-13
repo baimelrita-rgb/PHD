@@ -205,7 +205,8 @@ def main():
     body += C.md_table(["type", "instances", "detectors", "library (learned earlier)", "detectors or library"],
                        [[k, v[0], v[1], v[2], v[3]] for k, v in sorted(per.items())])
     np.savez_compressed(C.interim(f"consolidation_fires{a.tag}.npz"), t=Tte, det=det, lib_prior=lib_fire, lib_all=lib_all,
-                        added_at=np.array([v["added_at"] for v in library.values()]))
+                        added_at=np.array([v["added_at"] for v in library.values()]),
+                        rule_fires=np.array([v["fires"] for v in library.values()]).reshape(len(library), len(Tte)))
     body += f"\nMargin factor {Y.MARGIN_FACTOR}, seed {a.seed}, detector alarms from `{a.alarms}`.\n"
     C.write_report(f"consolidation{a.tag}.md", body)
     R.save({k: v["rule"] for k, v in library.items()}, C.ROOT / "rules" / C.suffixed(f"library{a.tag}.json"))

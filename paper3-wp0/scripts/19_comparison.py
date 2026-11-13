@@ -41,7 +41,9 @@ def load(path, key):
     return (d["t"] if "t" in d else d["test_t"]), d[key].astype(bool)
 
 
-def evaluate(t, alarm, events, settle=60.0):
+def evaluate(t, alarm, events, settle=60.0, strict=None):
+    """strict = (rule_fires, added_at): an attack counts as detected by the library only through rules
+    learned before the attack started (no credit for rules learned from that attack's own alert)."""
     att = [e for e in events if "benign" not in e["id"]]
     near = np.zeros(len(t), bool)
     for e in att:
@@ -52,9 +54,15 @@ def evaluate(t, alarm, events, settle=60.0):
     n = collections.Counter(e["description"] for e in att)
     for e in att:
         sel = (t >= e["start"]) & (t <= e.get("recovery", e["end"]))
-        if alarm[sel].any():
+        if strict is not None:
+            rf, added = strict
+            prior = added < e["start"]
+            alarm_e = rf[prior].any(axis=0) if prior.any() else np.zeros(len(t), bool)
+        else:
+            alarm_e = alarm
+        if alarm_e[sel].any():
             det[e["description"]] += 1
-            delays[e["description"]].append(float(t[sel][alarm[sel]][0] - e["start"]))
+            delays[e["description"]].append(float(t[sel][alarm_e[sel]][0] - e["start"]))
     fa = alarm & benign
     episodes = int(np.sum(np.diff(np.r_[0, fa.astype(int)]) == 1))
     hours = benign.sum() * dt / 3600
@@ -87,8 +95,8 @@ def main():
         ev = S.load_events(S.root(), "test")
         rows, res = [], {}
 
-        def add(name, x):
-            r = evaluate(*x, ev) if x is not None else None
+        def add(name, x, strict=None):
+            r = evaluate(*x, ev, strict=strict) if x is not None else None
             res[name] = (r, x)
             rows.append(row(name, r))
         if grid == "sherlock":
@@ -97,7 +105,14 @@ def main():
             add("ML: Isolation Forest, physics-informed", load(C.suffixed("detector_alarms_physics.npz"), "IF"))
             add("ML: autoencoder, physics-informed", load(C.suffixed("detector_alarms_physics.npz"), "AE"))
             add("Detectors D1 or AE (alert source)", load(C.suffixed("consolidation_fires.npz"), "det"))
-            add("Certified library only (learned online from alerts)", load(C.suffixed("consolidation_fires.npz"), "lib_prior"))
+            add("Certified library, rules active at the time (incl. learned during the same attack)", load(C.suffixed("consolidation_fires.npz"), "lib_prior"))
+            pth = C.INTERIM / C.suffixed("consolidation_fires.npz")
+            dd = np.load(pth) if pth.exists() else None
+            if dd is not None and "rule_fires" in dd:
+                add("Certified library only, strict (rules learned before the attack)", (dd["t"], dd["lib_prior"].astype(bool)),
+                    strict=(dd["rule_fires"].astype(bool), dd["added_at"]))
+            else:
+                add("Certified library only, strict (rules learned before the attack)", None)
             cf = load(C.suffixed("consolidation_fires.npz"), "det")
             lf = load(C.suffixed("consolidation_fires.npz"), "lib_prior")
             add("Combined: detectors or certified library", (cf[0], cf[1] | lf[1]) if cf and lf else None)
@@ -109,6 +124,8 @@ def main():
             add("Certified library, single record", load(C.suffixed("semiurban_fires.npz"), "fires"))
             add("Certified library, persistence L = 3", load(C.suffixed("semiurban_fires.npz"), "fires_p"))
             sb = load(C.suffixed("se_residuals.npz"), "alarm")
+            lp0 = load(C.suffixed("semiurban_fires.npz"), "fires_p")
+            add("Combined: SE-BDD or certified library (L = 3)", (sb[0], sb[1] | lp0[1]) if sb and lp0 else None)
             ae = load(C.suffixed("detector_alarms_physics.npz"), "AE")
             lp = load(C.suffixed("semiurban_fires.npz"), "fires_p")
             if sb and lp:
