@@ -49,8 +49,9 @@ def rules_path():
     return ROOT / "rules" / suffixed("rules.json")
 
 
-def bounds_path():
-    return ROOT / "rules" / suffixed("model_error_bounds.json")
+def bounds_path(model: str = "lindistflow"):
+    name = "model_error_bounds.json" if model == "lindistflow" else f"model_error_bounds_{model}.json"
+    return ROOT / "rules" / suffixed(name)
 
 
 def interim(name: str):

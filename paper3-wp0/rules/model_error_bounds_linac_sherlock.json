@@ -1,0 +1,16 @@
+{
+  "source": "scripts/04_lindistflow_error.py --seed 7: max(sample max, DE worst case) x 1.25",
+  "adv_budget_per_topology": 500,
+  "safety_factor": 1.25,
+  "delta": {
+    "vm_pu": 0.010421124136464482,
+    "loading": 11.751808282443665,
+    "trafo_loading": 2.8841510380022584,
+    "p_from": 0.24206075555443962,
+    "trafo_p_hv": 0.26901547558289884
+  },
+  "linear_atoms": {
+    "load_p.0:1;load_p.1:1;load_p.10:1;load_p.11:1;load_p.12:1;load_p.13:1;load_p.14:1;load_p.15:1;load_p.16:1;load_p.17:1;load_p.2:1;load_p.3:1;load_p.4:1;load_p.5:1;load_p.6:1;load_p.7:1;load_p.8:1;load_p.9:1;sgen_p.0:-1;sgen_p.1:-1;sgen_p.10:-1;sgen_p.11:-1;sgen_p.12:-1;sgen_p.2:-1;sgen_p.3:-1;sgen_p.4:-1;sgen_p.5:-1;sgen_p.6:-1;sgen_p.7:-1;sgen_p.8:-1;sgen_p.9:-1;storage_p.0:1;storage_p.1:1;trafo_p_hv.0:-1;trafo_p_hv.1:-1": 0.2866350785206873
+  },
+  "linear_atoms_source": "scripts/04b_atom_bounds.py --grid sherlock --model linac --seed 7"
+}

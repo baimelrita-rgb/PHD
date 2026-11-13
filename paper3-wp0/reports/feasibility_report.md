@@ -22,7 +22,8 @@ Round 1 is in git history (commit "WP0 feasibility: physics oracle for rule cert
 | G1 | No model file in the download or in public Wattson. The reconstruction matches the recorded physics | 100 tap-0 snapshots: voltage mean 2.60e-04, max 1.06e-03 pu (noise floor 5.00e-04); tap -1 validation: mean 2.68e-04, max 9.24e-04 pu (`sherlock_model_check.md`, `sherlock_taps.md`) | Fail as worded; model reconstructed and validated |
 | G2 | After dropping arp-spoof: 3 process-level types | industroyer 7, control-and-freeze 5, drift-off 4 (`dataset_inventory.md`) | Fail with "at least 4 types"; pass with "at least 3" |
 | G5-pre | Naive R1 and context R2 refuted by both layers; search-calibrated R3 has no counterexample at 2,000 or 32,000 flows | R1: 253 of 9,671 benign samples fire; R2: DE finds it at 32,000 flows, Z3 finds it in 2 topologies, confirmed on AC; R3: best margin -3.03 (scaled) at 32,000 flows (`oracle_search*.md`, `oracle_exact.md`) | **Pass** (R3 evidence is search-based) |
-| G6 | Sample max below 0.01 pu, worst case found above it | 1,000 samples: max 0.00802 pu; search worst case 0.01204 pu; delta_vm = 0.01505 pu (`lindistflow_error.md`) | Pass on samples, fail on worst case; handled by delta |
+| G6 (update WP1-b2) | With the linearised AC model the worst case found is below 0.01 pu on both grids | 0.00708 pu reference, 0.00834 pu Sherlock (`linac_error*.md`) | **Pass** |
+| G6 (LinDistFlow, round 2) | Sample max below 0.01 pu, worst case found above it | 1,000 samples: max 0.00802 pu; search worst case 0.01204 pu; delta_vm = 0.01505 pu (`lindistflow_error.md`) | Pass on samples, fail on worst case; handled by delta |
 | T | Seconds per rule | Search 3.6 to 3.9 s at 2,000 flows, about 20 s at 32,000; Z3 1.6 to 19.9 s per mode (`oracle_search*.md`, `oracle_exact.md`) | **Pass** |
 
 ## 2. What worked and what did not

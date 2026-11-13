@@ -1,0 +1,16 @@
+{
+  "source": "scripts/04_lindistflow_error.py --seed 7: max(sample max, DE worst case) x 1.25",
+  "adv_budget_per_topology": 1000,
+  "safety_factor": 1.25,
+  "delta": {
+    "vm_pu": 0.008853868485446115,
+    "loading": 9.452044539907671,
+    "trafo_loading": 3.2061775203239407,
+    "p_from": 0.1996383517270761,
+    "trafo_p_hv": 0.2115453355550878
+  },
+  "linear_atoms": {
+    "load_p.0:1;load_p.1:1;load_p.10:1;load_p.11:1;load_p.12:1;load_p.13:1;load_p.14:1;load_p.15:1;load_p.16:1;load_p.17:1;load_p.2:1;load_p.3:1;load_p.4:1;load_p.5:1;load_p.6:1;load_p.7:1;load_p.8:1;load_p.9:1;sgen_p.0:-1;sgen_p.1:-1;sgen_p.2:-1;sgen_p.3:-1;sgen_p.4:-1;sgen_p.5:-1;sgen_p.6:-1;sgen_p.7:-1;sgen_p.8:-1;trafo_p_hv.0:-1;trafo_p_hv.1:-1": 0.24376294801323084
+  },
+  "linear_atoms_source": "scripts/04b_atom_bounds.py --grid cigre_pv_wind --model linac --seed 7"
+}

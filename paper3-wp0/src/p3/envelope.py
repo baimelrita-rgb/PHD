@@ -109,9 +109,10 @@ def use_grid(name: str):
     _GRID = GRIDS[name]()
     for f in (_base_net, enumerate_configs, dims, _envelopes, injection_maps):
         f.cache_clear()
-    from . import fastpf, lindistflow, measure
+    from . import fastpf, linac, lindistflow, measure
     fastpf._CACHE.clear()
     lindistflow.model.cache_clear()
+    linac.model.cache_clear()
     for f in (measure.names, measure.index, measure._discrete, measure._slices):
         f.cache_clear()
     return _GRID

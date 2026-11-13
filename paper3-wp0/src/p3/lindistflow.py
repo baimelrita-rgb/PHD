@@ -23,6 +23,8 @@ from . import envelope as E
 
 
 class LinDistFlow:
+    squared = True    # voltage variable is v = vm^2
+
     def __init__(self, cfg: E.Config):
         self.cfg = cfg
         net = E.apply_config(E.base_net(), cfg)
@@ -117,6 +119,8 @@ class LinDistFlow:
                 self.AQ_trafo[br_idx[c]] = self.AQb[pos[c]] * self.sn
                 self.cQ_trafo[br_idx[c]] = self.cQb[pos[c]] * self.sn
         self.smax_trafo = net.trafo.sn_mva.values.astype(float)
+        self.cP_line = np.zeros(len(net.line))      # lossless: no constant active power terms
+        self.cP_trafo = np.zeros(len(net.trafo))
         vn = net.bus.vn_kv.values[[pos[int(b)] for b in net.line.from_bus]]
         self.smax_line = np.sqrt(3) * vn * (net.line.max_i_ka * net.line.df * net.line.parallel).values  # MVA at 1 pu
 

@@ -32,7 +32,7 @@ def _set_tau(rule, tau):
     return r
 
 
-def refine_threshold(rule, stage_a_data, cfgs, budget=2000, seed=E.SEED, max_iter=10, eps=EPS):
+def refine_threshold(rule, stage_a_data, cfgs, budget=2000, seed=E.SEED, max_iter=10, eps=EPS, model="lindistflow"):
     atom = rule["atoms"][0]
     assert atom["type"] == "threshold" and atom["op"] == "<" and atom["meas"].startswith("vm_pu.")
     bus = int(atom["meas"].split(".")[1])
@@ -44,7 +44,7 @@ def refine_threshold(rule, stage_a_data, cfgs, budget=2000, seed=E.SEED, max_ite
         t0 = time.time()
         A = O.stage_a(cur, res, Xa, ci, cfgs)
         B = O.stage_b(cur, cfgs, budget=budget, seed=seed + 97 * it)
-        ex = X.solve(cur, cfgs)
+        ex = X.solve(cur, cfgs, model=model)
         vals = []
         if A.found:
             ben = res["benign"]
@@ -52,7 +52,7 @@ def refine_threshold(rule, stage_a_data, cfgs, budget=2000, seed=E.SEED, max_ite
             vals.append(("search-A", float(v[v < _tau(cur)].min())))
         if B.found:
             vals.append(("search-B", float(B.cex.m[col])))
-        ex_vals = [float(L.model(c).vm(x)[bus]) for c, st, _, x in ex.per_cfg if st == "sat"]
+        ex_vals = [float(X.linear_model(c, model).vm(x)[bus]) for c, st, _, x in ex.per_cfg if st == "sat"]
         if ex_vals:
             vals.append(("exact", min(ex_vals)))
         row = {"iter": it, "tau": _tau(cur), "search_A": A.n_cex, "search_B": B.n_cex,

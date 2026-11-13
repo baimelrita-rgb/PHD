@@ -1,4 +1,5 @@
-"""T5a: LinDistFlow bus voltage error against full AC power flow on benign samples."""
+"""T5a: linear-model error against full AC power flow on benign samples (LinDistFlow by
+default; --model linac for the linearised AC model, which also covers meshed configurations)."""
 import sys
 from pathlib import Path
 
@@ -17,9 +18,16 @@ def main():
     ap.add_argument("--n", type=int, default=1000)
     ap.add_argument("--adv-budget", type=int, default=1000, help="DE power flows per topology and quantity for the worst-case search")
     ap.add_argument("--safety", type=float, default=1.25, help="safety factor on the worst error found")
+    ap.add_argument("--model", default="lindistflow", choices=["lindistflow", "linac"])
     a = C.init(ap.parse_args())
-    radial = tuple(c for c in E.enumerate_configs() if E.is_radial(c))   # LinDistFlow is radial only
-    X, ci, cfgs = E.sample_lhs(E.full(), a.n, seed=a.seed + 3000, configs=radial)
+    from p3 import linac as LA
+    if a.model == "lindistflow":
+        covered = tuple(c for c in E.enumerate_configs() if E.is_radial(c))   # LinDistFlow is radial only
+        L_model = L.model
+    else:
+        covered = E.enumerate_configs()
+        L_model = LA.model
+    X, ci, cfgs = E.sample_lhs(E.full(), a.n, seed=a.seed + 3000, configs=covered)
     res = C.evaluate_batch(X, ci, cfgs)
     idx = M.index()
     vcols = [idx[f"vm_pu.{b}"] for b in range(15)]
@@ -27,7 +35,7 @@ def main():
     errs = {k: [] for k in range(len(cfgs))}
     lerr = {k: [] for k in range(len(cfgs))}
     for i in np.where(res["benign"])[0]:
-        m = L.model(cfgs[ci[i]])
+        m = L_model(cfgs[ci[i]])
         errs[ci[i]].append(np.abs(m.vm(X[i]) - res["M"][i, vcols]))
         lerr[ci[i]].append(np.abs(m.loading_percent(X[i]) - res["M"][i, lcols]))
     rows, allv, alll = [], [], []
@@ -40,7 +48,7 @@ def main():
     e = np.concatenate(allv); le = np.concatenate(alll)
     rows.append(["**all**", int(res["benign"].sum()), f"{e.mean():.5f}", f"{np.percentile(e, 95):.5f}", f"{e.max():.5f}", f"{le.max():.2f}"])
     # signed error at the R1 bus, to show the bias direction
-    sgn = [L.model(cfgs[ci[i]]).vm(X[i])[11] - res["M"][i, idx["vm_pu.11"]] for i in np.where(res["benign"])[0]]
+    sgn = [L_model(cfgs[ci[i]]).vm(X[i])[11] - res["M"][i, idx["vm_pu.11"]] for i in np.where(res["benign"])[0]]
     body = "# T5a LinDistFlow voltage error against AC power flow\n\n"
     body += (f"{a.n} Latin hypercube samples of the full envelope (seed {a.seed + 3000}), {int(res['benign'].sum())} benign. "
              "Error = |vm_LinDistFlow - vm_AC| over all 15 buses of every benign sample, in pu. "
@@ -67,7 +75,7 @@ def main():
     # sample maxima for every quantity
     samp = {q: 0.0 for q in quantities}
     for i in np.where(res["benign"])[0]:
-        lm = L.model(cfgs[ci[i]])
+        lm = L_model(cfgs[ci[i]])
         for q, fn in quantities.items():
             samp[q] = max(samp[q], float(np.max(fn(lm, X[i], res["M"][i]))))
     worst = {q: 0.0 for q in quantities}
@@ -76,28 +84,30 @@ def main():
     joint = len(cfgs) > 40
     for q, fn in quantities.items():
         if joint:   # many configurations: one joint DE per quantity, same total budget per quantity as 40 runs
-            st = O.de_maximize_joint(lambda x, mm, c, fn=fn: float(np.max(fn(L.model(c), x, mm))), cfgs, E.full(),
+            st = O.de_maximize_joint(lambda x, mm, c, fn=fn: float(np.max(fn(L_model(c), x, mm))), cfgs, E.full(),
                                      a.adv_budget * 40, a.seed)
             worst[q] = max(worst[q], max(st["best"], 0.0))
         for k, c in enumerate(cfgs if not joint else ()):
-            lm = L.model(c)
+            lm = L_model(c)
             st = O.de_maximize(lambda x, mm, lm=lm, fn=fn: float(np.max(fn(lm, x, mm))), c, E.full(),
                                a.adv_budget, a.seed + k)
             worst[q] = max(worst[q], max(st["best"], 0.0))
         adv.append([q, units[q], f"{samp[q]:.5f}", f"{worst[q]:.5f}", f"{a.safety * max(worst[q], samp[q]):.5f}"])
     wmax = worst["vm_pu"]
     delta = {q: a.safety * max(worst[q], samp[q]) for q in quantities}
-    C.bounds_path().write_text(json.dumps({
+    C.bounds_path(a.model).write_text(json.dumps({
         "source": f"scripts/04_lindistflow_error.py --seed {a.seed}: max(sample max, DE worst case) x {a.safety}",
         "adv_budget_per_topology": a.adv_budget, "safety_factor": a.safety, "delta": delta}, indent=2))
     body += ("\n## Worst case found by search, and the error bounds used by the robust exact layer\n\n"
              f"Differential evolution maximising the max abs linear-minus-AC error over benign states, "
              f"{a.adv_budget} power flows per topology and quantity ({'one joint DE over all radial configurations with 40 x that budget' if joint else 'one DE per topology'}). delta = {a.safety} x max(sample max, worst found); "
-             f"saved to `rules/{C.bounds_path().name}`. delta is an empirical bound, not a proof.\n\n")
+             f"saved to `rules/{C.bounds_path(a.model).name}`. delta is an empirical bound, not a proof.\n\n")
     body += C.md_table(["quantity", "unit", f"max over {int(res['benign'].sum())} samples", "worst found by search", "delta used"], adv)
     body += (f"\nWorst benign voltage error found by search: {wmax:.5f} pu "
              f"({'below' if wmax < 0.01 else 'above'} 0.01 pu).\n")
-    C.write_report("lindistflow_error.md", body)
+    if a.model != "lindistflow":
+        body = body.replace("LinDistFlow", "linearised AC (operating point = envelope centre, all configurations)")
+    C.write_report("lindistflow_error.md" if a.model == "lindistflow" else f"{a.model}_error.md", body)
     print(f"max err {e.max():.5f}  p95 {np.percentile(e,95):.5f}  worst found {wmax:.5f}")
 
 

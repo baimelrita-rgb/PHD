@@ -29,7 +29,9 @@ def ac_recheck(rule, x, cfg):
 def main():
     ap = C.parser(__doc__)
     ap.add_argument("--rules", default=None)
-    ap.add_argument("--report", default="oracle_exact.md")
+    ap.add_argument("--report", default=None)
+    ap.add_argument("--model", default="lindistflow", choices=["lindistflow", "linac", "auto"],
+                    help="linear model: LinDistFlow (radial only), linearised AC, or auto (LinDistFlow radial, linearised AC meshed)")
     a = C.init(ap.parse_args())
     a.rules = a.rules or str(C.rules_path())
     rules = R.load(a.rules)
@@ -37,9 +39,15 @@ def main():
     idx = M.index()
     rows, rc_rows, notes, verdicts = [], [], [], []
     confirmed = {}
-    delta = X.load_delta(C.bounds_path())
+    a.report = a.report or ("oracle_exact.md" if a.model == "lindistflow" else f"oracle_exact_{a.model}.md")
+    if a.model == "auto":
+        delta = X.load_deltas({m: C.bounds_path(m) for m in X.MODELS})
+    else:
+        delta = X.load_delta(C.bounds_path(a.model))
+    vbus = next((int(at["meas"].split(".")[1]) for r in rules.values() for cl in R.clauses(r) for at in cl
+                 if at.get("meas", "").startswith("vm_pu.")), 11)
     for (mode, dl), (name, rule) in [(m, r) for m in (("nominal", None), ("robust", delta)) for r in rules.items()]:
-        res = X.solve(rule, cfgs, delta=dl)
+        res = X.solve(rule, cfgs, delta=dl, model=a.model)
         n_sat = sum(p[1] == "sat" for p in res.per_cfg)
         n_unsat = sum(p[1] == "unsat" for p in res.per_cfg)
         if res.note:
@@ -51,9 +59,9 @@ def main():
             if st != "sat":
                 continue
             fast, ref = ac_recheck(rule, x, cfg)
-            lm = L.model(cfg)
+            lm = X.linear_model(cfg, a.model)
             agree += int(fast[1] and fast[2])
-            rc_rows.append([mode, name, f"`{cfg.label}`", f"{lm.vm(x)[11]:.5f}", f"{fast[4][idx['vm_pu.11']]:.5f}" if fast[0] else "⟨·⟩",
+            rc_rows.append([mode, name, f"`{cfg.label}`", f"{lm.vm(x)[vbus]:.5f}", f"{fast[4][idx[f'vm_pu.{vbus}']]:.5f}" if fast[0] else "⟨·⟩",
                             C.fmt(fast[0]), C.fmt(fast[1]), C.fmt(fast[2]), C.fmt(fast[3]),
                             f"{C.fmt(ref[0])}/{C.fmt(ref[1])}/{C.fmt(ref[2])}"])
         if n_sat:
@@ -61,7 +69,7 @@ def main():
         confirmed[name] = confirmed.get(name, 0) + agree
         if mode == "robust":
             if res.status == "unsat":
-                v = "certified relative to LinDistFlow with the validated error bound delta"
+                v = f"certified relative to the linear model ({a.model}) with the validated error bound delta"
                 if res.note:
                     v += f" on the radial configurations only ({res.note}; those rely on the search layer)"
             elif confirmed[name]:
@@ -77,12 +85,12 @@ def main():
              f"({len(cfgs)} topologies). SAT means at least one topology is SAT.\n\n")
     body += ("Two modes. Nominal: linear model as is (UNSAT certifies the linear model only). Robust: every AC condition is "
              "replaced by the weakest linear condition it implies under the error bounds delta in "
-             f"`rules/{C.bounds_path().name}` (" + ", ".join(f"{k} {v:.4g}" for k, v in delta.items()) + "). "
+             "`" + (", ".join(f"rules/{C.bounds_path(m).name}" for m in X.MODELS) if a.model == "auto" else f"rules/{C.bounds_path(a.model).name}") + "` (" + str(delta) + "). "
              "Robust UNSAT certifies the AC rule, provided the linear-to-AC error stays within delta on the envelope.\n\n")
     body += C.md_table(["mode", "rule", "result", "topologies SAT", "topologies UNSAT", "total solve time s", "max per query s"], rows)
     body += "\nSee `lindistflow_error.md` for the LinDistFlow error table (G6).\n"
     body += "\n## AC re-check of every SAT model\n\n"
-    body += (C.md_table(["rule", "topology", "vm_pu.11 LinDistFlow", "vm_pu.11 AC", "AC converged", "AC benign", "AC fires",
+    body += (C.md_table(["rule", "topology", f"vm_pu.{vbus} linear", f"vm_pu.{vbus} AC", "AC converged", "AC benign", "AC fires",
                          "AC margin", "runpp conv/benign/fires"], rc_rows) if rc_rows else "No SAT models.\n")
     body += "\n" + "\n".join(notes) + "\n"
     body += "\n## Verdict per rule (robust mode)\n\n" + C.md_table(["rule", "verdict"], verdicts)

@@ -27,3 +27,10 @@
 - Grid abstraction; reference grid results reproduce exactly.
 - Sherlock envelope from train: 336 configurations (170 radial); coverage train 100 %, benign test topology 99.86 %, continuous 100 %.
 - Sherlock oracle: R1 refuted and refined into uselessness (tau 0.89998); R2 certified (robust, radial part); R3 no counterexample by search, exact inconclusive. `wp1b_summary.md`.
+
+## WP1-b2
+
+- Linearised AC model (`src/p3/linac.py`), radial and meshed; exact layer `--model linac`.
+- Worst error found: 0.00708 pu (reference), 0.00834 pu (Sherlock, all 336 configurations): G6 passes on the worst case.
+- Box-implied constraint pruning (exact, 10 to 25 times faster); rule-specific error bounds (`scripts/04b_atom_bounds.py`).
+- Verdicts: reference R1 R2 refuted, R3 certified; Sherlock R1 refuted, R2 R3 certified on all configurations. `wp1b2_summary.md`.

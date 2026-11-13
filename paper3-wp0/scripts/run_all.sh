@@ -13,6 +13,11 @@ python scripts/03b_r3_diagnostic.py --seed "$SEED"
 python scripts/04_lindistflow_error.py --seed "$SEED"
 python scripts/05_oracle_exact.py --seed "$SEED"
 python scripts/06_cegis_demo.py --seed "$SEED"
+# WP1-b2: linearised AC model (also meshed), rule-specific bounds, exact layer and CEGIS with it
+python scripts/04_lindistflow_error.py --seed "$SEED" --model linac
+python scripts/04b_atom_bounds.py --seed "$SEED" --model linac
+python scripts/05_oracle_exact.py --seed "$SEED" --model linac
+python scripts/06_cegis_demo.py --seed "$SEED" --model linac
 if [ -d data/raw/01-Basic/01-Basic ]; then
   python scripts/01_inventory.py --seed "$SEED"
   python scripts/07_sherlock_model_check.py --seed "$SEED"
@@ -30,5 +35,9 @@ if [ -d data/raw/01-Basic/01-Basic ]; then
   python scripts/04_lindistflow_error.py --seed "$SEED" --grid sherlock --adv-budget 500
   python scripts/05_oracle_exact.py --seed "$SEED" --grid sherlock
   python scripts/06_cegis_demo.py --seed "$SEED" --grid sherlock
+  python scripts/04_lindistflow_error.py --seed "$SEED" --grid sherlock --model linac --adv-budget 500
+  python scripts/04b_atom_bounds.py --seed "$SEED" --grid sherlock --model linac
+  python scripts/05_oracle_exact.py --seed "$SEED" --grid sherlock --model linac
+  python scripts/06_cegis_demo.py --seed "$SEED" --grid sherlock --model linac
 fi
 pip freeze > reports/env.txt

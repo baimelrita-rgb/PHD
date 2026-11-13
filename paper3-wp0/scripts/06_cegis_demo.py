@@ -18,6 +18,7 @@ def main():
     ap = C.parser(__doc__)
     ap.add_argument("--budget", type=int, default=2000)
     ap.add_argument("--max-iter", type=int, default=10)
+    ap.add_argument("--model", default="lindistflow", choices=["lindistflow", "linac", "auto"])
     a = C.init(ap.parse_args())
     rules = R.load(C.rules_path())
     r1 = rules["R1"]
@@ -28,7 +29,7 @@ def main():
     res = {k: d[k] for k in ("conv", "benign", "viol", "M")}
     cfgs = E.enumerate_configs()
     final, trace, done = G.refine_threshold(r1, (d["X"], d["ci"], res), cfgs, budget=a.budget, seed=a.seed,
-                                            max_iter=a.max_iter)
+                                            max_iter=a.max_iter, model=a.model)
     tau0, tau1 = r1["atoms"][0]["value"], final["atoms"][0]["value"]
     col = M.index()["vm_pu.11"]
     v_ben = res["M"][res["benign"], col]
@@ -58,7 +59,7 @@ def main():
     body += ("\nReading: the firing band is measured inside the voltages the envelope calls benign. "
              "If the final tau is at or below 0.90 pu, the refined rule fires only on states that already violate the "
              "operating limit. A voltage limit alarm already catches those, so as an intrusion rule it is useless.\n")
-    C.write_report("cegis_demo.md", body)
+    C.write_report("cegis_demo.md" if a.model == "lindistflow" else f"cegis_demo_{a.model}.md", body)
     print(f"tau0 {tau0:.5f} -> {tau1:.5f}, iterations {len(trace)}, converged {done}, retained {retained:.4f}")
 
 

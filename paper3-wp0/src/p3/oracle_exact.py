@@ -37,6 +37,7 @@ import numpy as np
 import z3
 
 from . import envelope as E
+from . import linac as LA
 from . import lindistflow as L
 from . import rules as R
 
@@ -64,11 +65,43 @@ class ExactResult:
 ZERO_DELTA = {"vm_pu": 0.0, "loading": 0.0, "trafo_loading": 0.0, "p_from": 0.0, "trafo_p_hv": 0.0}
 
 
+MODELS = ("lindistflow", "linac")
+
+
+def model_for(cfg, model="lindistflow"):
+    """Linear model used for one configuration. 'auto': LinDistFlow on radial, linearised AC on meshed."""
+    if model == "auto":
+        model = "lindistflow" if E.is_radial(cfg) else "linac"
+    return model
+
+
+def linear_model(cfg, model="lindistflow"):
+    return L.model(cfg) if model_for(cfg, model) == "lindistflow" else LA.model(cfg)
+
+
+def _delta_for(delta, kind):
+    """delta is a quantity dict (one model) or {model: quantity dict}."""
+    if delta and kind in delta and isinstance(delta[kind], dict):
+        return delta[kind]
+    return delta
+
+
+def atom_key(coeffs: dict) -> str:
+    """Sign-normalised key of a linear expression (|error| is the same for e and -e)."""
+    items = sorted((k, float(v)) for k, v in coeffs.items())
+    sign = 1.0 if items[0][1] >= 0 else -1.0
+    return ";".join(f"{k}:{sign * v:.9g}" for k, v in items)
+
+
 class Encoder:
-    def __init__(self, cfg: E.Config, env: E.Envelope | None = None, delta=None):
+    def __init__(self, cfg: E.Config, env: E.Envelope | None = None, delta=None, model="lindistflow"):
         self.cfg = cfg
-        self.d = dict(ZERO_DELTA, **(delta or {}))
-        self.m = L.model(cfg)
+        self.kind = model_for(cfg, model)
+        dd = dict(_delta_for(delta, self.kind) or {})
+        self.atom_d = dd.pop("linear_atoms", {}) or {}
+        self.d = dict(ZERO_DELTA, **dd)
+        self.m = linear_model(cfg, self.kind)
+        self._t = (lambda c: c * c) if self.m.squared else (lambda c: c)
         d = E.dims()
         self.z = ([z3.Real(f"s{i}") for i in range(d.n_load)] + [z3.Real(f"g{j}") for j in range(d.n_der)]
                   + [z3.Real(f"b{k}") for k in range(d.n_sto)])
@@ -90,24 +123,55 @@ class Encoder:
 
     def proj(self, l, k):
         a = np.cos(self.theta[k]) * self.m.AP_line[l] + np.sin(self.theta[k]) * self.m.AQ_line[l]
-        return _lin(self.z, a, np.sin(self.theta[k]) * self.m.cQ_line[l])
+        return _lin(self.z, a, np.cos(self.theta[k]) * self.m.cP_line[l] + np.sin(self.theta[k]) * self.m.cQ_line[l])
 
     def proj_trafo(self, t, k):
         a = np.cos(self.theta[k]) * self.m.AP_trafo[t] + np.sin(self.theta[k]) * self.m.AQ_trafo[t]
-        return _lin(self.z, a, np.sin(self.theta[k]) * self.m.cQ_trafo[t])
+        return _lin(self.z, a, np.cos(self.theta[k]) * self.m.cP_trafo[t] + np.sin(self.theta[k]) * self.m.cQ_trafo[t])
+
+    def _range(self, coef, const):
+        """Exact min and max of coef @ z + const over the parameter box (interval arithmetic)."""
+        lo = np.array([b[0] for b in self.bounds]); hi = np.array([b[1] for b in self.bounds])
+        cp, cn = np.maximum(coef, 0), np.minimum(coef, 0)
+        return const + cp @ lo + cn @ hi, const + cp @ hi + cn @ lo
 
     def benign(self):
+        """Operating limits as linear constraints. A constraint that holds on the whole box is
+        implied by the envelope and is dropped (exact, it removes no state)."""
         cons = []
+        self.n_dropped = 0
         dv = self.d["vm_pu"]
+        vlo, vhi = self._t(max(E.V_MIN - dv, 0.0)), self._t(E.V_MAX + dv)
         for b in range(len(self.m.buses)):
-            v = self.v_expr(b)
-            cons += [v >= max(E.V_MIN - dv, 0.0) ** 2, v <= (E.V_MAX + dv) ** 2]
+            mn, mx = self._range(self.m.Av[b], self.m.vc[b])
+            v = None
+            if mn < vlo:
+                v = self.v_expr(b); cons.append(v >= vlo)
+            else:
+                self.n_dropped += 1
+            if mx > vhi:
+                v = v if v is not None else self.v_expr(b); cons.append(v <= vhi)
+            else:
+                self.n_dropped += 1
+        cP_l, cP_t = self.m.cP_line, self.m.cP_trafo
         for l in np.where(self.m.line_active)[0]:
             smax = self.m.smax_line[l] * (E.LOADING_MAX + self.d["loading"]) / 100
-            cons += [self.proj(l, k) <= smax for k in range(K)]
+            for k in range(K):
+                c, s_ = np.cos(self.theta[k]), np.sin(self.theta[k])
+                _, mx = self._range(c * self.m.AP_line[l] + s_ * self.m.AQ_line[l], c * cP_l[l] + s_ * self.m.cQ_line[l])
+                if mx > smax:
+                    cons.append(self.proj(l, k) <= smax)
+                else:
+                    self.n_dropped += 1
         for t in range(len(self.m.smax_trafo)):
             smax = self.m.smax_trafo[t] * (E.LOADING_MAX + self.d["trafo_loading"]) / 100
-            cons += [self.proj_trafo(t, k) <= smax for k in range(K)]
+            for k in range(K):
+                c, s_ = np.cos(self.theta[k]), np.sin(self.theta[k])
+                _, mx = self._range(c * self.m.AP_trafo[t] + s_ * self.m.AQ_trafo[t], c * cP_t[t] + s_ * self.m.cQ_trafo[t])
+                if mx > smax:
+                    cons.append(self.proj_trafo(t, k) <= smax)
+                else:
+                    self.n_dropped += 1
         return cons
 
     def linear_meas(self, name):
@@ -115,9 +179,9 @@ class Encoder:
         i = int(i)
         n = len(self.z)
         if kind == "p_from":
-            return self.m.AP_line[i], 0.0
+            return self.m.AP_line[i], self.m.cP_line[i]
         if kind == "trafo_p_hv":
-            return self.m.AP_trafo[i], 0.0
+            return self.m.AP_trafo[i], self.m.cP_trafo[i]
         if kind == "load_p":
             return self.inj.Apl[i], 0.0
         if kind == "sgen_p":
@@ -142,8 +206,8 @@ class Encoder:
                 v = self.v_expr(i)
                 dv = self.d["vm_pu"]
                 if a["op"] == "<":
-                    return v < (c + dv) ** 2
-                return v > max(c - dv, 0.0) ** 2
+                    return v < self._t(c + dv)
+                return v > self._t(max(c - dv, 0.0))
             if kind == "loading":
                 dl = self.d["loading"]
                 c = c - dl if a["op"] == ">" else c + dl
@@ -165,6 +229,9 @@ class Encoder:
                 ck, cc = self.linear_meas(k)
                 coef += w * ck; const += w * cc
                 slack += abs(w) * self.d.get(k.split(".")[0], 0.0)
+            key = atom_key(a["coeffs"])
+            if key in self.atom_d:   # validated bound on the error of this expression itself
+                slack = min(slack, self.atom_d[key])
             e = _lin(self.z, coef, const)
             return e < a["value"] + slack if a["op"] == "<" else e > a["value"] - slack
         raise ValueError(a)
@@ -182,8 +249,8 @@ def _model_x(model, z):
 
 
 def _solve_one(args):
-    rule, cfg, env, timeout_ms, delta = args
-    enc = Encoder(cfg, env, delta)
+    rule, cfg, env, timeout_ms, delta, model = args
+    enc = Encoder(cfg, env, delta, model)
     phi = enc.rule(rule)
     sv = z3.Solver()
     sv.set("timeout", timeout_ms)
@@ -195,21 +262,25 @@ def _solve_one(args):
     return cfg, str(r), dt, x
 
 
-def solve(rule, cfgs=None, env=None, timeout_ms=60000, delta=None, workers=None) -> ExactResult:
-    """One Z3 query per radial configuration, in parallel processes (fork) when workers > 1."""
+def solve(rule, cfgs=None, env=None, timeout_ms=60000, delta=None, workers=None, model="lindistflow") -> ExactResult:
+    """One Z3 query per configuration the chosen linear model covers (LinDistFlow: radial only;
+    linac and auto: all), in parallel processes (fork) when workers > 1."""
     import os
     from concurrent.futures import ProcessPoolExecutor
     import multiprocessing as mp
     cfgs = E.enumerate_configs() if cfgs is None else cfgs
     t0 = time.time()
-    radial = [c for c in cfgs if E.is_radial(c)]
+    radial = [c for c in cfgs if model != "lindistflow" or E.is_radial(c)]
     skipped = len(cfgs) - len(radial)
+    if model in ("linac", "auto"):   # build linearisations in the parent so forked workers share them
+        for c in radial:
+            linear_model(c, model)
     try:
-        Encoder(radial[0], env, delta).rule(rule)
+        Encoder(radial[0], env, delta, model).rule(rule)
     except NotExpressible as e:
         return ExactResult("not_expressible", None, None, time.time() - t0, [], f"measurement {e} has no linear form")
     workers = workers or min(os.cpu_count() or 1, 8)
-    jobs = [(rule, c, env, timeout_ms, delta) for c in radial]
+    jobs = [(rule, c, env, timeout_ms, delta, model) for c in radial]
     if workers > 1 and len(jobs) > 4:
         with ProcessPoolExecutor(workers, mp_context=mp.get_context("fork")) as ex:
             per = list(ex.map(_solve_one, jobs, chunksize=max(1, len(jobs) // (4 * workers))))
@@ -225,4 +296,12 @@ def solve(rule, cfgs=None, env=None, timeout_ms=60000, delta=None, workers=None)
 def load_delta(path):
     import json
     d = json.loads(open(path).read())
-    return {k: float(v) for k, v in d["delta"].items()}
+    out = {k: float(v) for k, v in d["delta"].items()}
+    if d.get("linear_atoms"):
+        out["linear_atoms"] = {k: float(v) for k, v in d["linear_atoms"].items()}
+    return out
+
+
+def load_deltas(paths: dict):
+    """{model: path} -> {model: quantity dict}, for model='auto'."""
+    return {k: load_delta(p) for k, p in paths.items()}
