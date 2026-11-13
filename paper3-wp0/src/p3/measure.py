@@ -10,6 +10,7 @@ Names:
   line_in.<line>         line in service, 1 or 0
   load_p.<load>          metered load active power, MW   (added: needed by R2, R3)
   sgen_p.<sgen>          metered DER active power, MW    (added: needed by R3)
+  storage_p.<storage>    metered storage active power, MW, positive = charging (grids with storage)
 
 Indices are pandapower element indices of the CIGRE MV net.
 """
@@ -36,6 +37,8 @@ def names() -> tuple[str, ...]:
     n += [f"line_in.{l}" for l in net.line.index]
     n += [f"load_p.{i}" for i in net.load.index]
     n += [f"sgen_p.{j}" for j in net.sgen.index]
+    if E.dims().n_sto:
+        n += [f"storage_p.{k}" for k in net.storage.index]
     return tuple(n)
 
 
@@ -54,7 +57,7 @@ def vector_from_fast(r: dict, cfg: E.Config) -> np.ndarray:
     sw, lin = _discrete(cfg)
     return np.concatenate([
         r["vm_pu"], r["line_loading_percent"], r["line_p_from_mw"], r["trafo_p_hv_mw"],
-        r["trafo_loading_percent"], sw, lin, r["p_load"], r["p_sgen"],
+        r["trafo_loading_percent"], sw, lin, r["p_load"], r["p_sgen"], r["p_sto"],
     ])
 
 
@@ -70,6 +73,7 @@ def vector_from_net(net) -> np.ndarray:
         lin.astype(float),
         net.load.p_mw.values,
         net.sgen.p_mw.values,
+        net.storage.p_mw.values if E.dims().n_sto else np.zeros(0),
     ])
 
 

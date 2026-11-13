@@ -1,0 +1,12 @@
+{
+  "source": "scripts/04_lindistflow_error.py --seed 7: max(sample max, DE worst case) x 1.25",
+  "adv_budget_per_topology": 500,
+  "safety_factor": 1.25,
+  "delta": {
+    "vm_pu": 0.015090036479782215,
+    "loading": 10.211026095780031,
+    "trafo_loading": 3.7440367750576797,
+    "p_from": 0.5848613001253666,
+    "trafo_p_hv": 0.6403215488087755
+  }
+}

@@ -17,8 +17,9 @@ def main():
     ap.add_argument("--n", type=int, default=1000)
     ap.add_argument("--adv-budget", type=int, default=1000, help="DE power flows per topology and quantity for the worst-case search")
     ap.add_argument("--safety", type=float, default=1.25, help="safety factor on the worst error found")
-    a = ap.parse_args()
-    X, ci, cfgs = E.sample_lhs(E.ENVELOPE_FULL, a.n, seed=a.seed + 3000)
+    a = C.init(ap.parse_args())
+    radial = tuple(c for c in E.enumerate_configs() if E.is_radial(c))   # LinDistFlow is radial only
+    X, ci, cfgs = E.sample_lhs(E.full(), a.n, seed=a.seed + 3000, configs=radial)
     res = C.evaluate_batch(X, ci, cfgs)
     idx = M.index()
     vcols = [idx[f"vm_pu.{b}"] for b in range(15)]
@@ -50,11 +51,7 @@ def main():
              f"Signed error at bus 11 (LinDistFlow minus AC): min {min(sgn):.5f}, mean {np.mean(sgn):.5f}, max {max(sgn):.5f} pu. "
              "A positive value means LinDistFlow over-estimates the voltage.\n")
     # adversarial worst case per linearised quantity: DE maximising |linear - AC| over benign states
-    from scipy.optimize import differential_evolution
-    from scipy.stats import qmc
     import json
-    bounds = E.cont_bounds(E.ENVELOPE_FULL)
-    lo = np.array([b[0] for b in bounds]); hi = np.array([b[1] for b in bounds])
     pcols = [idx[f"p_from.{l}"] for l in range(15)]
     tcols = [idx[f"trafo_p_hv.{t}"] for t in range(2)]
     tlcols = [idx[f"trafo_loading.{t}"] for t in range(2)]
@@ -75,36 +72,28 @@ def main():
             samp[q] = max(samp[q], float(np.max(fn(lm, X[i], res["M"][i]))))
     worst = {q: 0.0 for q in quantities}
     adv = []
+    from p3 import oracle_search as O
+    joint = len(cfgs) > 40
     for q, fn in quantities.items():
-        for k, c in enumerate(cfgs):
+        if joint:   # many configurations: one joint DE per quantity, same total budget per quantity as 40 runs
+            st = O.de_maximize_joint(lambda x, mm, c, fn=fn: float(np.max(fn(L.model(c), x, mm))), cfgs, E.full(),
+                                     a.adv_budget * 40, a.seed)
+            worst[q] = max(worst[q], max(st["best"], 0.0))
+        for k, c in enumerate(cfgs if not joint else ()):
             lm = L.model(c)
-            st = {"n": 0, "best": 0.0}
-
-            def f(x):
-                if st["n"] >= a.adv_budget:
-                    return 1e6
-                st["n"] += 1
-                ok, ben, viol, mm = M.evaluate(x, c)
-                if not ok or not ben:
-                    return 1.0 + viol
-                err = float(np.max(fn(lm, x, mm)))
-                st["best"] = max(st["best"], err)
-                return -err
-
-            init = lo + qmc.LatinHypercube(d=len(bounds), seed=a.seed + k).random(15) * (hi - lo)
-            differential_evolution(f, bounds, init=init, maxiter=-(-(a.adv_budget - 15) // 15), polish=False,
-                                   seed=a.seed + k, tol=0, atol=0)
-            worst[q] = max(worst[q], st["best"])
+            st = O.de_maximize(lambda x, mm, lm=lm, fn=fn: float(np.max(fn(lm, x, mm))), c, E.full(),
+                               a.adv_budget, a.seed + k)
+            worst[q] = max(worst[q], max(st["best"], 0.0))
         adv.append([q, units[q], f"{samp[q]:.5f}", f"{worst[q]:.5f}", f"{a.safety * max(worst[q], samp[q]):.5f}"])
     wmax = worst["vm_pu"]
     delta = {q: a.safety * max(worst[q], samp[q]) for q in quantities}
-    (C.ROOT / "rules" / "model_error_bounds.json").write_text(json.dumps({
+    C.bounds_path().write_text(json.dumps({
         "source": f"scripts/04_lindistflow_error.py --seed {a.seed}: max(sample max, DE worst case) x {a.safety}",
         "adv_budget_per_topology": a.adv_budget, "safety_factor": a.safety, "delta": delta}, indent=2))
     body += ("\n## Worst case found by search, and the error bounds used by the robust exact layer\n\n"
              f"Differential evolution maximising the max abs linear-minus-AC error over benign states, "
-             f"{a.adv_budget} power flows per topology and quantity. delta = {a.safety} x max(sample max, worst found); "
-             "saved to `rules/model_error_bounds.json`. delta is an empirical bound, not a proof.\n\n")
+             f"{a.adv_budget} power flows per topology and quantity ({'one joint DE over all radial configurations with 40 x that budget' if joint else 'one DE per topology'}). delta = {a.safety} x max(sample max, worst found); "
+             f"saved to `rules/{C.bounds_path().name}`. delta is an empirical bound, not a proof.\n\n")
     body += C.md_table(["quantity", "unit", f"max over {int(res['benign'].sum())} samples", "worst found by search", "delta used"], adv)
     body += (f"\nWorst benign voltage error found by search: {wmax:.5f} pu "
              f"({'below' if wmax < 0.01 else 'above'} 0.01 pu).\n")

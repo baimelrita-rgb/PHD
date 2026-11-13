@@ -28,19 +28,22 @@ def ac_recheck(rule, x, cfg):
 
 def main():
     ap = C.parser(__doc__)
-    ap.add_argument("--rules", default=str(C.RULES_PATH))
+    ap.add_argument("--rules", default=None)
     ap.add_argument("--report", default="oracle_exact.md")
-    a = ap.parse_args()
+    a = C.init(ap.parse_args())
+    a.rules = a.rules or str(C.rules_path())
     rules = R.load(a.rules)
     cfgs = E.enumerate_configs()
     idx = M.index()
     rows, rc_rows, notes, verdicts = [], [], [], []
     confirmed = {}
-    delta = X.load_delta(C.ROOT / "rules" / "model_error_bounds.json")
+    delta = X.load_delta(C.bounds_path())
     for (mode, dl), (name, rule) in [(m, r) for m in (("nominal", None), ("robust", delta)) for r in rules.items()]:
         res = X.solve(rule, cfgs, delta=dl)
         n_sat = sum(p[1] == "sat" for p in res.per_cfg)
         n_unsat = sum(p[1] == "unsat" for p in res.per_cfg)
+        if res.note:
+            notes.append(f"- {mode}, {name}: {res.note}.")
         rows.append([mode, name, res.status.upper(), f"{n_sat}/{len(res.per_cfg)}", f"{n_unsat}/{len(res.per_cfg)}",
                      C.fmt(res.solve_s, 3), C.fmt(max((p[2] for p in res.per_cfg), default=np.nan), 3)])
         agree = 0
@@ -72,7 +75,7 @@ def main():
              f"({len(cfgs)} topologies). SAT means at least one topology is SAT.\n\n")
     body += ("Two modes. Nominal: linear model as is (UNSAT certifies the linear model only). Robust: every AC condition is "
              "replaced by the weakest linear condition it implies under the error bounds delta in "
-             "`rules/model_error_bounds.json` (" + ", ".join(f"{k} {v:.4g}" for k, v in delta.items()) + "). "
+             f"`rules/{C.bounds_path().name}` (" + ", ".join(f"{k} {v:.4g}" for k, v in delta.items()) + "). "
              "Robust UNSAT certifies the AC rule, provided the linear-to-AC error stays within delta on the envelope.\n\n")
     body += C.md_table(["mode", "rule", "result", "topologies SAT", "topologies UNSAT", "total solve time s", "max per query s"], rows)
     body += "\nSee `lindistflow_error.md` for the LinDistFlow error table (G6).\n"

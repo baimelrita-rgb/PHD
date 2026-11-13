@@ -75,7 +75,7 @@ def main():
     loss_rule = {"atoms": [{"type": "linear", "coeffs": co, "op": ">", "value": 0.0, "scale": 0.1}]}
     search_max, search_cfg = -np.inf, None
     for i, cfg in enumerate(cfgs):
-        st = O._de_one(loss_rule, cfg, E.ENVELOPE_FULL, a.calib_budget, a.seed + 100 + i)
+        st = O._de_one(loss_rule, cfg, E.full(), a.calib_budget, a.seed + 100 + i)
         if 0.1 * st["best"] > search_max:
             search_max, search_cfg = 0.1 * st["best"], cfg
     m_marg = 1.5 * max(float(d.max()), search_max)

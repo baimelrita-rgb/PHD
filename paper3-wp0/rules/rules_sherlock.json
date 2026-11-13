@@ -1,0 +1,149 @@
+{
+  "R1": {
+    "name": "R1 naive threshold (mined from train)",
+    "description": "vm_pu at feeder-end bus 6 below tau; tau = 1st percentile over train records",
+    "atoms": [
+      {
+        "type": "threshold",
+        "meas": "vm_pu.6",
+        "op": "<",
+        "value": 0.9332723021507263,
+        "scale": 0.01
+      }
+    ]
+  },
+  "R2": {
+    "name": "R2 context rule (mined from train)",
+    "description": "loading of line 0 above x AND downstream load (base topology) below y; x = 99th pct, y = 1st pct over train records",
+    "atoms": [
+      {
+        "type": "threshold",
+        "meas": "loading.0",
+        "op": ">",
+        "value": 83.73855064655173,
+        "scale": 10.0
+      },
+      {
+        "type": "linear",
+        "coeffs": {
+          "load_p.1": 1.0,
+          "load_p.2": 1.0,
+          "load_p.3": 1.0,
+          "load_p.4": 1.0,
+          "load_p.5": 1.0,
+          "load_p.6": 1.0,
+          "load_p.7": 1.0,
+          "load_p.11": 1.0,
+          "load_p.12": 1.0,
+          "load_p.13": 1.0,
+          "load_p.14": 1.0
+        },
+        "op": "<",
+        "value": 0.9191067402343749,
+        "scale": 1.0
+      }
+    ]
+  },
+  "R3": {
+    "name": "R3 power balance violation",
+    "description": "|sum trafo P_hv - sum load P - sum storage P + sum sgen P| > m; m = 1.5 x max benign residual (LHS and DE)",
+    "calibration": {
+      "sample_max_mw": 0.37582854920622505,
+      "search_max_mw": 0.6047514637136154,
+      "search_topology": "ties=S1+S2+S3;out=L1+L8;tap=0,0",
+      "factor": 1.5
+    },
+    "any_of": [
+      [
+        {
+          "type": "linear",
+          "coeffs": {
+            "trafo_p_hv.0": 1.0,
+            "trafo_p_hv.1": 1.0,
+            "load_p.0": -1.0,
+            "load_p.1": -1.0,
+            "load_p.2": -1.0,
+            "load_p.3": -1.0,
+            "load_p.4": -1.0,
+            "load_p.5": -1.0,
+            "load_p.6": -1.0,
+            "load_p.7": -1.0,
+            "load_p.8": -1.0,
+            "load_p.9": -1.0,
+            "load_p.10": -1.0,
+            "load_p.11": -1.0,
+            "load_p.12": -1.0,
+            "load_p.13": -1.0,
+            "load_p.14": -1.0,
+            "load_p.15": -1.0,
+            "load_p.16": -1.0,
+            "load_p.17": -1.0,
+            "storage_p.0": -1.0,
+            "storage_p.1": -1.0,
+            "sgen_p.0": 1.0,
+            "sgen_p.1": 1.0,
+            "sgen_p.2": 1.0,
+            "sgen_p.3": 1.0,
+            "sgen_p.4": 1.0,
+            "sgen_p.5": 1.0,
+            "sgen_p.6": 1.0,
+            "sgen_p.7": 1.0,
+            "sgen_p.8": 1.0,
+            "sgen_p.9": 1.0,
+            "sgen_p.10": 1.0,
+            "sgen_p.11": 1.0,
+            "sgen_p.12": 1.0
+          },
+          "op": ">",
+          "value": 0.9071271955704232,
+          "scale": 0.1
+        }
+      ],
+      [
+        {
+          "type": "linear",
+          "coeffs": {
+            "trafo_p_hv.0": -1.0,
+            "trafo_p_hv.1": -1.0,
+            "load_p.0": 1.0,
+            "load_p.1": 1.0,
+            "load_p.2": 1.0,
+            "load_p.3": 1.0,
+            "load_p.4": 1.0,
+            "load_p.5": 1.0,
+            "load_p.6": 1.0,
+            "load_p.7": 1.0,
+            "load_p.8": 1.0,
+            "load_p.9": 1.0,
+            "load_p.10": 1.0,
+            "load_p.11": 1.0,
+            "load_p.12": 1.0,
+            "load_p.13": 1.0,
+            "load_p.14": 1.0,
+            "load_p.15": 1.0,
+            "load_p.16": 1.0,
+            "load_p.17": 1.0,
+            "storage_p.0": 1.0,
+            "storage_p.1": 1.0,
+            "sgen_p.0": -1.0,
+            "sgen_p.1": -1.0,
+            "sgen_p.2": -1.0,
+            "sgen_p.3": -1.0,
+            "sgen_p.4": -1.0,
+            "sgen_p.5": -1.0,
+            "sgen_p.6": -1.0,
+            "sgen_p.7": -1.0,
+            "sgen_p.8": -1.0,
+            "sgen_p.9": -1.0,
+            "sgen_p.10": -1.0,
+            "sgen_p.11": -1.0,
+            "sgen_p.12": -1.0
+          },
+          "op": ">",
+          "value": 0.9071271955704232,
+          "scale": 0.1
+        }
+      ]
+    ]
+  }
+}

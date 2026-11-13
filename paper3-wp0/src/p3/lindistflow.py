@@ -8,8 +8,9 @@ Branches are lines and transformers, impedances in pu on sn_mva = 1 MVA and the 
 nominal voltage. Ignored: losses, line charging, transformer magnetising branch
 (zero in this model), phase shift (no effect on magnitudes in a radial network).
 
-Everything is affine in the envelope parameters x = (load scalings s, DER outputs g):
-  v = v0 + Av @ x,  P_line = AP @ x,  Q_line = AQ @ x.
+Everything is affine in the envelope parameters x (envelope.injection_maps):
+  v = vc + Av @ x,  P_line = AP @ x,  Q_line = AQ @ x + cQ  (cQ from loads with fixed Q).
+Transformer taps (HV side) scale the source voltage seen below the transformer by 1/t^2.
 """
 from __future__ import annotations
 
@@ -64,23 +65,41 @@ class LinDistFlow:
                 b = parent[b]
         r = np.array([br_r.get(b, 0.0) for b in buses])
         x = np.array([br_x.get(b, 0.0) for b in buses])
-        nL, nG = E.dims().n_load, E.dims().n_der
-        Lp = np.zeros((nb, nL)); Lq = np.zeros((nb, nL)); Gp = np.zeros((nb, nG))
-        for i in base.load.index:
-            Lp[pos[base.load.bus.at[i]], i] = base.load.p_mw.at[i] / self.sn
-            Lq[pos[base.load.bus.at[i]], i] = base.load.q_mvar.at[i] / self.sn
-        for j in base.sgen.index:
-            Gp[pos[base.sgen.bus.at[j]], j] = base.sgen.sn_mva.at[j] / self.sn
-        # net load injection (positive = consumption) as affine maps of x
-        Pin = np.hstack([Lp, -Gp])
-        Qin = np.hstack([Lq, np.zeros((nb, nG))])
+        # element injections as affine maps of x (E.injection_maps), aggregated per bus, pu
+        M = E.injection_maps()
+        nx_ = E.dims().n_cont
+        Pin = np.zeros((nb, nx_)); Qin = np.zeros((nb, nx_)); cQin = np.zeros(nb)
+        for i, bb in enumerate(base.load.bus.values):
+            Pin[pos[bb]] += M.Apl[i] / self.sn
+            Qin[pos[bb]] += M.Aql[i] / self.sn
+            cQin[pos[bb]] += M.cql[i] / self.sn
+        for j, bb in enumerate(base.sgen.bus.values):
+            Pin[pos[bb]] -= M.Apg[j] / self.sn
+        if E.dims().n_sto:
+            for k, bb in enumerate(base.storage.bus.values):
+                Pin[pos[bb]] += M.Apb[k] / self.sn
         self.APb = T @ Pin          # P flowing into each child bus (row = child bus), pu
         self.AQb = T @ Qin
+        self.cQb = T @ cQin         # constant part of Q (loads with fixed Q)
         self.Av = -2.0 * Path @ (r[:, None] * self.APb + x[:, None] * self.AQb)
+        # off-nominal transformer taps scale the voltage below the transformer: V_lv = V_hv / t (HV-side tap)
+        v_root = np.full(nb, self.v0)
+        for c in children:
+            if br_kind[c] == "trafo":
+                ti = br_idx[c]
+                step = net.trafo.tap_step_percent.at[ti]
+                pos_t = net.trafo.tap_pos.at[ti]
+                if step == step and pos_t == pos_t:
+                    t = 1.0 + (pos_t - net.trafo.tap_neutral.at[ti]) * step / 100.0
+                    f = 1.0 / t ** 2 if net.trafo.tap_side.at[ti] == "hv" else t ** 2
+                    assert parent[c] == root, "taps supported on transformers next to the slack bus only"
+                    for d in nx.descendants(nx.bfs_tree(g, root), c) | {c}:
+                        v_root[pos[d]] = self.v0 * f
+        self.vc = v_root - 2.0 * Path @ (x * self.cQb)   # constant term of v per bus
         self.pos, self.buses = pos, buses
         # per line: P, Q at from end (sign per pandapower from/to), zero if not active
         nl = len(net.line)
-        self.AP_line = np.zeros((nl, Pin.shape[1])); self.AQ_line = np.zeros((nl, Pin.shape[1]))
+        self.AP_line = np.zeros((nl, nx_)); self.AQ_line = np.zeros((nl, nx_)); self.cQ_line = np.zeros(nl)
         self.line_active = np.zeros(nl, bool)
         for c in children:
             if br_kind[c] == "line":
@@ -88,29 +107,31 @@ class LinDistFlow:
                 sign = 1.0 if int(net.line.from_bus.at[li]) == parent[c] else -1.0
                 self.AP_line[li] = sign * self.APb[pos[c]] * self.sn
                 self.AQ_line[li] = sign * self.AQb[pos[c]] * self.sn
+                self.cQ_line[li] = sign * self.cQb[pos[c]] * self.sn
                 self.line_active[li] = True
-        self.AP_trafo = np.zeros((len(net.trafo), Pin.shape[1]))
-        self.AQ_trafo = np.zeros((len(net.trafo), Pin.shape[1]))
+        self.AP_trafo = np.zeros((len(net.trafo), nx_))
+        self.AQ_trafo = np.zeros((len(net.trafo), nx_)); self.cQ_trafo = np.zeros(len(net.trafo))
         for c in children:
             if br_kind[c] == "trafo":
                 self.AP_trafo[br_idx[c]] = self.APb[pos[c]] * self.sn
                 self.AQ_trafo[br_idx[c]] = self.AQb[pos[c]] * self.sn
+                self.cQ_trafo[br_idx[c]] = self.cQb[pos[c]] * self.sn
         self.smax_trafo = net.trafo.sn_mva.values.astype(float)
         vn = net.bus.vn_kv.values[[pos[int(b)] for b in net.line.from_bus]]
         self.smax_line = np.sqrt(3) * vn * (net.line.max_i_ka * net.line.df * net.line.parallel).values  # MVA at 1 pu
 
     def v(self, x):
-        return self.v0 + self.Av @ x
+        return self.vc + self.Av @ x
 
     def vm(self, x):
         return np.sqrt(np.maximum(self.v(x), 0.0))
 
     def loading_percent(self, x):
-        P, Q = self.AP_line @ x, self.AQ_line @ x
+        P, Q = self.AP_line @ x, self.AQ_line @ x + self.cQ_line
         return np.where(self.line_active, np.hypot(P, Q) / self.smax_line * 100, 0.0)
 
     def trafo_loading_percent(self, x):
-        return np.hypot(self.AP_trafo @ x, self.AQ_trafo @ x) / self.smax_trafo * 100
+        return np.hypot(self.AP_trafo @ x, self.AQ_trafo @ x + self.cQ_trafo) / self.smax_trafo * 100
 
     def p_from(self, x):
         return self.AP_line @ x

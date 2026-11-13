@@ -16,6 +16,7 @@ def main():
     ap.add_argument("--root", default=str(S.ROOT_DEFAULT))
     ap.add_argument("--exclude-types", nargs="*", default=["arp-spoof:arp-spoof-dos"],
                     help="attack types left out of G2 (owner decision 1: arp-spoof-dos is network-level, out of scope)")
+    ap.add_argument("--min-types", type=int, default=3, help="G2: minimum attack types (owner decision: 3)")
     a = ap.parse_args()
     root = Path(a.root)
     if not root.exists():
@@ -90,8 +91,8 @@ def main():
             cnt_in = {k: v for k, v in cnt.items() if k not in a.exclude_types}
             n_types = len(cnt_in)
             min_inst = min(cnt_in.values())
-            g2 = n_types >= 4 and min_inst >= 3
-            g2_3 = n_types >= 3 and min_inst >= 3
+            g2_4 = n_types >= 4 and min_inst >= 3
+            g2 = n_types >= a.min_types and min_inst >= 3
             # industroyer instances by kind of targeted asset (for a possible finer type split)
             ind = collections.Counter()
             for e in att:
@@ -102,10 +103,10 @@ def main():
              "center (maintenance, switching, generator control, transformer tap steps, manual commands). "
              "No short circuit or earth fault is labelled.\n\n")
     body += (f"Excluded from G2 (owner decision 1): {', '.join(a.exclude_types) or 'none'}.\n\n"
-             f"**G2 as written (at least 4 attack types, at least 3 instances each): {'PASS' if g2 else 'FAIL'}.** "
+             f"**G2 (at least {a.min_types} attack types, at least 3 instances each; owner decision): {'PASS' if g2 else 'FAIL'}.** "
              f"After the exclusion the test split has {n_types} process-level attack types "
              f"({', '.join(f'{k} {v}' for k, v in sorted(cnt_in.items()))}); the smallest has {min_inst} instances. "
-             f"With the criterion relaxed to at least 3 types: {'PASS' if g2_3 else 'FAIL'}. Train has no attacks.\n\n"
+             f"Under the original criterion (at least 4 types): {'PASS' if g2_4 else 'FAIL'}. Train has no attacks.\n\n"
              "Industroyer instances by targeted asset kind (a possible finer split, owner decision):\n\n"
              + C.md_table(["targeted assets", "instances"], sorted(ind.items())) + "\n")
 
@@ -145,7 +146,7 @@ def main():
              f"Wattson clock speed {cfg_tr.get('wattson_speed')} (simulated time runs faster than wall time). "
              "Powers are in W and var, currents in A, voltages in pu, angles in degrees (snapshot values).\n")
     C.write_report("dataset_inventory.md", body)
-    print("G1 no model file; G2", "pass" if g2 else "fail", "| relaxed to 3 types:", "pass" if g2_3 else "fail")
+    print("G1 no model file; G2", "pass" if g2 else "fail", f"(min types {a.min_types}); original 4-type criterion:", "pass" if g2_4 else "fail")
 
 
 if __name__ == "__main__":

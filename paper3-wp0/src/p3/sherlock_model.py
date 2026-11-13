@@ -116,3 +116,54 @@ def noise_floor(snap, net):
     return max(d)
 
 
+
+
+def base_net():
+    """Reconstructed Sherlock grid in its nominal state: CIGRE MV (all DER), identified
+    transformer and tap parameters, the 24 extra line-end switches (all closed), taps at 0."""
+    trafo, tap = load_params()
+    if trafo is None:
+        raise SystemExit(f"missing {PARAMS_PATH}: run scripts/08_identify_taps.py first")
+    net = pn.create_cigre_network_mv(with_der="all")
+    for t, prm in trafo.items():
+        for k in ("vkr_percent", "vk_percent", "pfe_kw", "i0_percent"):
+            net.trafo.at[t, k] = prm[k]
+    if tap:
+        apply_tap(net, tap)
+    for sidx, (bus, l, end) in switch_map(net).items():
+        pp.create_switch(net, bus, l, et="l", closed=True)
+    assert list(net.switch.index) == list(range(32))
+    return net
+
+
+def record_measurements(state: dict, names, net) -> "np.ndarray":
+    """IPAL state record -> measurement vector in the order of measure.names().
+    Line loading is recomputed from the reported end currents (IPAL has no line loading field)."""
+    imax_a = (net.line.max_i_ka * net.line.df * net.line.parallel).values * 1e3
+    out = np.zeros(len(names))
+    for j, n in enumerate(names):
+        kind, i = n.split(".")
+        i = int(i)
+        if kind == "vm_pu":
+            out[j] = state[f"bus.{i}:voltage"]
+        elif kind == "loading":
+            out[j] = max(state[f"line.{i}:current_from"], state[f"line.{i}:current_to"]) / imax_a[i] * 100
+        elif kind == "p_from":
+            out[j] = state[f"line.{i}:active_power_from"] / 1e6
+        elif kind == "trafo_p_hv":
+            out[j] = state[f"trafo.{i}:active_power_hv"] / 1e6
+        elif kind == "trafo_loading":
+            out[j] = state[f"trafo.{i}:loading"]
+        elif kind == "sw":
+            out[j] = float(bool(state[f"switch.{i}:is_closed"]))
+        elif kind == "line_in":
+            out[j] = 1.0
+        elif kind == "load_p":
+            out[j] = state[f"load.{i}:active_power"] / 1e6
+        elif kind == "sgen_p":
+            out[j] = state[f"sgen.{i}:active_power"] / 1e6
+        elif kind == "storage_p":
+            out[j] = state[f"storage.{i}:active_power"] / 1e6
+        else:
+            raise KeyError(n)
+    return out

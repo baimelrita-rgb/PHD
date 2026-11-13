@@ -17,7 +17,7 @@ from p3 import rules as R
 def describe(cex, rule):
     if cex is None:
         return "⟨none⟩"
-    s, g = E.split_x(cex.x)
+    s, g, _ = E.split_x(cex.x)
     idx = M.index()
     keys = sorted({k for c in R.clauses(rule) for a in c for k in ([a["meas"]] if "meas" in a else a["coeffs"])})
     shown = [k for k in keys if not k.startswith("load_p.")][:4]
@@ -35,15 +35,16 @@ def main():
     ap.add_argument("--n-lhs", type=int, default=10000)
     ap.add_argument("--budget", type=int, default=2000)
     ap.add_argument("--report", default="oracle_search.md")
-    ap.add_argument("--rules", default=str(C.RULES_PATH))
-    a = ap.parse_args()
+    ap.add_argument("--rules", default=None)
+    a = C.init(ap.parse_args())
+    a.rules = a.rules or str(C.rules_path())
     rules = R.load(a.rules)
 
     t0 = time.time()
-    X, ci, cfgs = E.sample_lhs(E.ENVELOPE_FULL, a.n_lhs, seed=a.seed + 2000)
+    X, ci, cfgs = E.sample_lhs(E.full(), a.n_lhs, seed=a.seed + 2000)
     res = C.evaluate_batch(X, ci, cfgs)
     t_lhs = time.time() - t0
-    np.savez_compressed(C.INTERIM / f"oracle_stageA_seed{a.seed}.npz", X=X, ci=ci, **res)
+    np.savez_compressed(C.interim(f"oracle_stageA_seed{a.seed}.npz"), X=X, ci=ci, **res)
 
     rows, details, prows = [], [], []
     for name, rule in rules.items():

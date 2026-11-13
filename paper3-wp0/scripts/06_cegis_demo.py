@@ -18,10 +18,10 @@ def main():
     ap = C.parser(__doc__)
     ap.add_argument("--budget", type=int, default=2000)
     ap.add_argument("--max-iter", type=int, default=10)
-    a = ap.parse_args()
-    rules = R.load(C.RULES_PATH)
+    a = C.init(ap.parse_args())
+    rules = R.load(C.rules_path())
     r1 = rules["R1"]
-    f = C.INTERIM / f"oracle_stageA_seed{a.seed}.npz"
+    f = C.interim(f"oracle_stageA_seed{a.seed}.npz")
     if not f.exists():
         raise SystemExit(f"missing {f}: run scripts/03_oracle_search.py --seed {a.seed} first")
     d = np.load(f)

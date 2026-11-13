@@ -51,6 +51,7 @@ class FastAC:
         bl = net._pd2ppc_lookups["bus"]
         self.load_bus = bl[net.load.bus.values]
         self.sgen_bus = bl[net.sgen.bus.values]
+        self.sto_bus = bl[net.storage.bus.values] if E.dims().n_sto else np.zeros(0, int)
         self.bus_ppc = bl[net.bus.index.values]
         self.vn_kv = bus[:, 9].real
         f0, f1 = net._pd2ppc_lookups["branch"]["line"]
@@ -62,24 +63,20 @@ class FastAC:
         self.tbus = branch[:, 1].real.astype(int)
         self.trafo_sn = net.trafo.sn_mva.values
         self.imax_ka = (net.line.max_i_ka * net.line.df * net.line.parallel).values
-        base = E._base_net()
-        self.p_load_nom = base.load.p_mw.values
-        self.q_load_nom = base.load.q_mvar.values
-        self.sgen_rated = base.sgen.sn_mva.values
+        self.inj = E.injection_maps()
         self._V0 = ppc["bus"][:, 7].real * np.exp(1j * np.deg2rad(ppc["bus"][:, 8].real))
 
     def injections(self, x):
-        s, g = E.split_x(x)
-        pl = self.p_load_nom * s
-        ql = self.q_load_nom * s
-        pg = self.sgen_rated * g
+        pl, ql, pg, pb = self.inj(x)
         S = np.zeros(self.nb, dtype=complex)
         np.add.at(S, self.load_bus, -(pl + 1j * ql))
         np.add.at(S, self.sgen_bus, pg)
-        return S / self.baseMVA, pl, ql, pg
+        if len(pb):
+            np.add.at(S, self.sto_bus, -pb)
+        return S / self.baseMVA, pl, ql, pg, pb
 
     def solve(self, x) -> tuple[Solution, dict]:
-        Sbus, pl, ql, pg = self.injections(x)
+        Sbus, pl, ql, pg, pb = self.injections(x)
         V = self._V0.copy()
         V[self.ref] = self.vref
         pq, ref = self.pq, self.ref
@@ -109,7 +106,7 @@ class FastAC:
             V = Vm * np.exp(1j * Va)
             if not np.all(np.isfinite(V)):
                 break
-        return Solution(conv, V if conv else None), {"p_load": pl, "q_load": ql, "p_sgen": pg}
+        return Solution(conv, V if conv else None), {"p_load": pl, "q_load": ql, "p_sgen": pg, "p_sto": pb}
 
     def results(self, V):
         """pandapower-equivalent result quantities from a converged voltage vector."""

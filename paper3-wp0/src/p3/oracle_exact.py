@@ -65,37 +65,36 @@ ZERO_DELTA = {"vm_pu": 0.0, "loading": 0.0, "trafo_loading": 0.0, "p_from": 0.0,
 
 
 class Encoder:
-    def __init__(self, cfg: E.Config, env: E.Envelope = E.ENVELOPE_FULL, delta=None):
+    def __init__(self, cfg: E.Config, env: E.Envelope | None = None, delta=None):
         self.cfg = cfg
         self.d = dict(ZERO_DELTA, **(delta or {}))
         self.m = L.model(cfg)
         d = E.dims()
-        self.z = [z3.Real(f"s{i}") for i in range(d.n_load)] + [z3.Real(f"g{j}") for j in range(d.n_der)]
+        self.z = ([z3.Real(f"s{i}") for i in range(d.n_load)] + [z3.Real(f"g{j}") for j in range(d.n_der)]
+                  + [z3.Real(f"b{k}") for k in range(d.n_sto)])
         self.bounds = E.cont_bounds(env)
         net = E.apply_config(E.base_net(), cfg)
         self.sw = net.switch.closed.values.astype(float)
         self.lin = net.line.in_service.values.astype(float)
-        base = E._base_net()
-        self.p_load_nom = base.load.p_mw.values
-        self.rated = base.sgen.sn_mva.values
+        self.inj = E.injection_maps()
         self.theta = 2 * np.pi * np.arange(K) / K
 
     def envelope(self):
         cons = []
         for zi, (lo, hi) in zip(self.z, self.bounds):
-            cons += [zi >= lo, zi <= hi]
+            cons += [zi == lo] if lo == hi else [zi >= lo, zi <= hi]
         return cons
 
     def v_expr(self, b):
-        return _lin(self.z, self.m.Av[b], self.m.v0)
+        return _lin(self.z, self.m.Av[b], self.m.vc[b])
 
     def proj(self, l, k):
         a = np.cos(self.theta[k]) * self.m.AP_line[l] + np.sin(self.theta[k]) * self.m.AQ_line[l]
-        return _lin(self.z, a)
+        return _lin(self.z, a, np.sin(self.theta[k]) * self.m.cQ_line[l])
 
     def proj_trafo(self, t, k):
         a = np.cos(self.theta[k]) * self.m.AP_trafo[t] + np.sin(self.theta[k]) * self.m.AQ_trafo[t]
-        return _lin(self.z, a)
+        return _lin(self.z, a, np.sin(self.theta[k]) * self.m.cQ_trafo[t])
 
     def benign(self):
         cons = []
@@ -120,9 +119,11 @@ class Encoder:
         if kind == "trafo_p_hv":
             return self.m.AP_trafo[i], 0.0
         if kind == "load_p":
-            a = np.zeros(n); a[i] = self.p_load_nom[i]; return a, 0.0
+            return self.inj.Apl[i], 0.0
         if kind == "sgen_p":
-            a = np.zeros(n); a[E.dims().n_load + i] = self.rated[i]; return a, 0.0
+            return self.inj.Apg[i], 0.0
+        if kind == "storage_p":
+            return self.inj.Apb[i], 0.0
         if kind == "sw":
             return np.zeros(n), self.sw[i]
         if kind == "line_in":
@@ -180,28 +181,45 @@ def _model_x(model, z):
     return np.array(out)
 
 
-def solve(rule, cfgs=None, env=E.ENVELOPE_FULL, timeout_ms=60000, delta=None) -> ExactResult:
+def _solve_one(args):
+    rule, cfg, env, timeout_ms, delta = args
+    enc = Encoder(cfg, env, delta)
+    phi = enc.rule(rule)
+    sv = z3.Solver()
+    sv.set("timeout", timeout_ms)
+    sv.add(enc.envelope() + enc.benign() + [phi])
+    t1 = time.time()
+    r = sv.check()
+    dt = time.time() - t1
+    x = _model_x(sv.model(), enc.z) if r == z3.sat else None
+    return cfg, str(r), dt, x
+
+
+def solve(rule, cfgs=None, env=None, timeout_ms=60000, delta=None, workers=None) -> ExactResult:
+    """One Z3 query per radial configuration, in parallel processes (fork) when workers > 1."""
+    import os
+    from concurrent.futures import ProcessPoolExecutor
+    import multiprocessing as mp
     cfgs = E.enumerate_configs() if cfgs is None else cfgs
     t0 = time.time()
-    per, first = [], None
-    for cfg in cfgs:
-        enc = Encoder(cfg, env, delta)
-        try:
-            phi = enc.rule(rule)
-        except NotExpressible as e:
-            return ExactResult("not_expressible", None, None, time.time() - t0, per, f"measurement {e} has no linear form")
-        s = z3.Solver()
-        s.set("timeout", timeout_ms)
-        s.add(enc.envelope() + enc.benign() + [phi])
-        t1 = time.time()
-        r = s.check()
-        dt = time.time() - t1
-        x = _model_x(s.model(), enc.z) if r == z3.sat else None
-        per.append((cfg, str(r), dt, x))
-        if r == z3.sat and first is None:
-            first = (cfg, x)
-    status = "sat" if first else ("unsat" if all(p[1] == "unsat" for p in per) else "unknown")
-    return ExactResult(status, first[0] if first else None, first[1] if first else None, time.time() - t0, per)
+    radial = [c for c in cfgs if E.is_radial(c)]
+    skipped = len(cfgs) - len(radial)
+    try:
+        Encoder(radial[0], env, delta).rule(rule)
+    except NotExpressible as e:
+        return ExactResult("not_expressible", None, None, time.time() - t0, [], f"measurement {e} has no linear form")
+    workers = workers or min(os.cpu_count() or 1, 8)
+    jobs = [(rule, c, env, timeout_ms, delta) for c in radial]
+    if workers > 1 and len(jobs) > 4:
+        with ProcessPoolExecutor(workers, mp_context=mp.get_context("fork")) as ex:
+            per = list(ex.map(_solve_one, jobs, chunksize=max(1, len(jobs) // (4 * workers))))
+    else:
+        per = [_solve_one(j) for j in jobs]
+    sat = [p for p in per if p[1] == "sat"]
+    status = "sat" if sat else ("unsat" if all(p[1] == "unsat" for p in per) else "unknown")
+    note = f"{skipped} meshed configurations not covered (LinDistFlow is radial only)" if skipped else ""
+    first = sat[0] if sat else None
+    return ExactResult(status, first[0] if first else None, first[3] if first else None, time.time() - t0, per, note)
 
 
 def load_delta(path):

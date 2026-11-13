@@ -39,10 +39,10 @@ def main():
     t0 = time.time()
     rows, best = [], (-np.inf, None, None)
     for i, cfg in enumerate(E.enumerate_configs()):
-        st = O._de_one(loss_rule, cfg, E.ENVELOPE_FULL, a.budget_per_topology, a.seed + 100 + i)
+        st = O._de_one(loss_rule, cfg, E.full(), a.budget_per_topology, a.seed + 100 + i)
         dmax = 0.1 * st["best"]
         m = st["best_m"]
-        s, g = E.split_x(st["best_x"])
+        s, g, _ = E.split_x(st["best_x"])
         rows.append([f"`{cfg.label}`", st["n"], C.fmt(dmax, 4), C.fmt(dmax > m_thr),
                      C.fmt(m[vm_cols].min(), 4), C.fmt(m[ld_cols].max(), 2), C.fmt(s.mean(), 3), C.fmt(g.mean(), 3)])
         if dmax > best[0]:
