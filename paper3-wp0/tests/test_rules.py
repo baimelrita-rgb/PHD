@@ -49,3 +49,12 @@ def test_saved_rules_validate():
     if C.RULES_PATH.exists():
         rules = R.load(C.RULES_PATH)
         assert set(rules) == {"R1", "R2", "R3"}
+
+
+def test_robust_encoding_zero_delta_equals_nominal():
+    from p3 import envelope as E, oracle_exact as X
+    cfg = E.base_config()
+    for rule in (R1, R2):
+        a = X.solve(rule, (cfg,)).status
+        b = X.solve(rule, (cfg,), delta=dict(X.ZERO_DELTA)).status
+        assert a == b

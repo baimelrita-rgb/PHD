@@ -9,3 +9,13 @@
 - T1 done: download md5 verified. G1 no (no model file), G2 fail (arp-spoof-dos has 2 instances). `dataset_inventory.md`.
 - T7 done: reconstructed model matches the recorded physics after fitting transformer parameters; voltage max error 1.06e-03 pu. `sherlock_model_check.md`.
 - T8 done: `feasibility_report.md`. Recommendation: go with changes.
+
+## Round 2 (owner decisions 1 to 6)
+
+- D1 done: arp-spoof-dos excluded from G2; 3 process-level types remain (G2 fails with "at least 4 types", passes with "at least 3"). `dataset_inventory.md`.
+- D2 done: public Wattson (fkie-cad/wattson) has only a generic CIGRE MV example; Sherlock's scenario is not public.
+- D3 done: tap changer identified from data: HV side, 1.500 % per step; validation error at the noise floor. `sherlock_taps.md`, `rules/sherlock_grid_params.json`.
+- D4 done: R3 margin calibrated by search (m 0.86726 MW); no counterexample at 2000 or 32000 flows. `rules.md`, `oracle_search*.md`.
+- D5 done: robust exact layer with validated error bounds (`rules/model_error_bounds.json`); verdicts R1 refuted, R2 refuted, R3 inconclusive in the exact layer. `oracle_exact.md`, `lindistflow_error.md`.
+- D6 done: transformer loading limit added (1929 of 2000 benign); N-1 reconfigurations kept, all 4 Sherlock reconfigurations inside the envelope. `envelope_smoke.md`.
+- WP1-a done: physics residual detector on Sherlock telemetry, 0.00059 false alarms per benign record; control-and-freeze 5/5, drift-off 3/4, industroyer 2/7. `physics_residual.md`.

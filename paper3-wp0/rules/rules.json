@@ -46,7 +46,13 @@
   },
   "R3": {
     "name": "R3 power balance violation",
-    "description": "|sum transformer P_hv - sum load P + sum DER P| > m; m = 1.5 x max loss over the full envelope sample",
+    "description": "|sum transformer P_hv - sum load P + sum DER P| > m; m = 1.5 x max benign loss, maximum taken over samples AND a DE search",
+    "calibration": {
+      "sample_max_mw": 0.268139030520781,
+      "search_max_mw": 0.5781721854586555,
+      "search_topology": "ties=S1;out=L1",
+      "factor": 1.5
+    },
     "any_of": [
       [
         {
@@ -83,7 +89,7 @@
             "sgen_p.8": 1.0
           },
           "op": ">",
-          "value": 0.40257711747131997,
+          "value": 0.8672582781879832,
           "scale": 0.1
         }
       ],
@@ -122,7 +128,7 @@
             "sgen_p.8": -1.0
           },
           "op": ">",
-          "value": 0.40257711747131997,
+          "value": 0.8672582781879832,
           "scale": 0.1
         }
       ]

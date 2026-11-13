@@ -5,6 +5,7 @@ Names:
   loading.<line>         line loading_percent (pandapower definition)
   p_from.<line>          line active power at from end, MW
   trafo_p_hv.<trafo>     transformer active power at HV side, MW
+  trafo_loading.<trafo>  transformer loading_percent (pandapower definition)
   sw.<switch>            switch state, 1 closed, 0 open
   line_in.<line>         line in service, 1 or 0
   load_p.<load>          metered load active power, MW   (added: needed by R2, R3)
@@ -30,6 +31,7 @@ def names() -> tuple[str, ...]:
     n += [f"loading.{l}" for l in net.line.index]
     n += [f"p_from.{l}" for l in net.line.index]
     n += [f"trafo_p_hv.{t}" for t in net.trafo.index]
+    n += [f"trafo_loading.{t}" for t in net.trafo.index]
     n += [f"sw.{s}" for s in net.switch.index]
     n += [f"line_in.{l}" for l in net.line.index]
     n += [f"load_p.{i}" for i in net.load.index]
@@ -52,7 +54,7 @@ def vector_from_fast(r: dict, cfg: E.Config) -> np.ndarray:
     sw, lin = _discrete(cfg)
     return np.concatenate([
         r["vm_pu"], r["line_loading_percent"], r["line_p_from_mw"], r["trafo_p_hv_mw"],
-        sw, lin, r["p_load"], r["p_sgen"],
+        r["trafo_loading_percent"], sw, lin, r["p_load"], r["p_sgen"],
     ])
 
 
@@ -63,6 +65,7 @@ def vector_from_net(net) -> np.ndarray:
         np.where(lin, net.res_line.loading_percent.values, 0.0),
         np.where(lin, net.res_line.p_from_mw.values, 0.0),
         net.res_trafo.p_hv_mw.values,
+        net.res_trafo.loading_percent.values,
         net.switch.closed.values.astype(float),
         lin.astype(float),
         net.load.p_mw.values,
@@ -74,12 +77,12 @@ def vector_from_net(net) -> np.ndarray:
 def _slices():
     idx = index()
     vm = [idx[k] for k in names() if k.startswith("vm_pu.")]
-    ld = [idx[k] for k in names() if k.startswith("loading.")]
+    ld = [idx[k] for k in names() if k.startswith("loading.") or k.startswith("trafo_loading.")]
     return np.array(vm), np.array(ld)
 
 
 def benign_check(m: np.ndarray) -> tuple[bool, float]:
-    """Operating limits. Returns (benign, violation) with violation >= 0 (0 iff benign)."""
+    """Operating limits (bus voltage, line AND transformer loading). Returns (benign, violation) with violation >= 0 (0 iff benign)."""
     vm_i, ld_i = _slices()
     vm = m[vm_i]
     viol = max(0.0, float(np.max(E.V_MIN - vm)), float(np.max(vm - E.V_MAX)))

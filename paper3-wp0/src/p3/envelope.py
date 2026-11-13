@@ -12,7 +12,8 @@ Envelope (all parameters explicit, see ENVELOPE_FULL and ENVELOPE_NARROW):
     open item for the owner.
 
 A sampled state is benign iff the AC power flow converges and
-  bus vm_pu in [0.90, 1.10] for all buses and line loading_percent <= 100.
+  bus vm_pu in [0.90, 1.10] for all buses, line loading_percent <= 100 and
+  transformer loading_percent <= 100 (added after WP0 round 1, owner decision 6).
 """
 from __future__ import annotations
 

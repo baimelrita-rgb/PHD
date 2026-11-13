@@ -90,9 +90,12 @@ class LinDistFlow:
                 self.AQ_line[li] = sign * self.AQb[pos[c]] * self.sn
                 self.line_active[li] = True
         self.AP_trafo = np.zeros((len(net.trafo), Pin.shape[1]))
+        self.AQ_trafo = np.zeros((len(net.trafo), Pin.shape[1]))
         for c in children:
             if br_kind[c] == "trafo":
                 self.AP_trafo[br_idx[c]] = self.APb[pos[c]] * self.sn
+                self.AQ_trafo[br_idx[c]] = self.AQb[pos[c]] * self.sn
+        self.smax_trafo = net.trafo.sn_mva.values.astype(float)
         vn = net.bus.vn_kv.values[[pos[int(b)] for b in net.line.from_bus]]
         self.smax_line = np.sqrt(3) * vn * (net.line.max_i_ka * net.line.df * net.line.parallel).values  # MVA at 1 pu
 
@@ -105,6 +108,15 @@ class LinDistFlow:
     def loading_percent(self, x):
         P, Q = self.AP_line @ x, self.AQ_line @ x
         return np.where(self.line_active, np.hypot(P, Q) / self.smax_line * 100, 0.0)
+
+    def trafo_loading_percent(self, x):
+        return np.hypot(self.AP_trafo @ x, self.AQ_trafo @ x) / self.smax_trafo * 100
+
+    def p_from(self, x):
+        return self.AP_line @ x
+
+    def trafo_p(self, x):
+        return self.AP_trafo @ x
 
 
 @lru_cache(maxsize=None)

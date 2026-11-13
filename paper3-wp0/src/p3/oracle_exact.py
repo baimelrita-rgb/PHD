@@ -4,6 +4,19 @@ One query per radial topology. SAT gives a counterexample of the LINEAR model, w
 is then re-checked on the AC model. UNSAT for every topology is a certificate that is
 valid for the linear model only.
 
+Robust mode (owner decision 5): with model-error margins delta (validated by an
+adversarial search, see scripts/04 and rules/model_error_bounds.json), every AC
+condition is mapped to the weakest linear condition it implies, assuming
+|linear - AC| <= delta for each quantity:
+  AC vm in [0.9, 1.1]   ->  linear vm in [0.9 - d_vm, 1.1 + d_vm]
+  AC vm <  c            ->  linear vm <  c + d_vm         (and > c  -> > c - d_vm)
+  AC loading <= 100     ->  linear loading <= 100 + d_ld  (lines, transformers)
+  AC loading >  c       ->  linear loading >  c - d_ld
+  linear atom sum w_k m_k > c  ->  linear sum > c - sum |w_k| d_k  (d = 0 for metered load/DER)
+Then UNSAT means: no benign AC counterexample exists, PROVIDED the AC-to-linear
+error stays within delta on the envelope. delta is an empirical bound, so the claim
+is "certified relative to LinDistFlow with a validated error bound".
+
 Encoding choices (all keep UNSAT sound for the linear model):
   * vm thresholds: vm < c  <=>  v < c^2 (v = vm^2, c > 0), exact.
   * line apparent power S = sqrt(P^2 + Q^2) is not linear. With K-gon projections
@@ -48,9 +61,13 @@ class ExactResult:
     note: str = ""
 
 
+ZERO_DELTA = {"vm_pu": 0.0, "loading": 0.0, "trafo_loading": 0.0, "p_from": 0.0, "trafo_p_hv": 0.0}
+
+
 class Encoder:
-    def __init__(self, cfg: E.Config, env: E.Envelope = E.ENVELOPE_FULL):
+    def __init__(self, cfg: E.Config, env: E.Envelope = E.ENVELOPE_FULL, delta=None):
         self.cfg = cfg
+        self.d = dict(ZERO_DELTA, **(delta or {}))
         self.m = L.model(cfg)
         d = E.dims()
         self.z = [z3.Real(f"s{i}") for i in range(d.n_load)] + [z3.Real(f"g{j}") for j in range(d.n_der)]
@@ -76,14 +93,22 @@ class Encoder:
         a = np.cos(self.theta[k]) * self.m.AP_line[l] + np.sin(self.theta[k]) * self.m.AQ_line[l]
         return _lin(self.z, a)
 
+    def proj_trafo(self, t, k):
+        a = np.cos(self.theta[k]) * self.m.AP_trafo[t] + np.sin(self.theta[k]) * self.m.AQ_trafo[t]
+        return _lin(self.z, a)
+
     def benign(self):
         cons = []
+        dv = self.d["vm_pu"]
         for b in range(len(self.m.buses)):
             v = self.v_expr(b)
-            cons += [v >= E.V_MIN ** 2, v <= E.V_MAX ** 2]
+            cons += [v >= max(E.V_MIN - dv, 0.0) ** 2, v <= (E.V_MAX + dv) ** 2]
         for l in np.where(self.m.line_active)[0]:
-            smax = self.m.smax_line[l] * E.LOADING_MAX / 100
+            smax = self.m.smax_line[l] * (E.LOADING_MAX + self.d["loading"]) / 100
             cons += [self.proj(l, k) <= smax for k in range(K)]
+        for t in range(len(self.m.smax_trafo)):
+            smax = self.m.smax_trafo[t] * (E.LOADING_MAX + self.d["trafo_loading"]) / 100
+            cons += [self.proj_trafo(t, k) <= smax for k in range(K)]
         return cons
 
     def linear_meas(self, name):
@@ -114,8 +139,13 @@ class Encoder:
             c = float(a["value"])
             if kind == "vm_pu":
                 v = self.v_expr(i)
-                return v < c * c if a["op"] == "<" else v > c * c
+                dv = self.d["vm_pu"]
+                if a["op"] == "<":
+                    return v < (c + dv) ** 2
+                return v > max(c - dv, 0.0) ** 2
             if kind == "loading":
+                dl = self.d["loading"]
+                c = c - dl if a["op"] == ">" else c + dl
                 if not self.m.line_active[i]:
                     return z3.BoolVal(0.0 < c) if a["op"] == "<" else z3.BoolVal(0.0 > c)
                 cap = self.m.smax_line[i] * c / 100
@@ -123,17 +153,19 @@ class Encoder:
                     return z3.Or([self.proj(i, k) > cap * np.cos(np.pi / K) for k in range(K)])
                 return z3.And([self.proj(i, k) < cap for k in range(K)])
             coef, const = self.linear_meas(a["meas"])
+            dk = self.d.get(kind, 0.0)
             e = _lin(self.z, coef, const)
-            return e < c if a["op"] == "<" else e > c
+            return e < c + dk if a["op"] == "<" else e > c - dk
         if a["type"] == "linear":
-            coef = np.zeros(len(self.z)); const = 0.0
+            coef = np.zeros(len(self.z)); const = 0.0; slack = 0.0
             for k, w in a["coeffs"].items():
-                if k.split(".")[0] in ("vm_pu", "loading"):
+                if k.split(".")[0] in ("vm_pu", "loading", "trafo_loading"):
                     raise NotExpressible(k)
                 ck, cc = self.linear_meas(k)
                 coef += w * ck; const += w * cc
+                slack += abs(w) * self.d.get(k.split(".")[0], 0.0)
             e = _lin(self.z, coef, const)
-            return e < a["value"] if a["op"] == "<" else e > a["value"]
+            return e < a["value"] + slack if a["op"] == "<" else e > a["value"] - slack
         raise ValueError(a)
 
     def rule(self, rule):
@@ -148,12 +180,12 @@ def _model_x(model, z):
     return np.array(out)
 
 
-def solve(rule, cfgs=None, env=E.ENVELOPE_FULL, timeout_ms=60000) -> ExactResult:
+def solve(rule, cfgs=None, env=E.ENVELOPE_FULL, timeout_ms=60000, delta=None) -> ExactResult:
     cfgs = E.enumerate_configs() if cfgs is None else cfgs
     t0 = time.time()
     per, first = [], None
     for cfg in cfgs:
-        enc = Encoder(cfg, env)
+        enc = Encoder(cfg, env, delta)
         try:
             phi = enc.rule(rule)
         except NotExpressible as e:
@@ -170,3 +202,9 @@ def solve(rule, cfgs=None, env=E.ENVELOPE_FULL, timeout_ms=60000) -> ExactResult
             first = (cfg, x)
     status = "sat" if first else ("unsat" if all(p[1] == "unsat" for p in per) else "unknown")
     return ExactResult(status, first[0] if first else None, first[1] if first else None, time.time() - t0, per)
+
+
+def load_delta(path):
+    import json
+    d = json.loads(open(path).read())
+    return {k: float(v) for k, v in d["delta"].items()}

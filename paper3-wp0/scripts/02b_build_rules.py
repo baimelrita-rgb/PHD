@@ -32,6 +32,7 @@ def downstream_loads(line_idx: int) -> list[int]:
 def main():
     ap = C.parser(__doc__)
     ap.add_argument("--n", type=int, default=2000)
+    ap.add_argument("--calib-budget", type=int, default=3000, help="DE power flows per topology for the R3 margin search")
     a = ap.parse_args()
     idx = M.index()
 
@@ -68,7 +69,16 @@ def main():
     rf = C.evaluate_batch(Xf, cif, cfgs)
     Bf = rf["M"][rf["benign"]]
     d = sum(c * Bf[:, idx[k]] for k, c in co.items())
-    m_marg = 1.5 * float(d.max())
+    # margin calibration by search (owner decision 4): maximise the residual over benign
+    # states with DE per topology; sample percentiles miss the high-loss corner
+    from p3 import oracle_search as O
+    loss_rule = {"atoms": [{"type": "linear", "coeffs": co, "op": ">", "value": 0.0, "scale": 0.1}]}
+    search_max, search_cfg = -np.inf, None
+    for i, cfg in enumerate(cfgs):
+        st = O._de_one(loss_rule, cfg, E.ENVELOPE_FULL, a.calib_budget, a.seed + 100 + i)
+        if 0.1 * st["best"] > search_max:
+            search_max, search_cfg = 0.1 * st["best"], cfg
+    m_marg = 1.5 * max(float(d.max()), search_max)
     co_neg = {k: -c for k, c in co.items()}
 
     rules = {
@@ -80,7 +90,9 @@ def main():
                "atoms": [{"type": "threshold", "meas": f"loading.{R2_LINE}", "op": ">", "value": x_thr, "scale": 10.0},
                          {"type": "linear", "coeffs": coeffs_dl, "op": "<", "value": y_thr, "scale": 1.0}]},
         "R3": {"name": "R3 power balance violation",
-               "description": "|sum transformer P_hv - sum load P + sum DER P| > m; m = 1.5 x max loss over the full envelope sample",
+               "description": "|sum transformer P_hv - sum load P + sum DER P| > m; m = 1.5 x max benign loss, maximum taken over samples AND a DE search",
+               "calibration": {"sample_max_mw": float(d.max()), "search_max_mw": float(search_max),
+                               "search_topology": search_cfg.label, "factor": 1.5},
                "any_of": [[{"type": "linear", "coeffs": co, "op": ">", "value": m_marg, "scale": 0.1}],
                           [{"type": "linear", "coeffs": co_neg, "op": ">", "value": m_marg, "scale": 0.1}]]},
     }
@@ -99,13 +111,15 @@ def main():
         ["R2 narrow samples where R2 fires", r2_narrow_fires],
         ["R3 full-envelope samples / benign", f"{a.n} / {int(rf['benign'].sum())} (seed {a.seed})"],
         ["R3 observed loss d: min, max MW", f"{d.min():.5f}, {d.max():.5f}"],
-        ["R3 margin m = 1.5 x max loss, MW", C.fmt(m_marg, 5)],
+        [f"R3 max loss found by DE ({a.calib_budget} flows per topology), MW", f"{search_max:.5f} (`{search_cfg.label}`)"],
+        ["R3 margin m = 1.5 x max(sample max, search max), MW", C.fmt(m_marg, 5)],
     ])
     body += ("\nNotes.\n\n"
              "1. R2 and R3 need metered load and DER powers, so `load_p.*` and `sgen_p.*` were added to the measurement vector.\n"
-             "2. R3 is written for the whole substation (both transformers) rather than one feeder, because tie switches move loads between feeders.\n"
-             "3. R3 |d| > m is a disjunction; the DSL holds it as `any_of` with two conjunctive clauses.\n"
-             "4. The R2 downstream set is fixed in the base topology. Reconfiguration can change which loads are actually downstream.\n")
+             "2. R3's margin is calibrated by search, not by sampling (owner decision 4). WP0 round 1 used the sample maximum only; the oracle then found benign counterexamples (see `r3_diagnostic.md`).\n"
+             "3. R3 is written for the whole substation (both transformers) rather than one feeder, because tie switches move loads between feeders.\n"
+             "4. R3 |d| > m is a disjunction; the DSL holds it as `any_of` with two conjunctive clauses.\n"
+             "5. The R2 downstream set is fixed in the base topology. Reconfiguration can change which loads are actually downstream.\n")
     C.write_report("rules.md", body)
     print(f"tau={tau:.5f} x={x_thr:.3f} y={y_thr:.4f} m={m_marg:.5f}")
 

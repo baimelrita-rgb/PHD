@@ -1,6 +1,6 @@
 # Paper 3, WP0: physics oracle feasibility
 
-Plan: `WP0_FEASIBILITY_PLAN.md`. Results: `reports/feasibility_report.md`.
+Plan: `WP0_FEASIBILITY_PLAN.md`. Results: `reports/feasibility_report.md`. Next stages, estimates, risks: `reports/wp1_plan.md`.
 
 ```
 pip install -e .
@@ -19,5 +19,7 @@ SEED=7 bash scripts/run_all.sh
 | `src/p3/oracle_exact.py` | Z3 encoding (envelope + LinDistFlow + rule) |
 | `src/p3/cegis.py` | counterexample-guided threshold refinement |
 | `src/p3/sherlock_io.py` | dataset inventory and loaders (data is parsed, never executed) |
+| `src/p3/sherlock_model.py` | reconstructed Sherlock grid (switch mapping, identified transformer and tap parameters) |
+| `src/p3/sherlock_residual.py` | physics residual of SCADA telemetry (WP1-a) |
 
 Deviations from the plan, all documented in the reports: an extra fast AC solver; `load_p.*` and `sgen_p.*` added to the measurement vector (needed by R2 and R3); an `any_of` disjunction in the DSL for R3's absolute value; diagnostic scripts `02b_build_rules.py` and `03b_r3_diagnostic.py`; budget-sensitivity reports.

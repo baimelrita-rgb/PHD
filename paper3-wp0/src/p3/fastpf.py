@@ -60,6 +60,7 @@ class FastAC:
         self.br_status = branch[:, 10].real > 0
         self.fbus = branch[:, 0].real.astype(int)
         self.tbus = branch[:, 1].real.astype(int)
+        self.trafo_sn = net.trafo.sn_mva.values
         self.imax_ka = (net.line.max_i_ka * net.line.df * net.line.parallel).values
         base = E._base_net()
         self.p_load_nom = base.load.p_mw.values
@@ -127,6 +128,9 @@ class FastAC:
             "line_loading_percent": loading,
             "line_p_from_mw": np.where(self.br_status[lb], Sf[lb].real, 0.0),
             "trafo_p_hv_mw": Sf[self.trafo_br].real,
+            "trafo_loading_percent": 100 * np.maximum(
+                np.abs(Sf[self.trafo_br]) / vm[self.fbus[self.trafo_br]],
+                np.abs(St[self.trafo_br]) / vm[self.tbus[self.trafo_br]]) / self.trafo_sn,
         }
 
 
@@ -148,3 +152,78 @@ def solve_state(x, cfg: E.Config):
     r = s.results(sol.V)
     r.update(inj)
     return True, r
+
+
+class FastNet:
+    """Generic version of FastAC for any pandapower net with loads, sgens, storage and one
+    ext grid: Ybus taken from pandapower's internal case once per topology (switch and tap
+    state); injections and the slack voltage change per call."""
+
+    def __init__(self, net):
+        pp.runpp(net, numba=True)
+        ppc = net._ppc
+        self.baseMVA = float(ppc["baseMVA"])
+        bus, branch = ppc["bus"].copy(), ppc["branch"].copy()
+        Ybus, Yf, Yt = makeYbus(self.baseMVA, bus, branch)
+        self.Y, self.Yf, self.Yt = (np.asarray(m.todense()) for m in (Ybus, Yf, Yt))
+        btype = bus[:, 1].real.astype(int)
+        self.ref = np.where(btype == 3)[0]
+        self.nb = bus.shape[0]
+        # only buses electrically reachable from the slack (open switches leave isolated aux buses)
+        from scipy.sparse.csgraph import breadth_first_order
+        from scipy.sparse import csr_matrix
+        reach = breadth_first_order(csr_matrix(np.abs(self.Y) > 0), int(self.ref[0]), directed=False, return_predecessors=False)
+        live = np.zeros(self.nb, bool); live[reach] = True
+        self.live = live
+        self.pq = np.where((btype != 3) & live)[0]
+        bl = net._pd2ppc_lookups["bus"]
+        self.lb = {k: bl[getattr(net, k).bus.values] for k in ("load", "sgen", "storage")}
+        self.bus_ppc = bl[net.bus.index.values]
+        self.vn_kv = bus[:, 9].real
+        self.fbus = branch[:, 0].real.astype(int)
+        self.tbus = branch[:, 1].real.astype(int)
+        f0, f1 = net._pd2ppc_lookups["branch"]["line"]
+        t0, t1 = net._pd2ppc_lookups["branch"]["trafo"]
+        self.line_br, self.trafo_br = np.arange(f0, f1), np.arange(t0, t1)
+        self.br_on = branch[:, 10].real > 0
+        self.V0 = bus[:, 7].real * np.exp(1j * np.deg2rad(bus[:, 8].real))
+
+    def solve(self, inj: dict, vm_ref: float, va_ref_deg: float):
+        """inj: {"load": (p, q, on), "sgen": (p, q, on), "storage": (p, q, on)} in MW/Mvar."""
+        S = np.zeros(self.nb, dtype=complex)
+        for kind, sign in (("load", -1.0), ("sgen", 1.0), ("storage", -1.0)):
+            p, q, on = inj[kind]
+            np.add.at(S, self.lb[kind], sign * on * (p + 1j * q))
+        S /= self.baseMVA
+        S[~self.live] = 0.0
+        V = self.V0.copy()
+        V[~self.live] = 0.0
+        V[self.ref] = vm_ref * np.exp(1j * np.deg2rad(va_ref_deg))
+        pq, Y = self.pq, self.Y
+        for _ in range(MAX_IT):
+            mis = V * np.conj(Y @ V) - S
+            F = np.r_[mis[pq].real, mis[pq].imag]
+            if np.max(np.abs(F)) < TOL:
+                self.V0 = np.where(self.live, V, self.V0)
+                return V
+            Ibus = Y @ V
+            Vn = V / np.abs(V)
+            dVm = V[:, None] * np.conj(Y * Vn[None, :])
+            dVm[np.diag_indices_from(dVm)] += np.conj(Ibus) * Vn
+            dVa = -1j * V[:, None] * np.conj(Y * V[None, :])
+            dVa[np.diag_indices_from(dVa)] += 1j * V * np.conj(Ibus)
+            A, B = dVa[np.ix_(pq, pq)], dVm[np.ix_(pq, pq)]
+            dx = np.linalg.solve(np.block([[A.real, B.real], [A.imag, B.imag]]), -F)
+            Va, Vm = np.angle(V), np.abs(V)
+            Va[pq] += dx[: len(pq)]
+            Vm[pq] += dx[len(pq):]
+            V = Vm * np.exp(1j * Va)
+            if not np.all(np.isfinite(V)):
+                break
+        return None
+
+    def results(self, V):
+        Sf = V[self.fbus] * np.conj(self.Yf @ V) * self.baseMVA
+        return {"vm_pu": np.abs(V)[self.bus_ppc],
+                "line_p_from_mw": np.where(self.br_on[self.line_br], Sf[self.line_br].real, 0.0),
+                "trafo_p_hv_mw": Sf[self.trafo_br].real}

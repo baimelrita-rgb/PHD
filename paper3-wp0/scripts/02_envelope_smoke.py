@@ -13,6 +13,38 @@ from p3 import envelope as E
 from p3 import measure as M
 
 
+def sherlock_reconfigurations():
+    """Benign reconfiguration procedures in Sherlock 01-Basic (cable maintenance, separator
+    movement), mapped to (closed tie switches, line out) of this envelope. Sherlock switches
+    0..7 are pandapower's own; switch 8+2l / 9+2l are the ends of line l (see sherlock_model_check.md)."""
+    from p3 import sherlock_io as S
+    if not S.ROOT_DEFAULT.exists():
+        return None
+    net = E.base_net()
+    tie_of = {}  # pandapower switch index -> tie name (both ends of a tie line)
+    for name, sidx in E.tie_switch_index(net).items():
+        line = int(net.switch.at[sidx, "element"])
+        for s2 in net.switch.index[(net.switch.et == "l") & (net.switch.element == line)]:
+            tie_of[int(s2)] = name
+    out = []
+    for split in ("train", "test"):
+        cfg = S.load_config(S.ROOT_DEFAULT, split)["playbooks"][0]["config"]
+        if "cable_maintenance_element" in cfg:
+            ties = sorted({tie_of[int(x.split(".")[1])] for x in cfg["cable_maintenance_close_switches"] if int(x.split(".")[1]) in tie_of})
+            out.append((split, "cable maintenance", tuple(ties), int(cfg["cable_maintenance_element"].split(".")[1])))
+        if "separator_movement_close_element" in cfg:
+            c = int(cfg["separator_movement_close_element"].split(".")[1])
+            o = int(cfg["separator_movement_open_element"].split(".")[1])
+            out.append((split, "separator movement", (tie_of[c],), (o - 8) // 2))
+    known = {frozenset(E.active_lines(E.apply_config(E.base_net(), c))) for c in E.enumerate_configs()}
+    rows = []
+    for split, ev, ties, line in out:
+        c = E.Config(ties, line)
+        key = frozenset(E.active_lines(E.apply_config(E.base_net(), c)))
+        rows.append([split, ev, f"`{c.label}`", "yes" if key in known else "NO"])
+    return rows
+
+
 def main():
     ap = C.parser(__doc__)
     ap.add_argument("--n", type=int, default=2000)
@@ -33,6 +65,8 @@ def main():
     low_v = conv & (np.nanmin(Mx[:, vm_cols], axis=1) < E.V_MIN)
     high_v = conv & (np.nanmax(Mx[:, vm_cols], axis=1) > E.V_MAX)
     over_l = conv & (np.nanmax(Mx[:, ld_cols], axis=1) > E.LOADING_MAX)
+    tl_cols = [idx[k] for k in names if k.startswith("trafo_loading.")]
+    over_t = conv & (np.nanmax(Mx[:, tl_cols], axis=1) > E.LOADING_MAX)
 
     # reference cross-check with pandapower runpp
     rng = np.random.default_rng(a.seed)
@@ -67,8 +101,13 @@ def main():
         ["per-DER output of rated (q = 0)", f"{E.ENVELOPE_FULL.der_scale}, {E.dims().n_der} DER"],
         ["discrete topologies (connected, radial, tie switches S1 S2 S3, at most one line out)", len(cfgs)],
         ["transformer taps", "fixed: the CIGRE MV model has no tap changer (tap fields NaN)"],
-        ["benign limits", f"vm_pu in [{E.V_MIN}, {E.V_MAX}], line loading <= {E.LOADING_MAX} %"],
+        ["benign limits", f"vm_pu in [{E.V_MIN}, {E.V_MAX}], line and transformer loading <= {E.LOADING_MAX} %"],
     ])
+    sh = sherlock_reconfigurations()
+    if sh:
+        body += ("\nSherlock's own benign reconfiguration procedures, mapped to this envelope "
+                 "(evidence for keeping N-1 reconfigurations as benign, owner decision 6):\n\n")
+        body += C.md_table(["Sherlock split", "procedure", "topology", "inside the envelope"], sh)
     body += "\nTopologies: " + ", ".join(f"`{c.label}`" for c in cfgs) + "\n\n"
     body += "## Acceptance\n\n"
     body += C.md_table(["quantity", "value"], [
@@ -79,6 +118,7 @@ def main():
         ["rejected or flagged: some bus below 0.90 pu", int(low_v.sum())],
         ["rejected or flagged: some bus above 1.10 pu", int(high_v.sum())],
         ["rejected or flagged: some line above 100 %", int(over_l.sum())],
+        ["rejected or flagged: some transformer above 100 %", int(over_t.sum())],
         ["accepted (benign)", int(ben.sum())],
         ["acceptance rate", C.fmt(ben.mean())],
         ["runtime, fast AC solver, total s", C.fmt(t_eval, 2)],
@@ -86,7 +126,7 @@ def main():
         ["runtime per power flow, pandapower runpp, ms", C.fmt(1000 * t_ref, 2)],
         [f"fast solver vs runpp: max abs diff over all measurements ({len(chk)} samples)", f"{max_err:.2e}"],
         [f"fast solver vs runpp: convergence agreement", f"{conv_agree}/{len(chk)}"],
-        [f"max transformer loading %, benign samples in the runpp subset (observation, not a limit)", C.fmt(tr_load_max, 2)],
+        ["max transformer loading % over converged samples (before the limit)", C.fmt(float(np.nanmax(Mx[conv][:, tl_cols])), 2)],
     ])
     body += "\nA sample can violate more than one limit, so the rejection rows overlap.\n\n"
     body += "Per-topology acceptance:\n\n"
