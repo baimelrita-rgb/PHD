@@ -79,8 +79,11 @@ def main():
     ap.add_argument("--budget", type=int, default=150)
     ap.add_argument("--iters", type=int, default=1)
     ap.add_argument("--settle-s", type=float, default=60.0)
+    ap.add_argument("--tag", default="")
+    ap.add_argument("--margin-factor", type=float, default=MARGIN_FACTOR)
     ap.set_defaults(grid="semiurban")
     a = C.init(ap.parse_args())
+    globals()["MARGIN_FACTOR"] = a.margin_factor
     t0 = time.time()
     d = np.load(C.interim("se_residuals.npz"), allow_pickle=True)
     obs = list(d["obs"]); obs_pos = {n: k for k, n in enumerate(obs)}
@@ -170,7 +173,9 @@ def main():
     body += "\nDetection per attack type:\n\n" + C.md_table(["type", "instances", "SE-BDD detector", "certified library (single record)", f"library with persistence L = {L}", "detector or library with persistence"],
                                                          [[t, *per[t]] for t in types])
     body += "\nPer instance:\n\n" + C.md_table(["id", "type", "detector", "library", "library with persistence"], rows)
-    C.write_report("semiurban_consolidation.md", body)
+    np.savez_compressed(C.interim(f"semiurban_fires{a.tag}.npz"), t=Tte, det=det, fires=fires, fires_p=fires_p, L=L)
+    body += f"\nMargin factor {MARGIN_FACTOR}, seed {a.seed}.\n"
+    C.write_report(f"semiurban_consolidation{a.tag}.md", body)
     print({t: per[t] for t in types}, "library FA", f"{fires[benign].mean():.5f}", "with persistence", f"{fires_p[benign].mean():.5f}", "detector FA", f"{det[benign].mean():.5f}", f"{wall:.0f}s")
 
 

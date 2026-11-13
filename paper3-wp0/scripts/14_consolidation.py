@@ -71,8 +71,12 @@ def main():
     ap.add_argument("--detectors", default="D1,AE")
     ap.add_argument("--min-cfg-records", type=int, default=300)
     ap.add_argument("--settle-s", type=float, default=60.0)
+    ap.add_argument("--tag", default="", help="suffix for output files (robustness runs)")
+    ap.add_argument("--margin-factor", type=float, default=Y.MARGIN_FACTOR)
+    ap.add_argument("--alarms", default="detector_alarms_physics.npz")
     ap.set_defaults(grid="sherlock")
     a = C.init(ap.parse_args())
+    Y.MARGIN_FACTOR = a.margin_factor
     t0 = time.time()
     cfgs = E.enumerate_configs()
     cidx = Y.config_index()
@@ -105,7 +109,7 @@ def main():
             n = {k: max(v, noise_cfg[T].get(k, 0.0)) for k, v in n.items()}
         return n
 
-    al = np.load(C.interim("detector_alarms_physics.npz"))
+    al = np.load(C.interim(a.alarms))
     assert np.allclose(al["t"], Tte)
     det = np.zeros(len(Tte), bool)
     for d in a.detectors.split(","):
@@ -200,8 +204,11 @@ def main():
     body += "\n## Per attack type\n\n"
     body += C.md_table(["type", "instances", "detectors", "library (learned earlier)", "detectors or library"],
                        [[k, v[0], v[1], v[2], v[3]] for k, v in sorted(per.items())])
-    C.write_report("consolidation.md", body)
-    R.save({k: v["rule"] for k, v in library.items()}, C.ROOT / "rules" / C.suffixed("library.json"))
+    np.savez_compressed(C.interim(f"consolidation_fires{a.tag}.npz"), t=Tte, det=det, lib_prior=lib_fire, lib_all=lib_all,
+                        added_at=np.array([v["added_at"] for v in library.values()]))
+    body += f"\nMargin factor {Y.MARGIN_FACTOR}, seed {a.seed}, detector alarms from `{a.alarms}`.\n"
+    C.write_report(f"consolidation{a.tag}.md", body)
+    R.save({k: v["rule"] for k, v in library.items()}, C.ROOT / "rules" / C.suffixed(f"library{a.tag}.json"))
     print(dict(per), f"library FA {lib_all[benign].mean():.5f}", f"{wall:.0f}s")
 
 
