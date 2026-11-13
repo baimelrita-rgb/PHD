@@ -10,6 +10,7 @@ CPS-security conference) with the paper's main claim intact.
 | --- | --- | --- |
 | WP0 feasibility | done | `feasibility_report.md` |
 | WP1-a physics visibility of Sherlock attacks | done | `physics_residual.md`: 0.00059 false alarms per benign record; control-and-freeze 5/5, drift-off 3/4, industroyer 2/7 |
+| WP2-a 02-Semiurban grid reconstruction | done | `semiurban_identify.md`, `semiurban_model_check_*.md`: SimBench 1-MV-semiurb--2-sw plus 56 identified DER-and-storage transformer groups; voltage error mean 2.8e-4, max 1.0e-3 pu on train and test |
 | WP1-d detectors (ML) and self-consolidation loop | done | `wp1d_summary.md`: physics-informed autoencoder works (raw-feature ML fails); label-free loop: library catches drift-off 4/4, control-and-freeze 4/5, industroyer 2/7 from earlier alerts, including 2 attacks the detectors missed |
 | WP1-c rule synthesis from alerts | done | `wp1c_summary.md`: certified rules for drift-off 3/4, control-and-freeze 3/5, industroyer 3/7; false alarms at most 0.0003 per benign test record; 2 plausible rules correctly refuted |
 | WP1-b2 exact layer for meshed configurations | done | `wp1b2_summary.md`: linearised AC, worst error 0.00708 / 0.00834 pu (G6 passes on the worst case); R1 refuted, R2 and R3 certified on all 336 Sherlock configurations |

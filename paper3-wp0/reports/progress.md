@@ -46,3 +46,8 @@
 - ML detectors (`scripts/13_ml_detectors.py`): autoencoder and Isolation Forest, raw and physics-informed features. Raw autoencoder alarms on 99.99 % of benign records; physics-informed autoencoder 0.001 false alarms; Isolation Forest never alarms (score saturation).
 - Consolidation loop (`scripts/14_consolidation.py`), alerts from D1 or AE only: 22 episodes, 9 covered by the library, final library 10 rules; library catches drift-off 4/4, control-and-freeze 4/5, industroyer 2/7 from earlier alerts. `wp1d_summary.md`.
 - Fixed: search concentrated on the rule's topology; CEGIS margin update consistent with the robust error bound.
+
+## WP2-a
+
+- 02-Semiurban structure identified from data (`scripts/15a_semiurban_identify.py`): 56 RTU groups, each a new bus behind a new 0.63 MVA transformer carrying one sgen and one storage unit (power balance error at most 5.7e-5 MW). SimBench transformers 0 and 1 recovered exactly by the same fit.
+- Reconstructed grid (`src/p3/semiurban_model.py`) matches Sherlock's element counts; validation (`scripts/15b`): voltage mean 2.8e-4, max 1.0e-3 pu; line P max 0.2 kW; transformer P max 0.4 kW, train and test.
