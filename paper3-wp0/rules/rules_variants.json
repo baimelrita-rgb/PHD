@@ -1,0 +1,86 @@
+{
+  "R3_recal": {
+    "name": "R3_recal (variant, owner decision)",
+    "description": "as R3, but m = 1.5 x the max benign loss found by DE in r3_diagnostic.md",
+    "any_of": [
+      [
+        {
+          "type": "linear",
+          "coeffs": {
+            "trafo_p_hv.0": 1.0,
+            "trafo_p_hv.1": 1.0,
+            "load_p.0": -1.0,
+            "load_p.1": -1.0,
+            "load_p.2": -1.0,
+            "load_p.3": -1.0,
+            "load_p.4": -1.0,
+            "load_p.5": -1.0,
+            "load_p.6": -1.0,
+            "load_p.7": -1.0,
+            "load_p.8": -1.0,
+            "load_p.9": -1.0,
+            "load_p.10": -1.0,
+            "load_p.11": -1.0,
+            "load_p.12": -1.0,
+            "load_p.13": -1.0,
+            "load_p.14": -1.0,
+            "load_p.15": -1.0,
+            "load_p.16": -1.0,
+            "load_p.17": -1.0,
+            "sgen_p.0": 1.0,
+            "sgen_p.1": 1.0,
+            "sgen_p.2": 1.0,
+            "sgen_p.3": 1.0,
+            "sgen_p.4": 1.0,
+            "sgen_p.5": 1.0,
+            "sgen_p.6": 1.0,
+            "sgen_p.7": 1.0,
+            "sgen_p.8": 1.0
+          },
+          "op": ">",
+          "value": 0.8593160494704546,
+          "scale": 0.1
+        }
+      ],
+      [
+        {
+          "type": "linear",
+          "coeffs": {
+            "trafo_p_hv.0": -1.0,
+            "trafo_p_hv.1": -1.0,
+            "load_p.0": 1.0,
+            "load_p.1": 1.0,
+            "load_p.2": 1.0,
+            "load_p.3": 1.0,
+            "load_p.4": 1.0,
+            "load_p.5": 1.0,
+            "load_p.6": 1.0,
+            "load_p.7": 1.0,
+            "load_p.8": 1.0,
+            "load_p.9": 1.0,
+            "load_p.10": 1.0,
+            "load_p.11": 1.0,
+            "load_p.12": 1.0,
+            "load_p.13": 1.0,
+            "load_p.14": 1.0,
+            "load_p.15": 1.0,
+            "load_p.16": 1.0,
+            "load_p.17": 1.0,
+            "sgen_p.0": -1.0,
+            "sgen_p.1": -1.0,
+            "sgen_p.2": -1.0,
+            "sgen_p.3": -1.0,
+            "sgen_p.4": -1.0,
+            "sgen_p.5": -1.0,
+            "sgen_p.6": -1.0,
+            "sgen_p.7": -1.0,
+            "sgen_p.8": -1.0
+          },
+          "op": ">",
+          "value": 0.8593160494704546,
+          "scale": 0.1
+        }
+      ]
+    ]
+  }
+}

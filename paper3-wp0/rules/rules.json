@@ -1,0 +1,131 @@
+{
+  "R1": {
+    "name": "R1 naive threshold",
+    "description": "vm_pu at feeder-end bus 11 below tau; tau = 1st percentile over the narrow envelope",
+    "atoms": [
+      {
+        "type": "threshold",
+        "meas": "vm_pu.11",
+        "op": "<",
+        "value": 0.9428068928180047,
+        "scale": 0.01
+      }
+    ]
+  },
+  "R2": {
+    "name": "R2 context rule",
+    "description": "loading of line 0 above x AND total downstream load (base topology) below y; x = 99th pct, y = 1st pct over the narrow envelope",
+    "atoms": [
+      {
+        "type": "threshold",
+        "meas": "loading.0",
+        "op": ">",
+        "value": 74.90350982615308,
+        "scale": 10.0
+      },
+      {
+        "type": "linear",
+        "coeffs": {
+          "load_p.1": 1.0,
+          "load_p.2": 1.0,
+          "load_p.3": 1.0,
+          "load_p.4": 1.0,
+          "load_p.5": 1.0,
+          "load_p.6": 1.0,
+          "load_p.7": 1.0,
+          "load_p.11": 1.0,
+          "load_p.12": 1.0,
+          "load_p.13": 1.0,
+          "load_p.14": 1.0
+        },
+        "op": "<",
+        "value": 2.9480810939749973,
+        "scale": 1.0
+      }
+    ]
+  },
+  "R3": {
+    "name": "R3 power balance violation",
+    "description": "|sum transformer P_hv - sum load P + sum DER P| > m; m = 1.5 x max loss over the full envelope sample",
+    "any_of": [
+      [
+        {
+          "type": "linear",
+          "coeffs": {
+            "trafo_p_hv.0": 1.0,
+            "trafo_p_hv.1": 1.0,
+            "load_p.0": -1.0,
+            "load_p.1": -1.0,
+            "load_p.2": -1.0,
+            "load_p.3": -1.0,
+            "load_p.4": -1.0,
+            "load_p.5": -1.0,
+            "load_p.6": -1.0,
+            "load_p.7": -1.0,
+            "load_p.8": -1.0,
+            "load_p.9": -1.0,
+            "load_p.10": -1.0,
+            "load_p.11": -1.0,
+            "load_p.12": -1.0,
+            "load_p.13": -1.0,
+            "load_p.14": -1.0,
+            "load_p.15": -1.0,
+            "load_p.16": -1.0,
+            "load_p.17": -1.0,
+            "sgen_p.0": 1.0,
+            "sgen_p.1": 1.0,
+            "sgen_p.2": 1.0,
+            "sgen_p.3": 1.0,
+            "sgen_p.4": 1.0,
+            "sgen_p.5": 1.0,
+            "sgen_p.6": 1.0,
+            "sgen_p.7": 1.0,
+            "sgen_p.8": 1.0
+          },
+          "op": ">",
+          "value": 0.40257711747131997,
+          "scale": 0.1
+        }
+      ],
+      [
+        {
+          "type": "linear",
+          "coeffs": {
+            "trafo_p_hv.0": -1.0,
+            "trafo_p_hv.1": -1.0,
+            "load_p.0": 1.0,
+            "load_p.1": 1.0,
+            "load_p.2": 1.0,
+            "load_p.3": 1.0,
+            "load_p.4": 1.0,
+            "load_p.5": 1.0,
+            "load_p.6": 1.0,
+            "load_p.7": 1.0,
+            "load_p.8": 1.0,
+            "load_p.9": 1.0,
+            "load_p.10": 1.0,
+            "load_p.11": 1.0,
+            "load_p.12": 1.0,
+            "load_p.13": 1.0,
+            "load_p.14": 1.0,
+            "load_p.15": 1.0,
+            "load_p.16": 1.0,
+            "load_p.17": 1.0,
+            "sgen_p.0": -1.0,
+            "sgen_p.1": -1.0,
+            "sgen_p.2": -1.0,
+            "sgen_p.3": -1.0,
+            "sgen_p.4": -1.0,
+            "sgen_p.5": -1.0,
+            "sgen_p.6": -1.0,
+            "sgen_p.7": -1.0,
+            "sgen_p.8": -1.0
+          },
+          "op": ">",
+          "value": 0.40257711747131997,
+          "scale": 0.1
+        }
+      ]
+    ]
+  }
+}

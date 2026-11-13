@@ -1,0 +1,22 @@
+[project]
+name = "p3-wp0"
+version = "0.1.0"
+description = "WP0 feasibility study: physics oracle for certifying intrusion detection rules on power grids"
+requires-python = ">=3.10"
+dependencies = [
+  "pandapower>=3.0",
+  "numpy",
+  "pandas",
+  "scipy",
+  "z3-solver",
+  "pytest",
+  "pyyaml",
+  "networkx",
+  "numba",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
