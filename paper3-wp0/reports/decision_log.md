@@ -34,3 +34,4 @@ Rules kept: every number from code; each script under 10 minutes; no tuning on t
   - SE-BDD: 0 false alarms.
 
   Interpretation: even physics-informed ML, calibrated on one train day, degrades under the test day's unseen topologies. Decision: keep the autoencoder as an alert source in the comparison table, but report its false alarms plainly. Its threshold is not tuned on test.
+- **Semiurban ML, raw features** (`ml_detectors_raw_semiurban.md`): the autoencoder alarms on 86 % of benign records. This replicates the 01-Basic finding (99.99 %) on the second grid: ML on raw telemetry flags benign operating change.
