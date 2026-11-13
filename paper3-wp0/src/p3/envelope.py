@@ -57,6 +57,7 @@ class GridSpec:
     max_outages: int = 1
     tap_options: tuple = ((),)      # tuples of tap positions per transformer; () keeps the model's own
     max_loops: int = 0              # 0: radial only; 1: connected with at most one closed loop
+    configs_fn: Callable | None = None   # explicit configuration list (large grids: topologies from data)
     load_q: str = "pf"              # "pf": q scales with p; "fixed": q stays nominal
 
 
@@ -91,10 +92,38 @@ def _sherlock_taps():
     return tuple(tuple(t) for t in json.loads(SHERLOCK_ENV_PATH.read_text())["taps"])
 
 
+SEMI_ENV_PATH = ROOT / "rules" / "semiurban_envelope.json"
+
+
+def _semi_builder():
+    from . import semiurban_model as SU
+    net = SU.base_net()
+    net.switch["closed"] = True     # topology is expressed by lines out of service
+    return net
+
+
+def _semi_json():
+    if not SEMI_ENV_PATH.exists():
+        raise SystemExit(f"missing {SEMI_ENV_PATH}: run scripts/16a_semiurban_envelope.py first")
+    return json.loads(SEMI_ENV_PATH.read_text())
+
+
+def _semi_envelopes():
+    d = _semi_json()
+    tup = lambda xs: tuple(tuple(b) for b in xs)
+    return {"full": Envelope("full", tup(d["load"]), tup(d["sgen"]), tup(d["storage"]))}
+
+
+def _semi_configs():
+    d = _semi_json()
+    return tuple(Config((), None if not t else (int(t[0]) if len(t) == 1 else tuple(int(x) for x in t)), ()) for t in d["topologies"])
+
+
 GRIDS = {
     "cigre_pv_wind": lambda: GridSpec("cigre_pv_wind", _cigre_builder, _cigre_envelopes),
     "sherlock": lambda: GridSpec("sherlock", _sherlock_builder, _sherlock_envelopes, max_outages=2,
                                  tap_options=_sherlock_taps(), load_q="fixed", max_loops=1),
+    "semiurban": lambda: GridSpec("semiurban", _semi_builder, _semi_envelopes, load_q="fixed", configs_fn=_semi_configs),
 }
 _GRID = GRIDS["cigre_pv_wind"]()
 
@@ -175,7 +204,13 @@ class Config:
 
 
 def tie_switch_index(net) -> dict[str, int]:
-    return {n: int(net.switch.index[net.switch.name == n][0]) for n in TIE_SWITCH_NAMES}
+    """Named tie switches S1 to S3 (CIGRE grids); empty for grids without them."""
+    out = {}
+    for n in TIE_SWITCH_NAMES:
+        hit = net.switch.index[net.switch.name == n]
+        if len(hit):
+            out[n] = int(hit[0])
+    return out
 
 
 def apply_config(net, cfg: Config):
@@ -218,6 +253,8 @@ def enumerate_configs() -> tuple[Config, ...]:
     """All tie / outage combinations (<= max_outages lines out) that are connected with at
     most max_loops closed loops (0 = radial), times the tap options. Configurations with the same active line set are the
     same electrical topology; the first (simplest) representation is kept."""
+    if _GRID.configs_fn is not None:
+        return _GRID.configs_fn()
     net = base_net()
     lines = list(net.line.index)
     found, seen = [], set()
@@ -336,7 +373,8 @@ def injection_maps() -> InjectionMaps:
         Apg[j, d.n_load + j] = net.sgen.sn_mva.values[j]
     Apb = np.zeros((d.n_sto, n))
     for k in range(d.n_sto):
-        Apb[k, d.n_load + d.n_der + k] = net.storage.p_mw.values[k]
+        p_nom = abs(float(net.storage.p_mw.values[k]))       # SimBench stores discharge as negative p_mw
+        Apb[k, d.n_load + d.n_der + k] = p_nom if p_nom > 0 else float(net.storage.sn_mva.values[k])
     return InjectionMaps(Apl, Aql, cql, Apg, Apb)
 
 

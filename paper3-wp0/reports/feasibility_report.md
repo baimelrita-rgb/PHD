@@ -32,7 +32,7 @@ What worked:
 - Both layers refute the naive rule and the context rule. CEGIS on R1 converged in 7 iterations to tau 0.89990: refined into uselessness (band left 0.0000), and this is visible in the report.
 - Calibrating the margin by search fixed R3: no counterexample even at 16 times the planned budget.
 - The Sherlock reconstruction reaches the noise floor once transformer losses and taps are identified from data.
-- WP1-a (`physics_residual.md`): a physics-consistency detector on the control center's telemetry has 0.00059 false alarms per benign record and detects control-and-freeze 5 of 5, drift-off 3 of 4 and industroyer 2 of 7.
+- WP1-a (`physics_residual_sherlock.md`): a physics-consistency detector on the control center's telemetry has 0.00059 false alarms per benign record and detects control-and-freeze 5 of 5, drift-off 3 of 4 and industroyer 2 of 7.
 
 What did not work:
 - The robust exact layer is inconclusive for R3: delta for transformer P (0.65 MW per transformer) exceeds the margin. Balance rules need a loss-aware exact layer.

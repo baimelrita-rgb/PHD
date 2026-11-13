@@ -42,14 +42,15 @@ def main():
     ap.add_argument("--settle-s", type=float, default=60.0, help="benign test records must be this far from any attack window")
     ap.add_argument("--k-pct", type=float, default=2.0, help="persistence detector: theta = k x train p99.9")
     ap.add_argument("--run-safety", type=float, default=1.5, help="persistence detector: L = ceil(f x longest train run above theta)")
-    ap.add_argument("--root", default=str(S.ROOT_DEFAULT))
-    a = ap.parse_args()
-    root = Path(a.root)
+    ap.add_argument("--root", default=None)
+    ap.set_defaults(grid="sherlock")
+    a = C.init(ap.parse_args())
+    root = Path(a.root) if a.root else S.root()
     t0 = time.time()
     tr = run(root, "train", a.step)
     te = run(root, "test", a.step)
     wall = time.time() - t0
-    np.savez_compressed(C.INTERIM / f"physics_residual_step{a.step}.npz",
+    np.savez_compressed(C.interim(f"physics_residual_step{a.step}.npz"),
                         **{f"{s}_{k}": np.array([r[k] for r in d]) for s, d in (("train", tr), ("test", te)) for k in ("t", "conv", *METRICS)})
 
     def arr(d, k):

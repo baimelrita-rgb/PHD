@@ -42,7 +42,7 @@ def downstream_loads(line_idx):
 
 def records(split, names, net, step):
     T, Mx = [], []
-    for i, rec in enumerate(S.iter_state(S.ROOT_DEFAULT, split)):
+    for i, rec in enumerate(S.iter_state(S.root(), split)):
         if i % step == 0:
             T.append(rec["timestamp"])
             Mx.append(SM.record_measurements(rec["state"], names, net))
@@ -103,7 +103,7 @@ def main():
     R.save(rules, C.rules_path())
 
     # behaviour on recorded telemetry
-    ev = S.load_events(S.ROOT_DEFAULT, "test")
+    ev = S.load_events(S.root(), "test")
     att = [e for e in ev if "benign" not in e["id"]]
     near = np.zeros(len(Tte), bool)
     for e in att:

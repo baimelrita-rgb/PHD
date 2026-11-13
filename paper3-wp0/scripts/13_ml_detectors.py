@@ -36,7 +36,7 @@ def physics_features(split):
     2 transformer P) for every record, from the WP1-a residual model."""
     from p3 import sherlock_residual as SR
     model, out = None, []
-    for rec in S.iter_state(S.ROOT_DEFAULT, split):
+    for rec in S.iter_state(S.root(), split):
         if model is None:
             model = SR.ResidualModel(rec["state"]); model.want_vectors = True
         r = model.residual(rec["state"])
@@ -59,7 +59,7 @@ def features(split, kind="physics"):
             scale[j] = net.storage.p_mw.values[i]
     cols = [idx[n] for n in keep]
     T, X = [], []
-    for rec in S.iter_state(S.ROOT_DEFAULT, split):
+    for rec in S.iter_state(S.root(), split):
         T.append(rec["timestamp"])
         X.append(SM.record_measurements(rec["state"], names, net)[cols] / scale)
     X = np.array(X)
@@ -104,7 +104,7 @@ def main():
     ae.fit(fit[::2], fit[::2])
     models["AE"] = lambda Zx: np.mean((ae.predict(Zx) - Zx) ** 2, axis=1)
 
-    ev = S.load_events(S.ROOT_DEFAULT, "test")
+    ev = S.load_events(S.root(), "test")
     att = [e for e in ev if "benign" not in e["id"]]
     near = np.zeros(len(Tte), bool)
     for e in att:
@@ -121,7 +121,7 @@ def main():
         alarms[name] = al
         calib[name] = (th, L)
     # D1 physics-residual detector, for comparison and for the ensemble
-    d1 = np.load(C.INTERIM / "physics_residual_step1.npz")
+    d1 = np.load(C.interim("physics_residual_step1.npz"))
     d1_al = np.zeros(len(d1["test_t"]), bool)
     for m_ in ("vm", "p_line", "p_trafo"):
         th = 2.0 * np.nanpercentile(d1[f"train_{m_}"], 99.9)
@@ -131,7 +131,7 @@ def main():
     alarms["D1"] = d1_al
     alarms["D1 or IF or AE"] = alarms["D1"] | alarms["IF"] | alarms["AE"]
     alarms["IF or AE"] = alarms["IF"] | alarms["AE"]
-    np.savez_compressed(C.INTERIM / f"detector_alarms_{a.features}.npz", t=Tte, **{k.replace(" ", "_"): v for k, v in alarms.items()})
+    np.savez_compressed(C.interim(f"detector_alarms_{a.features}.npz"), t=Tte, **{k.replace(" ", "_"): v for k, v in alarms.items()})
     wall = time.time() - t0
 
     def episodes(mask):

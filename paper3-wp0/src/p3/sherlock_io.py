@@ -10,6 +10,13 @@ import zipfile
 from pathlib import Path
 
 ROOT_DEFAULT = Path(__file__).resolve().parents[2] / "data" / "raw" / "01-Basic" / "01-Basic"
+ROOT_SEMI = Path(__file__).resolve().parents[2] / "data" / "raw" / "02-Semiurban" / "02-Semiurban"
+
+
+def root() -> Path:
+    """Dataset root for the active grid: 02-Semiurban for grid 'semiurban', else 01-Basic."""
+    from . import envelope as E
+    return ROOT_SEMI if E.grid().name == "semiurban" else ROOT_DEFAULT
 
 
 def file_tree(root: Path):
@@ -55,8 +62,14 @@ def load_config(root: Path, split: str):
     return yaml.safe_load((root / "raw" / split / "sherlock-config.yml").read_text())
 
 
-def iter_state(root: Path, split: str, vantage: str = "n302"):
-    with gzip.open(root / f"{split}.{vantage}.state.gz", "rt") as f:
+def iter_state(root: Path, split: str, vantage: str | None = None):
+    if vantage is None:
+        files = sorted(root.glob(f"{split}.*.state.gz"))
+        assert len(files) == 1, files
+        path = files[0]
+    else:
+        path = root / f"{split}.{vantage}.state.gz"
+    with gzip.open(path, "rt") as f:
         for line in f:
             yield json.loads(line)
 

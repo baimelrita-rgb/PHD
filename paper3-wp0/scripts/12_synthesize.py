@@ -29,7 +29,7 @@ from p3 import synthesis as Y
 def records(split, step):
     names, net = M.names(), E._base_net()
     T, Mx = [], []
-    for i, rec in enumerate(S.iter_state(S.ROOT_DEFAULT, split)):
+    for i, rec in enumerate(S.iter_state(S.root(), split)):
         if i % step == 0:
             T.append(rec["timestamp"])
             Mx.append(SM.record_measurements(rec["state"], names, net))
@@ -79,7 +79,7 @@ def main():
             noise_cfg[c][(kind, i)] = v
             noise_glob[(kind, i)] = max(noise_glob[(kind, i)], v)
 
-    ev = S.load_events(S.ROOT_DEFAULT, "test")
+    ev = S.load_events(S.root(), "test")
     att = [e for e in ev if "benign" not in e["id"]]
     near = np.zeros(len(Tte), bool)
     for e in att:
@@ -88,7 +88,7 @@ def main():
     windows = {e["id"]: (Tte >= e["start"]) & (Tte <= e.get("recovery", e["end"])) for e in att}
 
     # D1 physics-residual detector alarms (WP1-a, same calibration: theta = 2 x train p99.9, L = ceil(1.5 x longest train run))
-    d1 = np.load(C.INTERIM / "physics_residual_step1.npz")
+    d1 = np.load(C.interim("physics_residual_step1.npz"))
 
     def runs(mask):
         out, c = np.zeros(len(mask), int), 0

@@ -30,10 +30,16 @@ def ipal_to_snapshot_keys(state: dict) -> dict:
 
 class ResidualModel:
     def __init__(self, first_state: dict):
-        self.trafo, self.tap = SM.load_params()
+        from . import envelope as E
         v = ipal_to_snapshot_keys(first_state)
-        self.net, _, _ = SM.build(v, self.trafo, self.tap)
-        assert list(self.net.switch.index) == list(range(32))
+        if E.grid().name == "semiurban":
+            from . import semiurban_model as SU
+            self.tap = None
+            self.net = SU.build(v)
+        else:
+            self.trafo, self.tap = SM.load_params()
+            self.net, _, _ = SM.build(v, self.trafo, self.tap)
+            assert list(self.net.switch.index) == list(range(32))
         self._cache = {}
 
     def update(self, v: dict):

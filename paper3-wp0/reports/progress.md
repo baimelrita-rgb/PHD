@@ -18,7 +18,7 @@
 - D4 done: R3 margin calibrated by search (m 0.86726 MW); no counterexample at 2000 or 32000 flows. `rules.md`, `oracle_search*.md`.
 - D5 done: robust exact layer with validated error bounds (`rules/model_error_bounds.json`); verdicts R1 refuted, R2 refuted, R3 inconclusive in the exact layer. `oracle_exact.md`, `lindistflow_error.md`.
 - D6 done: transformer loading limit added (1929 of 2000 benign); N-1 reconfigurations kept, all 4 Sherlock reconfigurations inside the envelope. `envelope_smoke.md`.
-- WP1-a done: physics residual detector on Sherlock telemetry, 0.00059 false alarms per benign record; control-and-freeze 5/5, drift-off 3/4, industroyer 2/7. `physics_residual.md`.
+- WP1-a done: physics residual detector on Sherlock telemetry, 0.00059 false alarms per benign record; control-and-freeze 5/5, drift-off 3/4, industroyer 2/7. `physics_residual_sherlock.md`.
 
 ## WP1-b
 
@@ -51,3 +51,10 @@
 
 - 02-Semiurban structure identified from data (`scripts/15a_semiurban_identify.py`): 56 RTU groups, each a new bus behind a new 0.63 MVA transformer carrying one sgen and one storage unit (power balance error at most 5.7e-5 MW). SimBench transformers 0 and 1 recovered exactly by the same fit.
 - Reconstructed grid (`src/p3/semiurban_model.py`) matches Sherlock's element counts; validation (`scripts/15b`): voltage mean 2.8e-4, max 1.0e-3 pu; line P max 0.2 kW; transformer P max 0.4 kW, train and test.
+
+## WP2-b (in progress)
+
+- Pipeline made grid-generic (dataset, residual model, file naming, Semiurban topologies, storage sign).
+- Semiurban envelope from train (`scripts/16a_semiurban_envelope.py`).
+- Two findings change the design (`wp2b_status.md`): partial observability (about 40 % of elements unmonitored) and train topologies covering only 16 % of benign test time.
+- Explainer page for non-specialists (Hebrew) published as an artifact (link in the chat).

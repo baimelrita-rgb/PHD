@@ -34,7 +34,7 @@ from p3 import synthesis as Y
 def records(split, step):
     names, net = M.names(), E._base_net()
     T, Mx = [], []
-    for i, rec in enumerate(S.iter_state(S.ROOT_DEFAULT, split)):
+    for i, rec in enumerate(S.iter_state(S.root(), split)):
         if i % step == 0:
             T.append(rec["timestamp"])
             Mx.append(SM.record_measurements(rec["state"], names, net))
@@ -105,7 +105,7 @@ def main():
             n = {k: max(v, noise_cfg[T].get(k, 0.0)) for k, v in n.items()}
         return n
 
-    al = np.load(C.INTERIM / "detector_alarms_physics.npz")
+    al = np.load(C.interim("detector_alarms_physics.npz"))
     assert np.allclose(al["t"], Tte)
     det = np.zeros(len(Tte), bool)
     for d in a.detectors.split(","):
@@ -152,7 +152,7 @@ def main():
     wall = time.time() - t0
 
     # evaluation with labels
-    ev = S.load_events(S.ROOT_DEFAULT, "test")
+    ev = S.load_events(S.root(), "test")
     att = sorted([e for e in ev if "benign" not in e["id"]], key=lambda e: e["start"])
     near = np.zeros(len(Tte), bool)
     for e in att:
