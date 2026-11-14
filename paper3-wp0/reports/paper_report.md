@@ -14,12 +14,13 @@ Anomaly detectors for grid telemetry raise alerts but leave no durable, inspecta
 - A rule enters a rule library only after a **physics oracle** certifies that no benign, physically feasible operating state triggers it.
 - The oracle combines an AC search layer (sampling and differential evolution) with an exact layer: Z3 over a linearised AC power flow, made robust by adversarially validated model-error bounds. Counterexamples refine rules.
 
-On the Sherlock dataset, both grid models were reconstructed from data and validated at the measurement noise floor: CIGRE MV with 15 buses, and SimBench semi-urban with 178 buses and about 40 % of elements without telemetry.
+On the Sherlock dataset, three grid models were reconstructed from data and validated at the measurement noise floor: CIGRE MV with 15 buses, SimBench semi-urban with 178 buses and about 40 % of elements without telemetry, and SimBench rural with 99 buses.
 
 - The oracle refutes rules mined from history, which become useless when made safe, and certifies physically grounded ones.
 - Replayed without labels, the certified library catches attacks the detectors miss and sometimes fires earlier, at a false alarm rate of about 0.1 % per record.
 - On the partially observable grid, state estimation and on-demand certification of every new topology (5 to 11 s each) extend the approach.
-- ML detectors on raw telemetry fail under benign operating change (86 % to 99.99 % false alarms), which motivates certified rules.
+- On a third grid without any training day, a zero-training transfer shows what carries over: the detector's global threshold and the physics certificate transfer; per-measurement rule margins need the grid's own noise data.
+- ML detectors on raw telemetry fail under benign operating change (43 % to 99.99 % false alarms on three grids), which motivates certified rules.
 
 ## Contributions
 
@@ -28,8 +29,9 @@ On the Sherlock dataset, both grid models were reconstructed from data and valid
 3. Rule synthesis from alerts: physical-invariant rules, grid-wide invariant rules and state rules, with counterexample-guided refinement of margins.
 4. A self-consolidating loop driven only by detector alerts, evaluated without labels in the loop.
 5. Partial observability and unseen topologies: iterated WLS state estimation with pseudo-measurements, and on-demand certification per topology.
-6. Data-driven reconstruction of both Sherlock grid models (switch mapping, transformer and tap identification, DER-and-storage transformer groups), validated against ground truth.
-7. Negative results that matter for practice:
+6. A zero-training transfer experiment on a third grid (03-Rural, no train day), separating what transfers between grids from what needs local calibration.
+7. Data-driven reconstruction of three Sherlock grid models (switch mapping, transformer and tap identification, DER-and-storage transformer groups), validated against ground truth.
+8. Negative results that matter for practice:
    - raw-feature ML fails under benign change;
    - thresholds mined from history are refined into uselessness;
    - a certificate covers physical variation, not telemetry noise;
@@ -47,6 +49,8 @@ On the Sherlock dataset, both grid models were reconstructed from data and valid
 | Excluded | arp-spoof-dos 2 (owner decision; reported separately) | arp-spoof-dos 6 |
 | Envelope topologies | 336 enumerated (170 radial, 166 with one loop) | structural; certified on demand (13 test topologies) |
 
+The third grid, **03-Rural**, is exactly SimBench 1-MV-rural--2-sw: 99 buses, 101 lines, 2 transformers, 204 switches. It has no train day; the test day has control-and-freeze 5, drift-off 9, industroyer 8 and arp-spoof-dos 6, and the first attack comes 0.65 h in. It is run as a zero-training transfer: envelope from SimBench planning profiles (P) and Q bounds transferred from Semiurban; SE-BDD threshold and persistence transferred from Semiurban; ML trained on the first 30 minutes only. Labels are used only for evaluation.
+
 Train days contain no attacks. All thresholds and calibrations use train only. Benign test records are those more than 60 s from any attack window.
 
 ## 2. Grid reconstruction (no model in the download)
@@ -57,6 +61,7 @@ Train days contain no attacks. All thresholds and calibrations use train only. B
 | 01-Basic, transformer losses fitted on disjoint snapshots | voltage mean 2.60e-04, max 1.06e-03 pu (noise floor 5.00e-04) | `sherlock_model_check.md` |
 | 01-Basic, tap changer (HV side, 1.5 % per step), validation set | mean 2.68e-04, max 9.24e-04 pu (tap ignored: 1.23e-02) | `sherlock_taps.md` |
 | 02-Semiurban, 56 groups identified (power balance error at most 5.7e-05 MW) | train: mean 2.80e-04, max 9.96e-04 pu; test: mean 2.75e-04, max 1.03e-03 pu | `semiurban_identify.md`, `semiurban_model_check_*.md` |
+| 03-Rural, SimBench base without additions (fitted transformers match SimBench) | test: mean 2.86e-04, max 1.01e-03 pu | `rural_identify.md`, `rural_model_check_test.md` |
 
 ## 3. Oracle results
 
@@ -105,11 +110,32 @@ CEGIS on R1: tau falls to 0.89990 on the reference grid and 0.89998 on Sherlock,
 | Combined: SE-BDD or certified library (L = 3) | 4/5 | 6/9 | 0/9 | 124 | 0.00401 |
 | Combined: SE-BDD or AE or certified library (L = 3) | 4/5 | 7/9 | 7/9 | 93 | 0.14923 |
 
-### 4.3 Reading
+### 4.3 03-Rural (zero-training transfer)
+
+| Method | CFC | Drift-off | Industroyer | Mean delay s | False alarms per benign record |
+| --- | --- | --- | --- | --- | --- |
+| Classic bad-data detection (SE-BDD), threshold transferred from Semiurban | 0/5 | 5/9 | 0/8 | 275 | 0.00017 |
+| ML: autoencoder, raw telemetry (30 min training) | 4/5 | 8/9 | 5/8 | 117 | 0.43249 |
+| ML: Isolation Forest, SE-residual features (30 min) | 3/5 | 5/9 | 1/8 | 187 | 0.00087 |
+| ML: autoencoder, SE-residual features (30 min) | 5/5 | 8/9 | 4/8 | 81 | 0.14358 |
+| Certified library, attempt 1: per-kind noise transferred, L = 3 | 5/5 | 8/9 | 7/8 | 15 | 0.72315 |
+| Certified library, attempt 2: global threshold as minimum margin, single record | 1/5 | 5/9 | 3/8 | 207 | 0.00087 |
+| Certified library, attempt 2, persistence L = 3 | 0/5 | 5/9 | 0/8 | 275 | 0.00017 |
+
+Sources: `comparison.md` (03-Rural section) and `semiurban_consolidation_perkind_rural.md` for attempt 1.
+
+Envelope coverage without Rural data: load P 100 % of benign records; load Q 10 % from SimBench profiles and 90.4 % after transferring Q bounds from Semiurban (`rural_envelope.md`).
+
+### 4.4 Reading
 
 - **01-Basic.** Adding the certified library to the detectors adds one drift-off and one industroyer instance and cuts the mean delay from 77 to 68 s, at +0.0006 false alarms per record. Under strict accounting (rules learned before the attack only) the library alone still catches every drift-off, including one that the detectors miss.
 - **Semiurban.** The certified library with persistence detects more than the classic SE-BDD (control-and-freeze 4/5 against 3/5, drift-off 6/9 against 4/9) at 0.004 false alarms against 0. Industroyer is caught only in single-record mode (7/9), from switching transients, at 0.016 false alarms.
-- **ML.** Raw-feature ML is unusable on both grids, and physics-informed features fix it on 01-Basic. On Semiurban the SE-feature autoencoder still has 0.149 false alarms: the test day has topologies not seen in train.
+- **ML.** Raw-feature ML is unusable on all three grids, and physics-informed features fix it on 01-Basic. On Semiurban the SE-feature autoencoder still has 0.149 false alarms: the test day has topologies not seen in train.
+- **Transfer (03-Rural).**
+  - The SE-BDD threshold transfers: 0.00017 false alarms on a grid it never saw, drift-off 5/9.
+  - Per-measurement noise floors do not transfer: Rural's transformer flow residuals reach 19 sigma against a transferred floor of 0.47, giving library attempt 1 its 0.72 false alarms.
+  - Using the transferred global threshold as the minimum margin (attempt 2, chosen after attempt 1 failed and reported as such) removes the flood, but then the library adds nothing over the detector with persistence.
+  - Conclusion: on-demand physics certification needs no local data, but the library's noise term needs a short benign calibration on each grid.
 
 ## 5. Synthesis and consolidation
 
@@ -138,11 +164,13 @@ CEGIS on R1: tau falls to 0.89990 on the reference grid and 0.89998 on Sherlock,
 3. **The certificate and telemetry noise are separate guarantees.** One rule certified against physics fired on 31 % of benign records when its noise level was estimated from about 100 records. Noise calibration needs enough data and a per-kind floor.
 4. **Sherlock operates meshed and with planned de-energised islands.** A radial-only or train-only topology envelope is wrong: train topologies cover only 16 % of benign Semiurban test time. On-demand certification solves this.
 5. **Partial observability needs state estimation with load reactive power and Gauss-Newton correction.** Linear estimation alone hides small falsifications. Fixed load Q produced 72 to 86 sigma residuals on real telemetry.
-6. **Search must be concentrated where a rule can fire.** A joint search over all configurations under-tested topology-specific rules. The first consolidation results were optimistic and were corrected.
+6. **What transfers between grids.** A detector's global threshold and the physics certificate transfer to a grid without training data; per-measurement noise margins do not (03-Rural).
+7. **Search must be concentrated where a rule can fire.** A joint search over all configurations under-tested topology-specific rules. The first consolidation results were optimistic and were corrected.
 
 ## 8. Threats to validity
 
-- One test day per grid, and few attack instances per type (4 to 9). Results are per instance, without confidence intervals.
+- One test day per grid (three grids), and few attack instances per type (4 to 9). Results are per instance, without confidence intervals.
+- 03-Rural has no train day; its ML baselines were trained on 30 minutes and are weak by construction. Library attempt 2 was chosen after attempt 1's failure on the same test day; both are reported.
 - Error bounds in the robust exact layer are empirical (adversarial search, safety factor 1.25), not proven. On Semiurban the certificates are search-based only.
 - Both grid models are reconstructions, validated at the noise floor, not the original Wattson scenarios.
 - The library learns and is evaluated on the same test day, in time order. Strict accounting is reported to bound the optimism.
@@ -156,8 +184,10 @@ cd paper3-wp0
 pip install -e .            # plus simbench, scikit-learn
 bash scripts/00_download_sherlock.sh
 bash scripts/00b_download_semiurban.sh
+bash scripts/00c_download_rural.sh
 SEED=7 bash scripts/run_all.sh       # main results
 bash scripts/night_runs.sh           # seeds and ablations
+bash scripts/rural_runs2.sh          # 03-Rural transfer (after 15a/15b/16b/17 with --grid rural, see decision_log.md)
 python scripts/19_comparison.py      # comparison tables
 ```
 
@@ -167,12 +197,12 @@ Seeds: base 7; robustness 8 and 9. Package versions: `reports/env.txt`. Each scr
 
 | Venue | Estimate |
 | --- | --- |
-| IEEE Transactions on Smart Grid | about 61 % |
-| International Journal of Electrical Power & Energy Systems | about 75 % |
+| IEEE Transactions on Smart Grid | about 62 % |
+| International Journal of Electrical Power & Energy Systems | about 76 % |
 
-The method is complete and evaluated on two grids, with honest negative results. The improvements over the classic detector are real but modest in size, on one test day.
+The method is complete and evaluated on three grids, including a zero-training transfer, with honest negative results. The third grid adds generalisation evidence (reconstruction, physics certificate and detector threshold all transfer), and it also shows a limit: the library needs per-grid noise calibration. Gains over the classic detector remain modest.
 
 What would raise the estimate most:
-- a second test day or scenario (03-Rural);
+- a second test day per grid, or a short benign calibration day for 03-Rural;
 - a formal error bound for the linearised model;
 - confidence intervals over more attack instances.
