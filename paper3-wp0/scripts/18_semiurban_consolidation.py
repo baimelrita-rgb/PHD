@@ -153,6 +153,7 @@ def main():
             fires[k] = bool(np.nanmax(np.abs(Rte[k]) / margin) > 1.0) if np.isfinite(Rte[k]).any() else False
     wall = time.time() - t0
     L = int(d["L"])
+    added_t = np.array([library[c][2] if (c is not None and c in library) else np.inf for c in cfg_te])   # when each record's topology rule was certified
 
     def runs(mask):
         out, c = np.zeros(len(mask), int), 0
@@ -170,14 +171,15 @@ def main():
     benign = ~near
     if a.calib_prefix_s > 0:
         benign &= Tte >= Tte[0] + a.calib_prefix_s       # calibration period is not evaluated
-    per = collections.defaultdict(lambda: [0, 0, 0, 0, 0])
+    per = collections.defaultdict(lambda: [0, 0, 0, 0, 0, 0])
     rows = []
     for e in att:
         sel = (Tte >= e["start"]) & (Tte <= e.get("recovery", e["end"]))
         dh, lh, lph = bool(det[sel].any()), bool(fires[sel].any()), bool(fires_p[sel].any())
+        lps = bool((fires_p[sel] & (added_t[sel] < e["start"])).any())      # strict: topology rule certified before the attack began
         p_ = per[e["description"]]
-        p_[0] += 1; p_[1] += int(dh); p_[2] += int(lh); p_[3] += int(lph); p_[4] += int(dh or lph)
-        rows.append([e["id"], e["description"], "yes" if dh else "no", "yes" if lh else "no", "yes" if lph else "no"])
+        p_[0] += 1; p_[1] += int(dh); p_[2] += int(lh); p_[3] += int(lph); p_[4] += int(dh or lph); p_[5] += int(lps)
+        rows.append([e["id"], e["description"], "yes" if dh else "no", "yes" if lh else "no", "yes" if lph else "no", "yes" if lps else "no"])
     body = "# WP2-b: on-demand certification and rule library on 02-Semiurban\n\n"
     body += (f"Rule per topology: some monitored measurement's state-estimation residual exceeds its margin "
              f"({MARGIN_FACTOR} x max(train noise, oracle bound)); " + (
@@ -197,10 +199,11 @@ def main():
     ])
     body += "\nOn-demand certification log:\n\n" + C.md_table(["time s", "topology", "verdict", "compute s", "rounds"], log)
     types = sorted(per)
-    body += "\nDetection per attack type:\n\n" + C.md_table(["type", "instances", "SE-BDD detector", "certified library (single record)", f"library with persistence L = {L}", "detector or library with persistence"],
-                                                         [[t, *per[t]] for t in types])
-    body += "\nPer instance:\n\n" + C.md_table(["id", "type", "detector", "library", "library with persistence"], rows)
-    np.savez_compressed(C.interim(f"semiurban_fires{a.tag}.npz"), t=Tte, det=det, fires=fires, fires_p=fires_p, L=L)
+    body += "\nDetection per attack type (strict = the topology's rule was certified before the attack started, so no credit for a rule certified during the attack itself):\n\n" + C.md_table(
+        ["type", "instances", "SE-BDD detector", "certified library (single record)", f"library with persistence L = {L}", "detector or library with persistence", f"library L = {L}, strict"],
+        [[t, *per[t]] for t in types])
+    body += "\nPer instance:\n\n" + C.md_table(["id", "type", "detector", "library", "library with persistence", "library with persistence, strict"], rows)
+    np.savez_compressed(C.interim(f"semiurban_fires{a.tag}.npz"), t=Tte, det=det, fires=fires, fires_p=fires_p, L=L, added_t=added_t)
     body += f"\nMargin factor {MARGIN_FACTOR}, seed {a.seed}.\n"
     C.write_report(f"semiurban_consolidation{a.tag}.md", body)
     print({t: per[t] for t in types}, "library FA", f"{fires[benign].mean():.5f}", "with persistence", f"{fires_p[benign].mean():.5f}", "detector FA", f"{det[benign].mean():.5f}", f"{wall:.0f}s")

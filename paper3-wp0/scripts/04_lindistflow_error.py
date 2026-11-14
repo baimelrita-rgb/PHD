@@ -19,6 +19,7 @@ def main():
     ap.add_argument("--adv-budget", type=int, default=1000, help="DE power flows per topology and quantity for the worst-case search")
     ap.add_argument("--safety", type=float, default=1.25, help="safety factor on the worst error found")
     ap.add_argument("--model", default="lindistflow", choices=["lindistflow", "linac"])
+    ap.add_argument("--report-tag", default="", help="sensitivity run: write reports/<model>_error<tag>.md only, keep the saved bounds unchanged")
     a = C.init(ap.parse_args())
     from p3 import linac as LA
     if a.model == "lindistflow":
@@ -95,7 +96,8 @@ def main():
         adv.append([q, units[q], f"{samp[q]:.5f}", f"{worst[q]:.5f}", f"{a.safety * max(worst[q], samp[q]):.5f}"])
     wmax = worst["vm_pu"]
     delta = {q: a.safety * max(worst[q], samp[q]) for q in quantities}
-    C.bounds_path(a.model).write_text(json.dumps({
+    if not a.report_tag:
+      C.bounds_path(a.model).write_text(json.dumps({
         "source": f"scripts/04_lindistflow_error.py --seed {a.seed}: max(sample max, DE worst case) x {a.safety}",
         "adv_budget_per_topology": a.adv_budget, "safety_factor": a.safety, "delta": delta}, indent=2))
     body += ("\n## Worst case found by search, and the error bounds used by the robust exact layer\n\n"
@@ -107,7 +109,7 @@ def main():
              f"({'below' if wmax < 0.01 else 'above'} 0.01 pu).\n")
     if a.model != "lindistflow":
         body = body.replace("LinDistFlow", "linearised AC (operating point = envelope centre, all configurations)")
-    C.write_report("lindistflow_error.md" if a.model == "lindistflow" else f"{a.model}_error.md", body)
+    C.write_report(("lindistflow_error" if a.model == "lindistflow" else f"{a.model}_error") + f"{a.report_tag}.md", body)
     print(f"max err {e.max():.5f}  p95 {np.percentile(e,95):.5f}  worst found {wmax:.5f}")
 
 

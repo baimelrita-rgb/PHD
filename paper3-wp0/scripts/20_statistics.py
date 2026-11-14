@@ -40,7 +40,7 @@ def garwood(k, alpha=0.05):
     return lo, hi
 
 
-def outcomes(t, alarm, events, strict=None, settle=60.0):
+def outcomes(t, alarm, events, strict=None, settle=60.0, added_t=None):
     att = [e for e in events if e["description"] in PROCESS and "benign" not in e["id"]]
     out = {}
     for e in att:
@@ -49,6 +49,8 @@ def outcomes(t, alarm, events, strict=None, settle=60.0):
             rf, added = strict
             prior = added < e["start"]
             a_e = rf[prior].any(axis=0) if prior.any() else np.zeros(len(t), bool)
+        elif added_t is not None:
+            a_e = alarm & (added_t < e["start"])
         else:
             a_e = alarm
         out[e["id"]] = bool(a_e[sel].any())
@@ -66,18 +68,24 @@ def outcomes(t, alarm, events, strict=None, settle=60.0):
 def main():
     ap = C.parser(__doc__)
     ap.add_argument("--tag", default="", help="01-Basic consolidation run to use (e.g. _tc: WP5 per-topology calibration)")
+    ap.add_argument("--pool-with", default="split", help="split-day variant whose paired counts are pooled with the recorded days")
     a = ap.parse_args()
     cf = f"consolidation_fires{a.tag}.npz"
     methods = {
         "sherlock": {"classic": ("detector_alarms_physics.npz", "D1", None),
                      "library (strict)": (cf, "lib_prior", "strict"),
-                     "combined": (cf, "comb", None)},
+                     "combined": (cf, "comb", None),
+                     "combined (strict)": (cf, "comb_strict", "strict")},
         "semiurban": {"classic": ("se_residuals.npz", "alarm", None),
                       "library (L = 3)": ("semiurban_fires.npz", "fires_p", None),
-                      "combined": ("semiurban_fires.npz", "comb", None)},
+                      "combined": ("semiurban_fires.npz", "comb", None),
+                      "library (L = 3, strict)": ("semiurban_fires.npz", "fires_p", "topo"),
+                      "combined (strict)": ("semiurban_fires.npz", "comb", "topo")},
         "rural": {"classic": ("se_residuals.npz", "alarm", None),
                   "library (L = 3)": ("semiurban_fires.npz", "fires_p", None),
-                  "combined": ("semiurban_fires.npz", "comb", None)},
+                  "combined": ("semiurban_fires.npz", "comb", None),
+                  "library (L = 3, strict)": ("semiurban_fires.npz", "fires_p", "topo"),
+                  "combined (strict)": ("semiurban_fires.npz", "comb", "topo")},
     }
     results = {}
     for grid, ms in methods.items():
@@ -89,16 +97,29 @@ def main():
         for name, (f, key, mode) in ms.items():
             d = np.load(C.interim(f), allow_pickle=True)
             t = d["t"] if "t" in d else d["test_t"]
-            if key == "comb":
+            if mode == "topo" and "added_t" not in d:
+                continue
+            added_t = None
+            if key in ("comb", "comb_strict"):
                 if grid == "sherlock":
-                    al = d["det"].astype(bool) | d["lib_prior"].astype(bool)
+                    det = d["det"].astype(bool)
+                    al = det | d["lib_prior"].astype(bool)
                 else:
                     sb = np.load(C.interim("se_residuals.npz"), allow_pickle=True)
-                    al = sb["alarm"].astype(bool) | d["fires_p"].astype(bool)
+                    det = sb["alarm"].astype(bool)
+                    al = det | d["fires_p"].astype(bool)
+                if mode == "topo":
+                    added_t = np.where(det, -np.inf, d["added_t"])
             else:
                 al = d[key].astype(bool)
-            strict = (d["rule_fires"].astype(bool), d["added_at"]) if mode == "strict" else None
-            res[name] = outcomes(t, al, ev, strict)
+                if mode == "topo":
+                    added_t = d["added_t"]
+            if key == "comb_strict":     # detectors, or library rules learned before the attack
+                rf = np.vstack([d["rule_fires"].astype(bool), det[None, :]])
+                strict = (rf, np.r_[d["added_at"], -np.inf])
+            else:
+                strict = (d["rule_fires"].astype(bool), d["added_at"]) if mode == "strict" else None
+            res[name] = outcomes(t, al, ev, strict, added_t=added_t)
         results[grid] = (res, {e["id"]: e["description"] for e in ev})
     C.GRID = C.DEFAULT_GRID
 
@@ -115,6 +136,8 @@ def main():
             lo, hi = wilson(k, n)
             flo, fhi = garwood(eps)
             rows.append([grid, name, f"{k}/{n}", f"{k / n:.2f} [{lo:.2f}, {hi:.2f}]", f"{eps / hours:.2f} [{flo / hours:.2f}, {fhi / hours:.2f}]"])
+            if "strict" in name and name != "library (strict)":
+                continue      # strict variants are reported per grid and in the paired tests, not pooled twice
             pk, pn = pooled.get(name.split(" ")[0], (0, 0))
             pooled[name.split(" ")[0]] = (pk + k, pn + n)
     body += "## Detection and false alarms per grid\n\n" + C.md_table(["grid", "method", "detected", "rate [95 % CI]", "false-alarm episodes per benign hour [95 % CI]"], rows)
@@ -132,19 +155,28 @@ def main():
             c = sum(1 for i in base if base[i] and not o[i])
             p = binomtest(b, b + c, 0.5).pvalue if b + c else 1.0
             trow.append([grid, f"{other} vs {names[0]}", b, c, f"{p:.3f}"])
-    # pooled McNemar for combined vs classic
-    b = c = 0
+    # pooled McNemar for combined vs classic, and for the strict variant where every grid has it
+    b = c = bs = cs = 0
+    all_strict = all("combined (strict)" in res for res, _ in results.values())
     for grid, (res, types) in results.items():
         base, o = res["classic"][0], res["combined"][0]
         b += sum(1 for i in base if o[i] and not base[i]); c += sum(1 for i in base if base[i] and not o[i])
+        if all_strict:
+            os_ = res["combined (strict)"][0]
+            bs += sum(1 for i in base if os_[i] and not base[i]); cs += sum(1 for i in base if base[i] and not os_[i])
     trow.append(["pooled", "combined vs classic", b, c, f"{binomtest(b, b + c, 0.5).pvalue if b + c else 1.0:.3f}"])
+    if all_strict:
+        trow.append(["pooled", "combined (strict) vs classic", bs, cs, f"{binomtest(bs, bs + cs, 0.5).pvalue if bs + cs else 1.0:.3f}"])
     import json
-    (C.INTERIM / C.suffixed(f"mcnemar_pooled{a.tag}.json")).write_text(json.dumps({"b": b, "c": c, "pooled": pooled}))
-    other = C.INTERIM / f"mcnemar_pooled{a.tag}_split.json"
+    (C.INTERIM / C.suffixed(f"mcnemar_pooled{a.tag}.json")).write_text(json.dumps({"b": b, "c": c, "bs": bs, "cs": cs, "all_strict": all_strict, "pooled": pooled}))
+    other = C.INTERIM / f"mcnemar_pooled{a.tag}_{a.pool_with}.json"
     if S.variant() == "" and other.exists():
         o = json.loads(other.read_text())
         B, Cc = b + o["b"], c + o["c"]
-        trow.append(["recorded test days + split day (v2)", "combined vs classic", B, Cc, f"{binomtest(B, B + Cc, 0.5).pvalue if B + Cc else 1.0:.5f}"])
+        trow.append([f"recorded test days + {a.pool_with} day", "combined vs classic", B, Cc, f"{binomtest(B, B + Cc, 0.5).pvalue if B + Cc else 1.0:.5f}"])
+        if all_strict and o.get("all_strict"):
+            Bs, Cs = bs + o["bs"], cs + o["cs"]
+            trow.append([f"recorded test days + {a.pool_with} day", "combined (strict) vs classic", Bs, Cs, f"{binomtest(Bs, Bs + Cs, 0.5).pvalue if Bs + Cs else 1.0:.5f}"])
         for name in pooled:
             k, n = pooled[name][0] + o["pooled"][name][0], pooled[name][1] + o["pooled"][name][1]
             lo, hi = wilson(k, n)
@@ -154,7 +186,7 @@ def main():
     body += "\n## Paired tests (exact McNemar)\n\n" + C.md_table(["grid", "comparison", "only the first detects", "only the classic detects", "p (two-sided)"], trow)
     body += ("\nReading: with 16 to 23 process-attack instances per grid, intervals are wide; a difference of a few instances "
              "is not significant on one grid alone. The pooled test is the paper's main paired evidence.\n")
-    C.write_report(f"statistics{a.tag}.md", body)
+    C.write_report(f"statistics{a.tag}" + ("" if a.pool_with == "split" else f"_pooled_{a.pool_with}") + ".md", body)
     print(body[-1800:])
 
 

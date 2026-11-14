@@ -16,6 +16,13 @@ ROOTS = {"semiurban": ROOT_SEMI, "rural": ROOT_RURAL}
 SPLIT_DIR = Path(__file__).resolve().parents[2] / "data" / "split"
 
 
+def split_dir() -> Path:
+    """Data root of a split-day variant: data/split for 'split' and its envelope-only variants (split_tappad),
+    data/<variant> for variants with their own injected day (e.g. split_d05, split_d20)."""
+    v = variant()
+    return SPLIT_DIR if v in ("", "split", "split_tappad") else SPLIT_DIR.parent / v
+
+
 def variant() -> str:
     """'' (the recorded days) or 'split' (WP4d: semi-synthetic day; env P3_VARIANT=split, built by scripts/22_split_day.py)."""
     import os
@@ -28,7 +35,7 @@ def root(name=None) -> Path:
         from . import envelope as E
         name = E.grid().name
     if variant().startswith("split"):
-        return SPLIT_DIR / ("sherlock" if name not in ROOTS else name)
+        return split_dir() / ("sherlock" if name not in ROOTS else name)
     return ROOTS.get(name, ROOT_DEFAULT)
 
 

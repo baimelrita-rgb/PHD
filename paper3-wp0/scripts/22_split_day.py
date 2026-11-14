@@ -201,7 +201,7 @@ def plan(grid, G, first_state, t0, t1, benign, rng, a):
             else:   # v2: magnitude and bus count of a measured real drift-off instance of this grid (scripts/22a), magnitude +-20 %
                 real = json.loads((C.ROOT / "rules" / "drift_magnitudes.json").read_text())[grid]
                 k_inst = int(rng.integers(len(real["max_signed_offset_pu"])))
-                D = float(real["max_signed_offset_pu"][k_inst]) * float(rng.uniform(0.8, 1.2))
+                D = float(real["max_signed_offset_pu"][k_inst]) * float(rng.uniform(0.8, 1.2)) * a.drift_scale
                 buses = area(net, b, max(1, int(real["buses_above_0.005"][k_inst])), rng)
             buses = [x for x in buses if x in obs_bus and x != 0] or [b]
             e["params"] = {"buses": buses, "final_offset_pu": D}
@@ -310,6 +310,7 @@ def main():
     ap.add_argument("--attack-model", default="v2", choices=["v1", "v2"],
                     help="v1: guessed drift range, 3-bus freeze; v2: drift magnitudes measured on the real attacks, larger frozen area")
     ap.add_argument("--freeze-buses", type=int, default=0, help="v2 frozen-area size (0: 3 on 01-Basic, 10 on 02-Semiurban)")
+    ap.add_argument("--drift-scale", type=float, default=1.0, help="v2 sensitivity: multiply the measured drift magnitudes")
     ap.add_argument("--gap-lo", type=float, default=240.0)
     ap.add_argument("--gap-hi", type=float, default=480.0)
     a = ap.parse_args()
@@ -319,7 +320,7 @@ def main():
         rng = np.random.default_rng(a.seed + (0 if grid == "sherlock" else 100))
         a.fb_eff = a.freeze_buses or (3 if grid == "sherlock" else 10)
         src, v = ORIG[grid], VANTAGE[grid]
-        out = S.SPLIT_DIR / grid
+        out = S.split_dir() / grid
         for sp in ("train", "test"):
             (out / "ipal" / sp).mkdir(parents=True, exist_ok=True)
         if not (out / "raw").exists():

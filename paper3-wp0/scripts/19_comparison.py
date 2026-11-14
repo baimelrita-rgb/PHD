@@ -41,7 +41,7 @@ def load(path, key):
     return (d["t"] if "t" in d else d["test_t"]), d[key].astype(bool)
 
 
-def evaluate(t, alarm, events, settle=60.0, strict=None):
+def evaluate(t, alarm, events, settle=60.0, strict=None, added_t=None):
     """strict = (rule_fires, added_at): an attack counts as detected by the library only through rules
     learned before the attack started (no credit for rules learned from that attack's own alert)."""
     att = [e for e in events if "benign" not in e["id"]]
@@ -58,6 +58,8 @@ def evaluate(t, alarm, events, settle=60.0, strict=None):
             rf, added = strict
             prior = added < e["start"]
             alarm_e = rf[prior].any(axis=0) if prior.any() else np.zeros(len(t), bool)
+        elif added_t is not None:
+            alarm_e = alarm & (added_t < e["start"])       # per-record topology rule certified before the attack
         else:
             alarm_e = alarm
         if alarm_e[sel].any():
@@ -85,7 +87,7 @@ def main():
     ap = C.parser(__doc__)
     a = ap.parse_args()
     body = "# WP2-c: comparison of detection methods, robustness and ablations\n\n"
-    if S.variant() == "split":
+    if S.variant().startswith("split"):
         body = ("# WP4d: comparison on the semi-synthetic split day\n\nSecond half of each recorded train day with injected "
                 "attacks (`split_day.md`); every calibration redone on the first half only. Rows without saved alarms are ⟨·⟩.\n\n")
     body += ("All numbers recomputed here from saved per-record alarms. Benign records: more than 60 s from any attack "
@@ -93,7 +95,7 @@ def main():
              "start, averaged over detected process-attack instances (arp-spoof excluded per owner decision 1).\n\n")
     out = {}
     grids = [("sherlock", "01-Basic (CIGRE MV, 15 buses, fully observed)"), ("semiurban", "02-Semiurban (SimBench, 178 buses, about 40 % unmonitored)")]
-    if (C.INTERIM / "se_residuals_rural.npz").exists() and S.variant() != "split":
+    if (C.INTERIM / "se_residuals_rural.npz").exists() and not S.variant().startswith("split"):
         grids.append(("rural", "03-Rural (SimBench, 99 buses; zero-training transfer: no Rural data used for calibration, ML trained on the first 30 min only)"))
     for grid, label in grids:
         E.use_grid(grid)
@@ -101,8 +103,8 @@ def main():
         ev = S.load_events(S.root(), "test")
         rows, res = [], {}
 
-        def add(name, x, strict=None):
-            r = evaluate(*x, ev, strict=strict) if x is not None else None
+        def add(name, x, strict=None, added_t=None):
+            r = evaluate(*x, ev, strict=strict, added_t=added_t) if x is not None else None
             res[name] = (r, x)
             rows.append(row(name, r))
         if grid == "sherlock":
@@ -135,6 +137,13 @@ def main():
             add("ML: autoencoder, SE-residual features", load(C.suffixed("detector_alarms_physics.npz"), "AE"))
             add("Certified library, single record", load(C.suffixed("semiurban_fires.npz"), "fires"))
             add("Certified library, persistence L = 3", load(C.suffixed("semiurban_fires.npz"), "fires_p"))
+            pf = C.INTERIM / C.suffixed("semiurban_fires.npz")
+            df_ = np.load(pf, allow_pickle=True) if pf.exists() else None
+            if df_ is not None and "added_t" in df_:
+                add("Certified library, L = 3, strict (topology certified before the attack)", (df_["t"], df_["fires_p"].astype(bool)), added_t=df_["added_t"])
+                sbb = load(C.suffixed("se_residuals.npz"), "alarm")
+                add("Combined, strict: SE-BDD or library (L = 3, topology certified before the attack)", (df_["t"], df_["det"].astype(bool) | df_["fires_p"].astype(bool)) if sbb else None,
+                    added_t=np.where(df_["det"].astype(bool), -np.inf, df_["added_t"]))
             sb = load(C.suffixed("se_residuals.npz"), "alarm")
             lp0 = load(C.suffixed("semiurban_fires.npz"), "fires_p")
             add("Combined: SE-BDD or certified library (L = 3)", (sb[0], sb[1] | lp0[1]) if sb and lp0 else None)

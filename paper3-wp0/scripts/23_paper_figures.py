@@ -15,7 +15,16 @@ BLUE, ORANGE, AQUA, VIOLET = "#2a78d6", "#eb6834", "#1baf7a", "#6250d6"
 INK, INK2, MUTED, GRID, SURF = "#0b0b0b", "#52514e", "#8a8984", "#e6e5e1", "#fcfcfb"
 plt.rcParams.update({"font.family": "Inter", "font.size": 8, "axes.edgecolor": INK2, "axes.labelcolor": INK,
                      "xtick.color": INK2, "ytick.color": INK2, "axes.spines.top": False, "axes.spines.right": False,
-                     "axes.linewidth": 0.6, "xtick.major.width": 0.6, "ytick.major.width": 0.6, "svg.fonttype": "none"})
+                     "axes.linewidth": 0.6, "xtick.major.width": 0.6, "ytick.major.width": 0.6, "svg.fonttype": "path", "pdf.fonttype": 42})
+
+
+def headline(fig, text, sub=None):
+    h = fig.get_size_inches()[1]
+    y_sub = 1 + 0.10 / h
+    y_head = 1 + (0.30 if sub else 0.10) / h
+    fig.text(0.0, y_head, text, fontsize=9, fontweight="semibold", color=INK, ha="left", va="bottom", transform=fig.transFigure)
+    if sub:
+        fig.text(0.0, y_sub, sub, fontsize=7, color=INK2, ha="left", va="bottom", transform=fig.transFigure)
 
 
 def save(fig, name):
@@ -41,51 +50,56 @@ def arrow(ax, p, q, color=INK2, lw=0.9, style="->", rad=0.0, ls="-"):
 
 # ---------------------------------------------------------------- Fig 1: end-to-end architecture
 def fig1_architecture():
-    fig, ax = plt.subplots(figsize=(7.4, 5.6))
-    ax.set_xlim(0, 10); ax.set_ylim(0, 6.6); ax.axis("off")
-    # lane labels
-    for y, lab in ((5.95, "Field and control centre"), (4.35, "Alert and synthesis"), (2.45, "Physics oracle (certification gate)"), (0.72, "Operation")):
-        ax.text(0.05, y, lab.upper(), fontsize=6.2, color=MUTED, va="center", fontweight="semibold")
-        ax.plot([0.05, 9.95], [y - 0.16, y - 0.16], color=GRID, lw=0.6, zorder=0)
-    # row 1
-    box(ax, 0.1, 4.75, 1.8, 1.0, "Distribution grid", "RTUs, switches, taps,\nloads, DER, storage")
-    box(ax, 2.25, 4.75, 1.9, 1.0, "SCADA telemetry", "IEC 104 at 1 Hz: voltages,\nflows, injections, switch\nand tap states")
-    box(ax, 4.5, 4.75, 2.1, 1.0, "Detectors (alert sources)", "D1 power-flow residual\nSE-BDD (partial observability)\nML: autoencoder, isolation forest")
-    box(ax, 6.95, 4.75, 2.95, 1.0, "Offline calibration (train day)", "reconstructed grid model, benign\nenvelope, noise per measurement,\ndetector thresholds", fc="#eef3fa")
-    arrow(ax, (1.9, 5.25), (2.25, 5.25)); arrow(ax, (4.15, 5.25), (4.5, 5.25))
-    # row 2
-    box(ax, 2.25, 3.2, 1.9, 0.95, "Alert episode", "60 s of telemetry\nfrom the first alarm")
-    box(ax, 4.5, 3.2, 2.1, 0.95, "Covered already?", "a library rule fires\nwithin the window: stop")
-    box(ax, 6.95, 3.2, 2.95, 0.95, "Rule synthesis", "P invariant, G grid-wide invariant\nper topology, S state change,\nSE estimation residual")
-    arrow(ax, (5.55, 4.75), (5.55, 4.15))
-    ax.text(5.62, 4.45, "alarm", fontsize=6.2, color=INK2, va="center")
-    arrow(ax, (4.15, 3.67), (4.5, 3.67))
-    arrow(ax, (3.2, 4.75), (3.2, 4.15)); ax.text(3.27, 4.45, "window", fontsize=6.2, color=INK2, va="center")
-    arrow(ax, (6.6, 3.67), (6.95, 3.67)); ax.text(6.77, 3.9, "no", fontsize=6.2, color=INK2, ha="center")
-    # row 3 oracle
-    ax.add_patch(FancyBboxPatch((2.25, 1.05), 7.65, 1.65, boxstyle="round,pad=0.015,rounding_size=0.08", fc="#fdf3ea", ec=ORANGE, lw=1.0))
-    box(ax, 2.45, 1.25, 2.3, 1.2, "Search layer", "10,000 LHS states and\ndifferential evolution on the\nfull AC power flow", fc=SURF)
-    box(ax, 5.0, 1.25, 2.3, 1.2, "Robust exact layer", "Z3 over linearised AC and\nenvelope; atoms shifted by δ;\nUNSAT is a certificate", fc=SURF)
-    box(ax, 7.55, 1.25, 2.15, 1.2, "Error bounds δ", "adversarial search × 1.25,\nrule-specific atom bounds,\nscenario bound ε = 3.45e-4", fc=SURF)
-    ax.text(9.8, 2.6, "oracle", fontsize=6.2, color=ORANGE, ha="right", va="center", fontweight="semibold")
-    arrow(ax, (8.4, 3.2), (8.4, 2.72)); ax.text(8.47, 2.96, "candidate rules", fontsize=6.2, color=INK2, va="center")
-    arrow(ax, (7.55, 1.85), (7.3, 1.85), style="->")
-    # CEGIS loop back to synthesis
-    arrow(ax, (3.6, 2.45), (3.6, 3.2), color=ORANGE, rad=0.0)
-    ax.text(3.68, 2.9, "counterexample:\nrefine margin (CEGIS)", fontsize=6.2, color=ORANGE, va="center", bbox=dict(fc=SURF, ec="none", pad=1))
-    # row 4
-    box(ax, 2.25, 0.08, 2.9, 0.5, "Certified rule library", fc="#e8f5ef", ec=AQUA)
-    box(ax, 5.5, 0.08, 2.1, 0.5, "Online per-topology\nnoise calibration (5 min)", fc="#eef3fa", title_size=6.6)
-    box(ax, 7.95, 0.08, 1.95, 0.5, "Operator alarms", fc="#f1f0ec")
-    arrow(ax, (6.15, 1.25), (4.2, 0.58), color=AQUA)
-    ax.text(5.6, 0.86, "no counterexample: certified", fontsize=6.2, color=AQUA, va="center", ha="center",
-            bbox=dict(fc=SURF, ec="none", pad=1))
-    arrow(ax, (5.15, 0.33), (5.5, 0.33)); arrow(ax, (7.6, 0.33), (7.95, 0.33))
-    arrow(ax, (1.0, 4.75), (1.0, 0.33), color=INK2, ls=(0, (2, 2)))
-    arrow(ax, (1.0, 0.33), (2.25, 0.33), color=INK2, ls=(0, (2, 2)))
-    ax.text(1.08, 2.0, "live telemetry\nmatched against\nthe library", fontsize=6.2, color=INK2, va="center")
+    """Coordinates are in inches (axes fill the figure), so text sizes and box sizes are commensurable."""
+    W, H = 7.4, 4.55
+    fig = plt.figure(figsize=(W, H))
+    ax = fig.add_axes([0, 0, 1, 1]); ax.set_xlim(0, W); ax.set_ylim(0.2, H); ax.axis("off")
+    C1, C2, C3, BW = 1.0, 3.18, 5.36, 1.9           # box columns (left edges) and width; 0.28 in gaps
+    lanes = [("MONITOR", 3.62, 4.52), ("LEARN", 2.62, 3.52), ("CERTIFY", 1.27, 2.52), ("OPERATE", 0.27, 1.17)]
+    for lab, y0, y1 in lanes:
+        ax.add_patch(Rectangle((0.02, y0), W - 0.04, y1 - y0, fc="#f4f3ef", ec="none", zorder=0))
+        ax.text(0.12, (y0 + y1) / 2, lab, fontsize=6.6, color=MUTED, fontweight="semibold", va="center", ha="left")
+    bh = 0.76
 
-    ax.text(0.1, 6.42, "Labels are never used in the loop; they score detection and false alarms afterwards.", fontsize=6.4, color=MUTED, style="italic")
+    def B(col, lane, title, body="", fc=SURF, ec=INK2, lw=0.8):
+        y0, y1 = lanes[lane][1], lanes[lane][2]
+        y = y0 + (y1 - y0 - bh) / 2
+        if lane == 2:
+            y = 1.36
+        box(ax, col, y, BW, bh, title, body, fc=fc, ec=ec, lw=lw, title_size=7.2, body_size=6.0, gap=0.27)
+        return col, y
+
+    # monitor
+    B(C1, 0, "Grid and SCADA telemetry", "IEC 104 at 1 Hz: voltages,\nflows, injections, switch\nand tap states")
+    B(C2, 0, "Detectors (alert sources)", "D1 power-flow residual\nSE-BDD with state estimation\nautoencoder, isolation forest")
+    B(C3, 0, "Offline calibration", "attack-free train day: grid\nmodel, benign envelope,\nnoise per measurement", fc="#eef3fa", ec=BLUE)
+    # learn
+    B(C2, 1, "Alert episode", "60 s from the first alarm;\nskipped when a library rule\nalready fires (covered)")
+    B(C3, 1, "Rule synthesis", "P  one-measurement invariant\nG  grid-wide invariant\nS  state change    SE  residual")
+    ax.text(C1 + BW / 2, 3.07, "labels are never used in the loop;\nthey only score it afterwards", fontsize=6.0, color=MUTED, style="italic", ha="center", va="center")
+    # certify
+    ax.add_patch(FancyBboxPatch((C1 - 0.06, 1.31), C3 + BW - C1 + 0.12, 1.15, boxstyle="round,pad=0.0,rounding_size=0.06", fc="#fdf3ea", ec=ORANGE, lw=1.0, zorder=0.5))
+    ax.text(C1 + 0.02, 2.37, "PHYSICS ORACLE (certification gate)", fontsize=6.2, color=ORANGE, fontweight="semibold", ha="left", va="center")
+    B(C1, 2, "Error bounds δ", "adversarial search × 1.25;\nscenario bound: exceeded\nwith probability ≤ 3.45e-4")
+    B(C2, 2, "Robust exact layer (Z3)", "linearised AC + envelope,\nrule atoms shifted by δ;\nUNSAT: rule is PROVED")
+    B(C3, 2, "Search layer (AC)", "10,000 LHS states and\ndifferential evolution;\nfinds benign counterexamples")
+    # operate
+    B(C1, 3, "Live telemetry", "the same SCADA stream,\nmatched rule by rule")
+    B(C2, 3, "Certified rule library", "readable JSON rules,\neach with its certificate", fc="#e8f5ef", ec=AQUA, lw=1.0)
+    B(C3, 3, "Operator alarms", "after 5 min of online noise\ncalibration per new topology")
+    # arrows (horizontal at box mid-height, vertical between lanes)
+    ym = lambda lane: (lanes[lane][1] + lanes[lane][2]) / 2
+    arrow(ax, (C1 + BW, ym(0)), (C2, ym(0)))
+    arrow(ax, (C2 + BW / 2, 3.69), (C2 + BW / 2, 3.45)); ax.text(C2 + BW / 2 + 0.05, 3.57, "alarm", fontsize=6, color=INK2, va="center")
+    arrow(ax, (C2 + BW, ym(1)), (C3, ym(1)))
+    arrow(ax, (C3 + 1.35, 2.69), (C3 + 1.35, 2.13)); ax.text(C3 + 1.4, 2.575, "candidates", fontsize=6, color=INK2, va="center", ha="left")
+    arrow(ax, (C3 + 0.55, 2.13), (C3 + 0.55, 2.69), color=ORANGE); ax.text(C3 + 0.5, 2.575, "counterexample: raise margin", fontsize=6, color=ORANGE, va="center", ha="right")
+    arrow(ax, (C3, 1.74), (C2 + BW, 1.74))
+    arrow(ax, (C1 + BW, 1.74), (C2, 1.74))
+    arrow(ax, (C2 + BW / 2, 1.36), (C2 + BW / 2, 1.1), color=AQUA, lw=1.1); ax.text(C2 + BW / 2 + 0.05, 1.22, "certified", fontsize=6, color=AQUA, va="center")
+    arrow(ax, (C1 + BW, ym(3)), (C2, ym(3)))
+    arrow(ax, (C2 + BW, ym(3)), (C3, ym(3)))
+    headline(fig, "Every alert becomes a candidate rule; only rules that pass the physics gate can raise an alarm")
     save(fig, "fig1_architecture")
 
 
@@ -109,6 +123,7 @@ def fig2_oracle():
     ax.set_xlim(0, 1.35); ax.set_xticks([0, 0.5, 1.0]); ax.set_xticklabels(["0", "0.5 δ", "δ = 1.25 × worst"], fontsize=6.8)
     ax.set_xlabel("linearised-AC error relative to the bound δ (Sherlock 01-Basic)", fontsize=7)
     ax.legend(fontsize=6.3, frameon=False, loc="upper center", bbox_to_anchor=(0.45, -0.28), ncol=2, handletextpad=0.3, columnspacing=1.0)
+    headline(fig, "The bound δ lies above every observed and every searched linearisation error", "margin between the worst case found and δ is the 1.25 safety factor")
     save(fig, "fig2_bounds")
 
 
@@ -125,12 +140,13 @@ def fig3_cegis():
     ax.scatter(range(len(ref)), ref, s=16, color=BLUE, zorder=3)
     ax.plot(range(len(sh)), sh, "-", lw=1.6, color=ORANGE, zorder=2)
     ax.scatter(range(len(sh)), sh, s=16, color=ORANGE, zorder=3)
-    ax.text(10, 0.9032, "reference CIGRE MV", fontsize=6.5, color=INK, ha="right")
-    ax.text(1.25, 0.9062, "Sherlock 01-Basic", fontsize=6.5, color=INK, ha="left")
-    ax.text(0.25, 0.9430, "τ₀ = 0.9428", fontsize=6.3, color=INK2); ax.text(0.25, 0.9325, "τ₀ = 0.9333", fontsize=6.3, color=INK2)
+    ax.text(0.22, 0.9440, "reference CIGRE MV, τ₀ = 0.9428", fontsize=6.4, color=INK, va="center")
+    ax.text(0.22, 0.9336, "Sherlock 01-Basic, τ₀ = 0.9333", fontsize=6.4, color=INK, va="center")
+
     ax.set_xlabel("CEGIS iteration"); ax.set_ylabel("threshold τ of rule R1 (pu)")
     ax.set_ylim(0.8945, 0.948); ax.set_xlim(-0.3, 10.4); ax.set_xticks(range(0, 11, 2))
     ax.grid(axis="y", color=GRID, lw=0.5); ax.set_axisbelow(True)
+    headline(fig, "A threshold mined from history cannot be made safe", "each counterexample lowers τ until the rule can fire only below the operating limit")
     save(fig, "fig3_cegis")
 
 
@@ -167,7 +183,7 @@ def fig4_timeline():
     ax.set_yticklabels(["library first fires", "attack window", "detector first alarm", "benign procedure", "alert episode", "candidate refuted"], fontsize=6.8)
     ax.tick_params(axis="y", length=0); ax.spines["left"].set_visible(False)
     for y in (0.95, 1.55, 2.05, 2.6): ax.axhline(y, color=GRID, lw=0.5, zorder=0)
-    ax.set_title("Self-consolidation on the 01-Basic test day: alerts, learned rules and detections in time order", loc="left", fontsize=8.5, color=INK)
+    headline(fig, "The library grows from alerts during the day and fires on later attacks, including ones the detectors miss", "01-Basic test day; the library counts only rules learned before each attack")
     handles = [Line2D([], [], marker="s", ls="", color=T[k], ms=6, label=k) for k in ("control-and-freeze", "drift-off", "industroyer", "arp-spoof (excluded)")]
     handles += [Line2D([], [], marker="^", ls="", color=AQUA, ms=6, label="G rule certified"), Line2D([], [], marker="^", ls="", color=VIOLET, ms=6, label="S rule certified"),
                 Line2D([], [], marker="o", ls="", color=INK2, ms=4, label="covered by library"), Line2D([], [], marker="x", ls="", color="#b03a32", ms=5, label="candidate refuted")]
@@ -214,8 +230,9 @@ def fig5_detection():
                    ("certified library, L = 3\nFA 0.00000", [[7, 7], [4, 7], [0, 7]]), ("certified library, 1 record\nFA 0.0042", [[7, 7], [6, 7], [0, 7]])],
           "(c) 02-Semiurban, additional day")
     handles = [Line2D([], [], marker="s", ls="", color=c, ms=7, label=t) for t, c in (("control-and-freeze", BLUE), ("drift-off", ORANGE), ("industroyer", AQUA))]
-    fig.legend(handles=handles, fontsize=7, frameon=False, loc="lower center", ncol=3, bbox_to_anchor=(0.5, -0.01))
-    fig.tight_layout(rect=(0, 0.07, 1, 1))
+    fig.tight_layout(rect=(0, 0.08, 1, 1))
+    fig.legend(handles=handles, fontsize=7, frameon=False, loc="lower center", ncol=3, bbox_to_anchor=(0.5, -0.03))
+    headline(fig, "Under partial observability, per-measurement certified margins detect what one global threshold hides", "bars: share of attack instances detected; FA: false alarms per benign record")
     save(fig, "fig5_detection")
 
 
@@ -233,7 +250,7 @@ def fig6_false_alarms():
         for i, (name, v, c) in enumerate(items):
             x = max(v, lo)
             ax.plot([lo, x], [i, i], color=c, lw=4, solid_capstyle="butt", zorder=2)
-            lab = "0 (no false alarm)" if v == 0 else (f"{v * 100:.3f} %" if v < 0.01 else f"{v * 100:.1f} %")
+            lab = "0 (no false alarm)" if v == 0 else (f"{v * 100:.3f} %" if v < 0.01 else (f"{v * 100:.2f} %" if v > 0.99 else f"{v * 100:.1f} %"))
             ax.text(x * 1.15, i, lab, va="center", fontsize=6.5, color=INK2)
         ax.set_yticks(range(len(items))); ax.set_yticklabels([n for n, _, _ in items], fontsize=6.8); ax.invert_yaxis()
         ax.set_xscale("log"); ax.set_xlim(lo, 3.0); ax.tick_params(axis="y", length=0)
@@ -242,36 +259,50 @@ def fig6_false_alarms():
     axs[-1].set_xticks([1e-4, 1e-3, 1e-2, 1e-1, 1]); axs[-1].set_xticklabels(["0.01 %", "0.1 %", "1 %", "10 %", "100 %"], fontsize=7)
     axs[-1].set_xlabel("false alarms per benign record (log scale)", fontsize=7.5)
     handles = [Line2D([], [], color=c, lw=4, label=l) for l, c in (("classic physics detector", BLUE), ("certified rule library", ORANGE), ("machine-learning detector", MUTED))]
-    fig.legend(handles=handles, fontsize=7, frameon=False, loc="upper right", bbox_to_anchor=(0.99, 1.0), ncol=3)
+    fig.legend(handles=handles, fontsize=7, frameon=False, loc="lower center", bbox_to_anchor=(0.5, -0.06), ncol=3)
+    headline(fig, "Certified rules keep false alarms at the level of a physics detector; learned detectors on raw telemetry do not", "false alarms per benign record on the three grids, log scale")
     save(fig, "fig6_false_alarms")
 
 
 # ---------------------------------------------------------------- Fig 7: pooled detection with CIs
 def fig7_pooled():
-    """statistics.md, statistics_split.md."""
-    data = [("recorded test days\n61 instances, 3 grids", [(22, 61, .25, .49), (25, 61, .30, .54), (27, 61, .33, .57)]),
-            ("recorded + additional day\n103 instances", [(35, 103, .26, .44), (42, 103, .32, .50), (49, 103, .38, .57)])]
-    fig, ax = plt.subplots(figsize=(3.6, 2.5))
+    """(a) statistics.md, statistics_split.md; (b) statistics.md, statistics_split*.md, statistics_pooled_split_d*.md."""
+    fig, (ax, bx) = plt.subplots(1, 2, figsize=(7.4, 2.7), gridspec_kw={"width_ratios": [1, 1.15], "wspace": 0.55})
+    data = [("recorded test days\n61 instances", [(22, 61, .25, .49), (25, 61, .30, .54), (27, 61, .33, .57)]),
+            ("recorded + additional\nday, 103 instances", [(35, 103, .26, .44), (42, 103, .32, .50), (49, 103, .38, .57)])]
     cols = [BLUE, ORANGE, AQUA]; names = ["classic detector", "certified library", "combined"]
     for g, (lab, rows) in enumerate(data):
         for k, (a, n, lo, hi) in enumerate(rows):
-            x = g * 3.6 + k * 0.95; p = a / n
-            ax.bar(x, p, color=cols[k], width=0.8, zorder=2, label=names[k] if g == 0 else None)
-            ax.errorbar(x, p, yerr=[[p - lo], [hi - p]], fmt="none", ecolor=INK, capsize=2.5, lw=0.8, zorder=3)
-            ax.text(x, hi + 0.025, f"{a}/{n}", ha="center", fontsize=6.3, color=INK2)
-    ax.set_xticks([0.95, 4.55]); ax.set_xticklabels([d[0] for d in data], fontsize=6.8)
-    ax.set_ylim(0, 1.0); ax.set_yticks([0, 0.25, 0.5, 0.75, 1.0]); ax.set_yticklabels(["0", "25 %", "50 %", "75 %", "100 %"], fontsize=7)
-    ax.set_ylabel("process attacks detected", fontsize=7.5)
+            x = g * 3.4 + k * 0.95; p_ = a / n
+            ax.bar(x, p_, color=cols[k], width=0.8, zorder=2, label=names[k] if g == 0 else None)
+            ax.errorbar(x, p_, yerr=[[p_ - lo], [hi - p_]], fmt="none", ecolor=INK, capsize=2.5, lw=0.8, zorder=3)
+            ax.text(x, hi + 0.03, f"{a}/{n}", ha="center", fontsize=6.2, color=INK2)
+    ax.set_xticks([0.95, 4.35]); ax.set_xticklabels([d[0] for d in data], fontsize=6.6)
+    ax.set_ylim(0, 0.8); ax.set_yticks([0, 0.2, 0.4, 0.6, 0.8]); ax.set_yticklabels(["0", "20 %", "40 %", "60 %", "80 %"], fontsize=7)
+    ax.set_ylabel("process attacks detected", fontsize=7.2)
     ax.yaxis.grid(True, color=GRID, lw=0.5); ax.set_axisbelow(True)
-    ax.legend(fontsize=6.5, frameon=False, loc="upper left", ncol=1, handlelength=1.0)
-    ax.text(5.5, 0.93, "combined vs classic (McNemar)\n5 / 0 only-one detects, p = 0.062\n14 / 0, p = 0.00012", fontsize=6.2, ha="right", va="top", color=INK2)
+    ax.legend(fontsize=6.3, frameon=False, loc="upper left", ncol=3, bbox_to_anchor=(-0.02, 1.13), handlelength=1.0, columnspacing=0.8)
+    ax.set_title("(a) detection rate with Wilson 95 % intervals", loc="left", fontsize=7.6, color=INK, pad=16)
+    rows = [("recorded test days", 5, 0, "p = 0.062"), ("+ additional day, 0.5 × drift", 14, 0, "p = 0.00012"),
+            ("+ additional day, 1 × drift (main)", 14, 0, "p = 0.00012"), ("+ additional day, 2 × drift", 12, 0, "p = 0.00049")]
+    for i_, (lab, b_, c_, pv) in enumerate(rows):
+        bx.barh(i_, b_, height=0.55, color=AQUA, zorder=2)
+        bx.barh(i_, -c_ if c_ else -0.0, height=0.55, color=BLUE, zorder=2)
+        bx.text(b_ + 0.3, i_, f"{b_} / {c_}   {pv}", va="center", fontsize=6.4, color=INK2)
+    bx.axvline(0, color=INK2, lw=0.8)
+    bx.set_yticks(range(len(rows))); bx.set_yticklabels([r[0] for r in rows], fontsize=6.8); bx.tick_params(axis="y", length=0)
+    bx.set_xlim(0, 22); bx.set_ylim(4.0, -0.5); bx.set_xticks([0, 5, 10, 15]); bx.set_xlabel("attack instances detected by only one side", fontsize=7)
+    bx.xaxis.grid(True, color=GRID, lw=0.5); bx.set_axisbelow(True)
+    bx.text(21.5, 3.45, "bars: instances only the combined system detects;\nonly the classic detector: 0 in every row", fontsize=6.0, color=INK2, ha="right", va="center")
+    bx.set_title("(b) paired test, combined vs classic (exact McNemar)", loc="left", fontsize=7.6, color=INK, pad=16)
+    headline(fig, "Adding the library to the classic detector never loses an attack, at any injected attack strength")
     save(fig, "fig7_pooled")
 
 
 # ---------------------------------------------------------------- Fig 8: what calibration does
 def fig8_calibration():
     """comparison.md, comparison_split.md (WP5 rows); semiurban_consolidation_*_rural.md."""
-    fig, axs = plt.subplots(1, 2, figsize=(7.4, 2.4), gridspec_kw={"wspace": 0.55})
+    fig, axs = plt.subplots(1, 2, figsize=(7.4, 2.5), gridspec_kw={"wspace": 0.62, "width_ratios": [1, 1.05]})
     ax = axs[0]
     groups = ["recorded day", "additional day"]
     before, after = [0.00124, 0.01432], [0.00056, 0.00346]
@@ -287,8 +318,8 @@ def fig8_calibration():
     ax.legend(fontsize=6.2, frameon=False, loc="upper left", ncol=1)
     ax.set_title("(a) 01-Basic: per-topology calibration, detection unchanged", loc="left", fontsize=8, color=INK)
     ax = axs[1]
-    items = [("SE-BDD, threshold transferred", 0.00017, BLUE), ("library, noise floors transferred", 0.723, ORANGE),
-             ("library, transferred global margin", 0.00017, ORANGE), ("library, 30 min local calibration", 0.184, ORANGE)]
+    items = [("SE-BDD, threshold\ntransferred", 0.00017, BLUE), ("library, noise floors\ntransferred", 0.723, ORANGE),
+             ("library, global margin\ntransferred", 0.00017, ORANGE), ("library, 30 min\nlocal calibration", 0.184, ORANGE)]
     for i, (n, v, c) in enumerate(items):
         ax.plot([1e-4, v], [i, i], color=c, lw=4, solid_capstyle="butt", zorder=2)
         ax.text(v * 1.2, i, f"{v * 100:.3f} %" if v < 0.01 else f"{v * 100:.1f} %", va="center", fontsize=6.3, color=INK2)
@@ -297,6 +328,7 @@ def fig8_calibration():
     ax.tick_params(axis="y", length=0); ax.xaxis.grid(True, color=GRID, lw=0.5); ax.set_axisbelow(True)
     ax.set_xlabel("false alarms per benign record", fontsize=7)
     ax.set_title("(b) 03-Rural: what transfers without local data", loc="left", fontsize=8, color=INK)
+    headline(fig, "The physics certificate transfers between grids; the noise margin must be calibrated per grid and per topology")
     save(fig, "fig8_calibration")
 
 

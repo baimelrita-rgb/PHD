@@ -65,7 +65,7 @@ def bounds_path(model: str = "lindistflow"):
     (min/max over a subset of the same records), so the bounds remain valid and are reused."""
     name = "model_error_bounds.json" if model == "lindistflow" else f"model_error_bounds_{model}.json"
     # a split variant whose envelope is NOT a subset of the full one (e.g. padded tap range) has its own bounds
-    return ROOT / "rules" / suffixed(name, variant=_variant() not in ("", "_split"))
+    return ROOT / "rules" / suffixed(name, variant="tappad" in _variant())
 
 
 def interim(name: str):
