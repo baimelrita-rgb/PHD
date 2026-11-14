@@ -137,6 +137,7 @@ def main():
         return n, float(Tte[rows[-1]])
 
     library, lib_fire, log = {}, np.zeros(len(Tte), bool), []
+    cert_times = []
     grid_done = set()
     for (s, e) in eps:
         ta = Tte[s]
@@ -167,6 +168,7 @@ def main():
         if st is not None:
             cands.append(st)
         for k, cand in enumerate(cands):
+            t_c = time.time()
             if cand.family == "G":
                 cert = Y.certify_grid(cand, cfgs, delta, a.cert_budget, a.seed + len(log) * 100 + 50)
                 grid_done.add(T)
@@ -179,6 +181,7 @@ def main():
                 f = fires_all(cert["rule"], Mte) & (Tte >= arm.get(id(cand), -np.inf))   # never inside its calibration window
                 lib_fire |= f & (Tte >= t_act)     # a rule only acts after it was learned (and calibrated)
                 library[key]["fires"] = f
+            cert_times.append((cand.family, cert["verdict"], time.time() - t_c, len(R.clauses(cand.rule))))
             added.append(f"{cand.rule['name'][:50]}: {cert['verdict']}")
         entry["topology"] = T.label if T else "outside envelope"
         entry["action"] = "; ".join(added) or "no candidate"
@@ -187,6 +190,12 @@ def main():
         log.append(entry)
         print(f"{ta - Tte[0]:8.0f} s  {entry['action'][:110]}")
     wall = time.time() - t0
+    # evaluation cost of the final library per telemetry record (all rules, every record)
+    idx_ = M.index(); t_e = time.time(); n_e = min(len(Mte), 5000)
+    for m in Mte[:n_e]:
+        for v in library.values():
+            R.margin(v["rule"], m, idx_)
+    eval_us = (time.time() - t_e) / max(n_e, 1) * 1e6
 
     # evaluation with labels
     ev = S.load_events(S.root(), "test")
@@ -240,6 +249,11 @@ def main():
     np.savez_compressed(C.interim(f"consolidation_fires{a.tag}.npz"), t=Tte, det=det, lib_prior=lib_fire, lib_all=lib_all,
                         added_at=np.array([v["added_at"] for v in library.values()]),
                         rule_fires=np.array([v["fires"] for v in library.values()]).reshape(len(library), len(Tte)))
+    body += "\n## Cost (scalability)\n\n" + C.md_table(["family", "verdict", "certification wall s", "clauses"], [[f, v, f"{t:.1f}", n] for f, v, t, n in cert_times])
+    body += (f"\nEvaluating the final library ({len(library)} rules, "
+             f"{sum(len(R.clauses(v['rule'])) for v in library.values())} clauses) on one telemetry record: {eval_us:.0f} microseconds "
+             f"(mean over {n_e} records, single core).\n")
+    (C.INTERIM / C.suffixed(f"consolidation_cost{a.tag}.json")).write_text(json.dumps({"cert": cert_times, "eval_us": eval_us, "n_rules": len(library)}))
     body += f"\nMargin factor {Y.MARGIN_FACTOR}, seed {a.seed}, detector alarms from `{a.alarms}`.\n"
     C.write_report(f"consolidation{a.tag}.md", body)
     R.save({k: v["rule"] for k, v in library.items()}, C.ROOT / "rules" / C.suffixed(f"library{a.tag}.json"))

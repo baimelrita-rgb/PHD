@@ -204,6 +204,9 @@ def main():
         [[t, *per[t]] for t in types])
     body += "\nPer instance:\n\n" + C.md_table(["id", "type", "detector", "library", "library with persistence", "library with persistence, strict"], rows)
     np.savez_compressed(C.interim(f"semiurban_fires{a.tag}.npz"), t=Tte, det=det, fires=fires, fires_p=fires_p, L=L, added_t=added_t)
+    import pickle      # the certified rules themselves (topology, margins), for independent validation (scripts/25)
+    (C.INTERIM / C.suffixed(f"semiurban_rules{a.tag}.pkl")).write_bytes(pickle.dumps(
+        {"obs": obs, "iters": a.iters, "rules": [(cfg, v[0], v[1]["verdict"]) for cfg, v in library.items()]}))
     body += f"\nMargin factor {MARGIN_FACTOR}, seed {a.seed}.\n"
     C.write_report(f"semiurban_consolidation{a.tag}.md", body)
     print({t: per[t] for t in types}, "library FA", f"{fires[benign].mean():.5f}", "with persistence", f"{fires_p[benign].mean():.5f}", "detector FA", f"{det[benign].mean():.5f}", f"{wall:.0f}s")

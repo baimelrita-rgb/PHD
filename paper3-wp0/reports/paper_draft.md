@@ -44,6 +44,23 @@ Section II reviews related work, Section III states the problem and threat model
 
 **Datasets.** Sherlock [14], generated with the Wattson co-simulator [21] on CIGRE [22] and SimBench [23] grids, is the only public dataset we know of with recorded benign operator procedures (maintenance, ring closing, tap changes) interleaved with attacks on a distribution grid, which is exactly what a certification gate must survive. Its download contains no grid model, so we reconstruct the grids with pandapower [24] (Section V-B).
 
+**Positioning.** Table I compares the proposed system with the closest lines of work on the properties this paper targets. Entries state what each cited paper reports; "not reported" means the paper does not address the property.
+
+*Table I. Positioning against the closest prior work.*
+
+| Work | Learns detection knowledge from data | Human-readable output | Checked against a physical model before use | Counterexample-guided refinement | Grows online from alerts | Partial observability |
+| --- | --- | --- | --- | --- | --- | --- |
+| Hadžiosmanović et al. [9] | per-variable prediction models from traffic | partly | no | no | no | not reported |
+| Feng et al. [10] | invariant rules mined from data logs | yes | no (validated on data) | no | no | not reported |
+| Chen et al. [11] | SVM invariant from code-mutation traces | no | statistical model checking on a simulator | no | no | not reported |
+| TABOR [12] | timed automata and Bayesian networks | yes | no | no | no | not reported |
+| SIMPLE [13] | value ranges, changes, distributions | yes | no | no | no | not reported |
+| Bad-data detection [15], [18] | no (fixed residual statistic) | not applicable | yes (state-estimation model) | no | no | yes |
+| Imhotep-SMT [27] | no (secure state estimator) | not applicable | yes (SMT over a linear model) | no | no | yes (sensor attacks) |
+| **This paper** | rules synthesised from detector alerts | yes | yes: proved (robust SMT) or search-validated (AC) with a measured false-alarm bound | yes | yes | yes |
+
+The closest relatives either mine rules from data and trust them [9], [10], [12], [13], validate a learned model statistically once before deployment [11], or use a physical model to detect without producing reusable rules [15], [18], [27]. None turns alerts into rules that are checked against the physics before they can raise an alarm, and none grows its rule set online.
+
 ---
 
 ## III. Problem Statement and Threat Model
@@ -397,9 +414,9 @@ Code: `paper3-wp0/` in the project repository (Python, pandapower, Z3). `bash sc
 
 [10] C. Feng, V. R. Palleti, A. Mathur, and D. Chana, "A systematic framework to generate invariants for anomaly detection in industrial control systems," in *Proc. Network and Distributed System Security Symp. (NDSS)*, San Diego, CA, USA, 2019.
 
-[11] Y. Chen, C. M. Poskitt, and J. Sun, "Learning from mutants: Using code mutation to learn and monitor invariants of a cyber-physical system," in *Proc. IEEE Symp. Security and Privacy*, 2018.
+[11] Y. Chen, C. M. Poskitt, and J. Sun, "Learning from mutants: Using code mutation to learn and monitor invariants of a cyber-physical system," in *Proc. IEEE Symp. Security and Privacy (S&P)*, 2018, pp. 648–660, doi: 10.1109/SP.2018.00016.
 
-[12] Q. Lin, S. Adepu, S. Verwer, and A. Mathur, "TABOR: A graphical model-based approach for anomaly detection in industrial control systems," in *Proc. ASIACCS*, 2018.
+[12] Q. Lin, S. Adepu, S. Verwer, and A. Mathur, "TABOR: A graphical model-based approach for anomaly detection in industrial control systems," in *Proc. ACM Asia Conf. Computer and Communications Security (AsiaCCS)*, 2018, pp. 525–536, doi: 10.1145/3196494.3196546.
 
 [13] K. Wolsing, L. Thiemt, C. van Sloun, E. Wagner, K. Wehrle, and M. Henze, "Can industrial intrusion detection be SIMPLE?," in *Proc. 27th European Symp. Research in Computer Security (ESORICS)*, LNCS vol. 13556, Springer, 2022, pp. 574–594, doi: 10.1007/978-3-031-17143-7_28.
 
@@ -428,3 +445,5 @@ Code: `paper3-wp0/` in the project repository (Python, pandapower, Z3). `bash sc
 [25] R. Storn and K. Price, "Differential evolution: A simple and efficient heuristic for global optimization over continuous spaces," *Journal of Global Optimization*, vol. 11, pp. 341–359, 1997.
 
 [26] E. B. Wilson, "Probable inference, the law of succession, and statistical inference," *J. American Statistical Association*, vol. 22, pp. 209–212, 1927; Q. McNemar, "Note on the sampling error of the difference between correlated proportions or percentages," *Psychometrika*, vol. 12, pp. 153–157, 1947; F. Garwood, "Fiducial limits for the Poisson distribution," *Biometrika*, vol. 28, pp. 437–442, 1936.
+
+[27] Y. Shoukry, P. Nuzzo, A. Puggelli, A. L. Sangiovanni-Vincentelli, S. A. Seshia, M. Srivastava, and P. Tabuada, "Imhotep-SMT: A satisfiability modulo theory solver for secure state estimation," in *Proc. 13th Int. Workshop on Satisfiability Modulo Theories (SMT)*, 2015; journal version: "Secure state estimation for cyber-physical systems under sensor attacks: A satisfiability modulo theory approach," *IEEE Trans. Automatic Control*, vol. 62, no. 10, pp. 4917–4932, 2017.
