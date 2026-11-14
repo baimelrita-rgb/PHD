@@ -44,9 +44,10 @@ def main():
     ap.add_argument("--settle-s", type=float, default=60.0)
     ap.add_argument("--noise-tol", type=float, default=1e-3, help="coverage check tolerance (measurement noise on P ratios)")
     ap.add_argument("--load-margin", type=float, default=0.01, help="absolute margin on observed load scaling")
+    ap.add_argument("--tap-pad", type=int, default=0, help="WP4d sensitivity: add tap positions up to this many steps beyond those seen")
     a = ap.parse_args()
     net = SM.base_net()
-    root = S.ROOT_DEFAULT
+    root = S.root("sherlock")
     lo = hi = None
     taps_seen, train_cfg, cache = collections.Counter(), collections.Counter(), {}
     for rec in S.iter_state(root, "train"):
@@ -64,6 +65,11 @@ def main():
            "storage": [[-1.0, 1.0] for k in range(len(net.storage))],
            "observed_train": {"lo": lo.tolist(), "hi": hi.tolist()},
            "taps": sorted([list(t) for t in taps_seen])}
+    if a.tap_pad:
+        import itertools
+        rng_t = [range(min(t[i] for t in taps_seen) - a.tap_pad, max(t[i] for t in taps_seen) + a.tap_pad + 1) for i in range(2)]
+        env["taps"] = [list(t) for t in itertools.product(*rng_t)]
+        env["tap_pad"] = a.tap_pad
     E.SHERLOCK_ENV_PATH.write_text(json.dumps(env, indent=2))
     C.init(type("A", (), {"grid": "sherlock"})())
     cfgs = E.enumerate_configs()

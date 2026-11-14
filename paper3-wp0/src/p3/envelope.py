@@ -71,7 +71,13 @@ def _cigre_envelopes():
     return {"full": Envelope("full"), "narrow": Envelope("narrow", load_scale=(0.6, 0.9))}
 
 
-SHERLOCK_ENV_PATH = ROOT / "rules" / "sherlock_envelope.json"
+def _var():
+    import os
+    v = os.environ.get("P3_VARIANT", "")
+    return f"_{v}" if v else ""
+
+
+SHERLOCK_ENV_PATH = ROOT / "rules" / f"sherlock_envelope{_var()}.json"
 
 
 def _sherlock_builder():
@@ -98,7 +104,7 @@ SEMI_ENV_PATH = ROOT / "rules" / "semiurban_envelope.json"
 
 
 def _sb_env_path(name):
-    return ROOT / "rules" / f"{name}_envelope.json"
+    return ROOT / "rules" / f"{name}_envelope{_var()}.json"
 
 
 def _sb_builder(name):

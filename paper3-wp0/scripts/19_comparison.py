@@ -85,12 +85,15 @@ def main():
     ap = C.parser(__doc__)
     a = ap.parse_args()
     body = "# WP2-c: comparison of detection methods, robustness and ablations\n\n"
+    if S.variant() == "split":
+        body = ("# WP4d: comparison on the semi-synthetic split day\n\nSecond half of each recorded train day with injected "
+                "attacks (`split_day.md`); every calibration redone on the first half only. Rows without saved alarms are ⟨·⟩.\n\n")
     body += ("All numbers recomputed here from saved per-record alarms. Benign records: more than 60 s from any attack "
              "window. 01-Basic: 1 Hz records. 02-Semiurban: every 5th record (5 s). Mean delay: first alarm after attack "
              "start, averaged over detected process-attack instances (arp-spoof excluded per owner decision 1).\n\n")
     out = {}
     grids = [("sherlock", "01-Basic (CIGRE MV, 15 buses, fully observed)"), ("semiurban", "02-Semiurban (SimBench, 178 buses, about 40 % unmonitored)")]
-    if (C.INTERIM / "se_residuals_rural.npz").exists():
+    if (C.INTERIM / "se_residuals_rural.npz").exists() and S.variant() != "split":
         grids.append(("rural", "03-Rural (SimBench, 99 buses; zero-training transfer: no Rural data used for calibration, ML trained on the first 30 min only)"))
     for grid, label in grids:
         E.use_grid(grid)

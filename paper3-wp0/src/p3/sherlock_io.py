@@ -13,6 +13,13 @@ ROOT_DEFAULT = Path(__file__).resolve().parents[2] / "data" / "raw" / "01-Basic"
 ROOT_SEMI = Path(__file__).resolve().parents[2] / "data" / "raw" / "02-Semiurban" / "02-Semiurban"
 ROOT_RURAL = Path(__file__).resolve().parents[2] / "data" / "raw" / "03-Rural" / "03-Rural"
 ROOTS = {"semiurban": ROOT_SEMI, "rural": ROOT_RURAL}
+SPLIT_DIR = Path(__file__).resolve().parents[2] / "data" / "split"
+
+
+def variant() -> str:
+    """'' (the recorded days) or 'split' (WP4d: semi-synthetic day; env P3_VARIANT=split, built by scripts/22_split_day.py)."""
+    import os
+    return os.environ.get("P3_VARIANT", "")
 
 
 def root(name=None) -> Path:
@@ -20,6 +27,8 @@ def root(name=None) -> Path:
     if name is None:
         from . import envelope as E
         name = E.grid().name
+    if variant().startswith("split"):
+        return SPLIT_DIR / ("sherlock" if name not in ROOTS else name)
     return ROOTS.get(name, ROOT_DEFAULT)
 
 
