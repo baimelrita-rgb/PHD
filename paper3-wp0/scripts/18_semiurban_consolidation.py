@@ -81,6 +81,8 @@ def main():
     ap.add_argument("--settle-s", type=float, default=60.0)
     ap.add_argument("--tag", default="")
     ap.add_argument("--noise-from", default=None, help="grid whose per-kind noise floors are transferred (grids without a train day)")
+    ap.add_argument("--calib-prefix-s", type=float, default=0.0,
+                    help="grids without a train day: calibrate per-measurement noise on the first seconds of the test day (attack free); not evaluated")
     ap.add_argument("--noise-mode", default="perkind", choices=["perkind", "global"],
                     help="with --noise-from: perkind = transferred per-kind floors; global = every margin at least the transferred SE-BDD threshold")
     ap.add_argument("--margin-factor", type=float, default=MARGIN_FACTOR)
@@ -92,7 +94,15 @@ def main():
     obs = list(d["obs"]); obs_pos = {n: k for k, n in enumerate(obs)}
     Ttr, Rtr, Tte, Rte, det = d["train_t"], d["train_R"], d["test_t"], d["test_R"], d["alarm"]
     kinds = np.array([n.split(".")[0] for n in obs])
-    if a.noise_from:      # no train day: per-kind noise floors transferred from another grid of the same dataset
+    if a.calib_prefix_s > 0:      # short benign calibration period on this grid (03-Rural)
+        pre = Tte < Tte[0] + a.calib_prefix_s
+        Rcal = Rte[pre]
+        noise = np.nanmax(np.abs(Rcal), axis=0)
+        noise = np.where(np.isfinite(noise), noise, np.nanmax(noise))
+        p999 = np.nanpercentile(np.abs(Rcal), 99.9, axis=0)
+        floor = {k: float(np.nanmedian(p999[kinds == k])) for k in set(kinds)}
+        noise = np.maximum(noise, np.array([floor[k] for k in kinds]))
+    elif a.noise_from:      # no train day: per-kind noise floors transferred from another grid of the same dataset
         src = np.load(C.INTERIM / f"se_residuals_{a.noise_from}.npz", allow_pickle=True)
         s_obs = np.array([n.split(".")[0] for n in src["obs"]])
         s_p999 = np.nanpercentile(np.abs(src["train_R"]), 99.9, axis=0)
@@ -158,6 +168,8 @@ def main():
     for e in att:
         near |= (Tte >= e["start"] - a.settle_s) & (Tte <= e.get("recovery", e["end"]) + a.settle_s)
     benign = ~near
+    if a.calib_prefix_s > 0:
+        benign &= Tte >= Tte[0] + a.calib_prefix_s       # calibration period is not evaluated
     per = collections.defaultdict(lambda: [0, 0, 0, 0, 0])
     rows = []
     for e in att:
