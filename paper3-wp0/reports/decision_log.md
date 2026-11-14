@@ -116,3 +116,16 @@ Rules kept: every number from code; each script under 10 minutes; no tuning on t
   - v2 draws each instance's magnitude (+-20 %) and bus count from a measured real instance of the same grid.
   - The control-and-freeze area grows to 10 buses on 02-Semiurban: in v1 a 1-bus freeze was typical, while a real RTU freeze covers many points.
   - v2 is the main split-day result. v1 is reported as a weak-attack sensitivity case. This choice follows the anatomy of the real attacks, not the v1 detection numbers. The v1 numbers favoured the library (14 against 0).
+- **4d, v2 results** (main split-day result; `comparison_split.md`, `statistics_split.md`, `split_day_events_*.md`):
+  - 01-Basic, 21 process attacks:
+    - D1: control-and-freeze 7/7, drift-off 4/7, industroyer 0/7, false alarms 0.00059. The three missed drift-offs are the near-zero ones (0.0013 to 0.0016 pu, drawn from the real near-zero instances). Every visible drift is caught.
+    - Library, strict: control-and-freeze 4/7, drift-off 2/7, at 0.0143 per record (7.8 episodes per hour). The combined system adds no instance over the detectors.
+    - Library false alarms come from unmodified benign records in the topology ties S2+S3, lines 5 and 8 out, entered by a benign "Separator Movement" and rare in the first half. The rule is sound against the model and envelope, but in that topology the real grid deviates from the reconstructed model by more than the noise margin. Persistence 3 / 5 lowers this to 0.0100 / 0.0079. Remedy for future work: calibrate noise per topology when a new topology appears.
+    - Tap-padded variant: control-and-freeze 6/7, drift-off 4/7, false alarms 0.0181.
+  - 02-Semiurban, 21 process attacks:
+    - SE-BDD: control-and-freeze 1/7, drift-off 1/7, industroyer 0/7, false alarms 0.
+    - Certified library, persistence 3: control-and-freeze 7/7, drift-off 4/7 (all four visible drifts), industroyer 0/7, false alarms 0.00000. Single record: 7/7, 6/7 at 0.0042.
+    - Autoencoder with SE features: 7/7, 3/7 at 0.059.
+  - Industroyer is 0 on both split days for every method. This is expected: the injected switching is physically consistent by construction, and the real-day industroyer catches came partly from transients and network side effects that a power-flow delta does not reproduce. Stated as a limit of the semi-synthetic day.
+  - Statistics: split-day McNemar, combined against classic: 01-Basic 0 against 0; 02-Semiurban 9 against 0, p = 0.004. Pooled with the recorded test days: 14 against 0, p = 0.00012. Pooled detection over 103 process-attack instances: classic 0.34 [0.26, 0.44], combined 0.48 [0.38, 0.57].
+  - v1 (weak attacks): 02-Semiurban library 14 against 0 over SE-BDD, 01-Basic as above. Reported as a sensitivity case.

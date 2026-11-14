@@ -120,7 +120,6 @@ def main():
     for name, (k, n) in pooled.items():
         lo, hi = wilson(k, n)
         prow.append([name, f"{k}/{n}", f"{k / n:.2f} [{lo:.2f}, {hi:.2f}]"])
-    body += "\n## Pooled over the three grids\n\n" + C.md_table(["method family", "detected", "rate [95 % CI]"], prow)
     trow = []
     for grid, (res, types) in results.items():
         names = list(res)
@@ -137,6 +136,19 @@ def main():
         base, o = res["classic"][0], res["combined"][0]
         b += sum(1 for i in base if o[i] and not base[i]); c += sum(1 for i in base if base[i] and not o[i])
     trow.append(["pooled", "combined vs classic", b, c, f"{binomtest(b, b + c, 0.5).pvalue if b + c else 1.0:.3f}"])
+    import json
+    (C.INTERIM / C.suffixed("mcnemar_pooled.json")).write_text(json.dumps({"b": b, "c": c, "pooled": pooled}))
+    other = C.INTERIM / "mcnemar_pooled_split.json"
+    if S.variant() == "" and other.exists():
+        o = json.loads(other.read_text())
+        B, Cc = b + o["b"], c + o["c"]
+        trow.append(["recorded test days + split day (v2)", "combined vs classic", B, Cc, f"{binomtest(B, B + Cc, 0.5).pvalue if B + Cc else 1.0:.5f}"])
+        for name in pooled:
+            k, n = pooled[name][0] + o["pooled"][name][0], pooled[name][1] + o["pooled"][name][1]
+            lo, hi = wilson(k, n)
+            prow.append([f"{name} (recorded days + split day v2)", f"{k}/{n}", f"{k / n:.2f} [{lo:.2f}, {hi:.2f}]"])
+        body = body.replace("\n## Pooled over the grids\n\n", "\n## Pooled over the grids\n\n")
+    body += "\n## Pooled over the grids\n\n" + C.md_table(["method family", "detected", "rate [95 % CI]"], prow)
     body += "\n## Paired tests (exact McNemar)\n\n" + C.md_table(["grid", "comparison", "only the first detects", "only the classic detects", "p (two-sided)"], trow)
     body += ("\nReading: with 16 to 23 process-attack instances per grid, intervals are wide; a difference of a few instances "
              "is not significant on one grid alone. The pooled test is the paper's main paired evidence.\n")

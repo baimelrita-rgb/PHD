@@ -2,7 +2,7 @@
 
 **Self-consolidating intrusion detection for power grids**
 
-Status: experiments complete. Every number below is copied from a generated report in `reports/` (named in brackets). The method text is in `paper_report_methods.md`; the full chronology of attempts and decisions is in `decision_log.md` and `progress.md`.
+Status: experiments complete, including WP4 (confidence intervals, probabilistic error bound, Rural short calibration, additional semi-synthetic test day). Every number below is copied from a generated report in `reports/` (named in brackets). The method text is in `paper_report_methods.md`; the full chronology of attempts and decisions is in `decision_log.md` and `progress.md`.
 
 ---
 
@@ -20,6 +20,7 @@ On the Sherlock dataset, three grid models were reconstructed from data and vali
 - Replayed without labels, the certified library catches attacks the detectors miss and sometimes fires earlier, at a false alarm rate of about 0.1 % per record.
 - On the partially observable grid, state estimation and on-demand certification of every new topology (5 to 11 s each) extend the approach.
 - On a third grid without any training day, a zero-training transfer shows what carries over: the detector's global threshold and the physics certificate transfer; per-measurement rule margins need the grid's own noise data.
+- On an additional, semi-synthetic test day with every calibration redone, the certified library on the partially observed grid catches 9 attack instances that state-estimation bad-data detection misses, with no false alarms. Pooled over 103 attack instances, combining library and detector beats the detector alone (14 against 0 discordant instances, exact McNemar p = 0.00012).
 - ML detectors on raw telemetry fail under benign operating change (43 % to 99.99 % false alarms on three grids), which motivates certified rules.
 
 ## Contributions
@@ -82,6 +83,8 @@ Verdicts, robust mode, linearised AC, rule-specific bounds (`oracle_exact_linac.
 
 CEGIS on R1: tau falls to 0.89990 on the reference grid and 0.89998 on Sherlock, below the 0.90 pu limit; the firing band left is 0.0000 (`cegis_demo*.md`). A safe threshold mined from history is a useless one.
 
+**Probabilistic error bound** (`scenario_bound.md`). 20,000 independent benign states, uniform over each envelope. Every delta used by the robust exact layer is at least the sample maximum: voltage 0.00367 and 0.00436 pu against delta 0.00885 and 0.01042. By the scenario approach, with confidence 0.999, a new benign state drawn the same way exceeds delta with probability at most 3.45e-04, for every quantity. This is a guarantee relative to the uniform envelope distribution. It complements the adversarial worst case and is not a worst-case proof.
+
 ## 4. Main comparison (`comparison.md`)
 
 ### 4.1 01-Basic (fully observed)
@@ -137,6 +140,58 @@ Envelope coverage without Rural data: load P 100 % of benign records; load Q 10 
   - Using the transferred global threshold as the minimum margin (attempt 2, chosen after attempt 1 failed and reported as such) removes the flood, but then the library adds nothing over the detector with persistence.
   - Conclusion: on-demand physics certification needs no local data, but the library's noise term needs a short benign calibration on each grid.
 
+### 4.5 Uncertainty and paired tests (`statistics.md`)
+
+Process attacks only. Wilson 95 % intervals; exact McNemar tests on the same attack instances.
+
+| Pooled detection | Recorded test days (61 instances) | Recorded days plus split day v2 (103 instances) |
+| --- | --- | --- |
+| classic detector | 22/61 = 0.36 [0.25, 0.49] | 35/103 = 0.34 [0.26, 0.44] |
+| certified library | 25/61 = 0.41 [0.30, 0.54] | 42/103 = 0.41 [0.32, 0.50] |
+| combined | 27/61 = 0.44 [0.33, 0.57] | 49/103 = 0.48 [0.38, 0.57] |
+
+Combined against classic, instances detected only by one side:
+- recorded days: 5 against 0, p = 0.062;
+- recorded days plus split day: 14 against 0, p = 0.00012.
+
+The combined system never loses an instance the classic detector catches. The gain is statistically established once the additional test day is included.
+
+### 4.6 03-Rural with a 30-minute benign calibration (`semiurban_consolidation_cal30_rural.md`)
+
+The library's per-measurement noise was calibrated on the first 30 minutes of the Rural test day (attack free, excluded from evaluation).
+- Detection: control-and-freeze 5/5, drift-off 8/9, industroyer 4/8.
+- False alarms: 0.184 per benign record even with persistence (0.723 with transferred floors).
+- Reading: 30 minutes does not cover the day's operating range and topologies. The noise term needs a representative benign period, as on the other two grids.
+
+### 4.7 Additional test day: semi-synthetic split day (`split_day.md`, `comparison_split.md`, `statistics_split.md`)
+
+Sherlock has one test day per scenario. To add an independent test, each recorded train day (01-Basic and 02-Semiurban, 12 h, attack free) is split at its midpoint.
+- First half: every calibration is redone on it (envelope, D1, SE-BDD, ML, library noise).
+- Second half: 21 process attacks per grid are injected into its recorded telemetry.
+
+Attack model, calibrated on the measured anatomy of the real attacks (`attack_anatomy.md`, `drift_magnitude.md`):
+- drift-off: a voltage ramp whose final offset and bus count are drawn from the real instances of the same grid. The real ones are bimodal: 0.036 to 0.39 pu, or about 0.0015 pu.
+- control-and-freeze: an area of 3 (01-Basic) or 10 (02-Semiurban) buses frozen, often with a line opened behind the freeze.
+- industroyer: a line opened or generators disconnected.
+
+Physical changes enter as an AC power-flow delta on the nearest ground-truth snapshot, so recorded noise and model mismatch are kept. The model-error bounds remain valid because a first-half envelope is a subset of the full one.
+
+| Method | CFC | drift-off | industroyer | false alarms per benign record |
+| --- | --- | --- | --- | --- |
+| 01-Basic: D1 | 7/7 | 4/7 | 0/7 | 0.00059 |
+| 01-Basic: certified library (strict) | 4/7 | 2/7 | 0/7 | 0.01432 |
+| 01-Basic: combined | 7/7 | 4/7 | 0/7 | 0.01491 |
+| 02-Semiurban: SE-BDD | 1/7 | 1/7 | 0/7 | 0.00000 |
+| 02-Semiurban: autoencoder, SE features | 7/7 | 3/7 | 0/7 | 0.05913 |
+| 02-Semiurban: certified library, L = 3 | 7/7 | 4/7 | 0/7 | 0.00000 |
+
+- **Every visible drift-off is caught.** The three missed drift-offs per grid are the near-zero ones (about 0.0015 pu), which are invisible by construction.
+- **Partially observed grid (02-Semiurban).** The certified library is far more sensitive than SE-BDD at zero false alarms: 9 instances against 0, p = 0.004. SE-BDD's single global threshold (138 sigma) hides falsifications that the per-measurement certified margins expose.
+- **Fully observed grid (01-Basic).** The detectors already catch every visible attack, and the library adds false alarms (7.8 episodes per hour). They come from unmodified benign records in a topology that a benign "Separator Movement" enters and that is rare in the first half. The rule is sound against the model and envelope, but the real grid there deviates from the reconstructed model by more than the noise margin. Persistence 3 or 5 lowers the rate to 0.0100 or 0.0079.
+- **Envelope coverage.** A benign command moves a transformer to a tap position never seen in the first half. With observed taps only, synthesis stops for the last 2 h. Padding the tap range by one step, with bounds re-validated (`linac_error_sherlock_split_v1_tappad.md`), restores certification: control-and-freeze 6/7, drift-off 4/7.
+- **Industroyer is 0 for every method on the split days.** Injected switching is physically consistent by construction. The real-day catches came partly from transients and side effects that a power-flow delta does not reproduce.
+- **Weak-attack sensitivity (v1, drift 0.005 to 0.05 pu, guessed before measuring the real magnitudes)** (`comparison_split_v1.md`): on 02-Semiurban, the library 7/7 and 7/7 against SE-BDD 0/7 and 0/7, at zero false alarms.
+
 ## 5. Synthesis and consolidation
 
 - **Synthesis from alerts** (`synthesis_sherlock.md`, 01-Basic): certified rules for control-and-freeze 3/5, drift-off 3/4 and industroyer 3/7. False alarms of the certified rules are at most 0.0003 per benign record. Two plausible rules ("DER to zero") were correctly refuted.
@@ -159,19 +214,22 @@ Envelope coverage without Rural data: load P 100 % of benign records; load Q 10 
 
 ## 7. Findings for the discussion
 
-1. **ML on raw telemetry fails under benign operating change** (0.99988 and 0.85948 false alarms). Physics-informed features help, but do not fully generalise to unseen topologies (0.149 on Semiurban).
-2. **A safe threshold mined from history is a useless one.** CEGIS drives it below the operating limit on both grids. Synthesis must produce context and invariant rules, not thresholds.
-3. **The certificate and telemetry noise are separate guarantees.** One rule certified against physics fired on 31 % of benign records when its noise level was estimated from about 100 records. Noise calibration needs enough data and a per-kind floor.
-4. **Sherlock operates meshed and with planned de-energised islands.** A radial-only or train-only topology envelope is wrong: train topologies cover only 16 % of benign Semiurban test time. On-demand certification solves this.
-5. **Partial observability needs state estimation with load reactive power and Gauss-Newton correction.** Linear estimation alone hides small falsifications. Fixed load Q produced 72 to 86 sigma residuals on real telemetry.
-6. **What transfers between grids.** A detector's global threshold and the physics certificate transfer to a grid without training data; per-measurement noise margins do not (03-Rural).
-7. **Search must be concentrated where a rule can fire.** A joint search over all configurations under-tested topology-specific rules. The first consolidation results were optimistic and were corrected.
+1. **Per-measurement certified margins beat a global bad-data threshold under partial observability** (split day, 02-Semiurban: 9 instances against 0, zero false alarms). On a fully observed grid with a strong residual detector the library adds little and can add false alarms in rarely seen topologies.
+2. **The envelope must cover benign operating actions** (tap positions, topologies). Observed-only envelopes break when an operator does something new; padding with engineering ranges plus re-validated bounds fixes it.
+3. **ML on raw telemetry fails under benign operating change** (0.99988 and 0.85948 false alarms). Physics-informed features help, but do not fully generalise to unseen topologies (0.149 on Semiurban).
+4. **A safe threshold mined from history is a useless one.** CEGIS drives it below the operating limit on both grids. Synthesis must produce context and invariant rules, not thresholds.
+5. **The certificate and telemetry noise are separate guarantees.** One rule certified against physics fired on 31 % of benign records when its noise level was estimated from about 100 records. Noise calibration needs enough data and a per-kind floor.
+6. **Sherlock operates meshed and with planned de-energised islands.** A radial-only or train-only topology envelope is wrong: train topologies cover only 16 % of benign Semiurban test time. On-demand certification solves this.
+7. **Partial observability needs state estimation with load reactive power and Gauss-Newton correction.** Linear estimation alone hides small falsifications. Fixed load Q produced 72 to 86 sigma residuals on real telemetry.
+8. **What transfers between grids.** A detector's global threshold and the physics certificate transfer to a grid without training data; per-measurement noise margins do not (03-Rural).
+9. **Search must be concentrated where a rule can fire.** A joint search over all configurations under-tested topology-specific rules. The first consolidation results were optimistic and were corrected.
 
 ## 8. Threats to validity
 
-- One test day per grid (three grids), and few attack instances per type (4 to 9). Results are per instance, without confidence intervals.
+- One recorded test day per grid (three grids) and few attack instances per type (4 to 9); intervals are wide (`statistics.md`). The additional test day is semi-synthetic: its attacks are injected, modelled on the real ones, and they cannot reproduce network-level side effects (no industroyer catches for any method there).
 - 03-Rural has no train day; its ML baselines were trained on 30 minutes and are weak by construction. Library attempt 2 was chosen after attempt 1's failure on the same test day; both are reported.
-- Error bounds in the robust exact layer are empirical (adversarial search, safety factor 1.25), not proven. On Semiurban the certificates are search-based only.
+- Error bounds in the robust exact layer are empirical (adversarial search, safety factor 1.25), backed by a scenario-approach probabilistic bound (epsilon 3.45e-04 at confidence 0.999) that holds relative to the uniform envelope distribution; not a worst-case proof. On Semiurban the certificates are search-based only.
+- The split-day attack model v2 was chosen after the v1 run; the choice follows the measured magnitudes of the real attacks (v1 had favoured the library), and both are reported.
 - Both grid models are reconstructions, validated at the noise floor, not the original Wattson scenarios.
 - The library learns and is evaluated on the same test day, in time order. Strict accounting is reported to bound the optimism.
 - Semiurban uses every 5th record; detection delays there have 5 s resolution.
@@ -189,6 +247,10 @@ SEED=7 bash scripts/run_all.sh       # main results
 bash scripts/night_runs.sh           # seeds and ablations
 bash scripts/rural_runs2.sh          # 03-Rural transfer (after 15a/15b/16b/17 with --grid rural, see decision_log.md)
 python scripts/19_comparison.py      # comparison tables
+python scripts/20_statistics.py; python scripts/21_scenario_bound.py
+python scripts/22a_drift_magnitude.py; python scripts/22_split_day.py   # additional test day
+bash scripts/split_runs.sh; bash scripts/split_tappad_runs.sh
+P3_VARIANT=split python scripts/19_comparison.py; P3_VARIANT=split python scripts/20_statistics.py; python scripts/20_statistics.py
 ```
 
 Seeds: base 7; robustness 8 and 9. Package versions: `reports/env.txt`. Each script finishes in under 10 minutes on the 4-core container used (the oracle exact layer runs Z3 in parallel).
@@ -197,12 +259,19 @@ Seeds: base 7; robustness 8 and 9. Package versions: `reports/env.txt`. Each scr
 
 | Venue | Estimate |
 | --- | --- |
-| IEEE Transactions on Smart Grid | about 62 % |
-| International Journal of Electrical Power & Energy Systems | about 76 % |
+| IEEE Transactions on Smart Grid | about 68 % |
+| International Journal of Electrical Power & Energy Systems | about 80 % |
 
-The method is complete and evaluated on three grids, including a zero-training transfer, with honest negative results. The third grid adds generalisation evidence (reconstruction, physics certificate and detector threshold all transfer), and it also shows a limit: the library needs per-grid noise calibration. Gains over the classic detector remain modest.
+Changes since the previous estimate (62 % and 76 %):
+- **Raised it:**
+  - the paired advantage of combining the certified library with the classic detector is now statistically established (14 against 0, p = 0.00012 over 103 instances);
+  - a second, independent test day with calibration redone on unseen data confirms the main pattern: on the partially observed grid the library is clearly more sensitive than SE-BDD at zero false alarms;
+  - the model-error bound has a probabilistic guarantee.
+- **Held it back:**
+  - the second day is semi-synthetic;
+  - on the fully observed grid the library adds false alarms in rarely seen topologies;
+  - 03-Rural shows that 30 minutes of calibration is not enough.
 
-What would raise the estimate most:
-- a second test day per grid, or a short benign calibration day for 03-Rural;
-- a formal error bound for the linearised model;
-- confidence intervals over more attack instances.
+What would raise the estimate further:
+- per-topology noise calibration when a new topology appears (the remedy for the 01-Basic split-day false alarms);
+- a real second recorded day (for example, a new Sherlock recording).
