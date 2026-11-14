@@ -85,3 +85,16 @@ Rules kept: every number from code; each script under 10 minutes; no tuning on t
   - ML trained on the first 30 minutes: autoencoder with SE features 5/5, 8/9, 4/8 at 0.144; Isolation Forest 3/5, 5/9, 1/8 at 0.00087; raw autoencoder 0.432 false alarms.
 - **Lesson from the transfer experiment:** a detector's global threshold transfers between grids of the same dataset. Per-measurement certified margins need the grid's own noise calibration; without it the library either floods with false alarms (attempt 1) or adds nothing over the detector (attempt 2). For the paper: a deployment needs a short benign calibration period on each grid for the library's noise term. The physics certificate itself transfers (on-demand certification needs no data).
 - **Final reports updated with 03-Rural:** `paper_report.md` (professional) and the Hebrew process report (same link). Assessment (judgement): IEEE TSG about 62 %, IJEPES about 76 %.
+
+## WP4: the remaining recommendations (owner: "continue with an additional test day and all other recommendations")
+
+| Step | What | Why / decision |
+| --- | --- | --- |
+| 4a | Wilson confidence intervals for detection rates; exact McNemar tests (paired, per attack instance) between methods | few instances per type; the tables had no uncertainty |
+| 4b | Probabilistic error bound for the linearised model (scenario approach): with confidence 1 - beta, the probability that a uniformly drawn benign envelope state has error above the sample maximum is below epsilon = ln(1/beta) / N | a fully formal worst-case bound is out of reach for an AC remainder over a 51 to 481 dimensional box; a scenario bound is provable and standard; it complements the adversarial search (empirical worst case) |
+| 4c | 03-Rural with a short benign calibration period: the first 30 minutes of its test day (attack free) calibrate the library's per-measurement noise | the transfer experiment showed this is what the library lacks |
+| 4d | Additional, independent test day: Sherlock has only one test day per scenario. A semi-synthetic test day is built from the second half of each train day (01-Basic, 02-Semiurban), with attacks injected into the recorded telemetry, and every calibration (detectors, ML, noise, envelope) redone on the first half only | gives a second evaluation day with known ground truth and no overlap with calibration data; injection follows the attack anatomy measured on the real test day |
+- **4a result** (`statistics.md`):
+  - Pooled over 61 process-attack instances: classic 22/61 = 0.36 [0.25, 0.49]; certified library 25/61; combined 27/61 = 0.44 [0.33, 0.57].
+  - Exact McNemar test, combined against classic: 5 instances detected only by the combined system, 0 only by the classic; p = 0.062. Per grid, no difference is significant (p from 0.25 to 1.0).
+  - Reported as a consistent but not statistically established advantage. No change to methods because of this.
