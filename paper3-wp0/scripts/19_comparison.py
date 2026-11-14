@@ -122,6 +122,12 @@ def main():
             cf = load(C.suffixed("consolidation_fires.npz"), "det")
             lf = load(C.suffixed("consolidation_fires.npz"), "lib_prior")
             add("Combined: detectors or certified library", (cf[0], cf[1] | lf[1]) if cf and lf else None)
+            pt = C.INTERIM / C.suffixed("consolidation_fires_tc.npz")
+            if pt.exists():     # WP5: per-topology online noise calibration
+                dt_ = np.load(pt)
+                add("WP5: certified library with per-topology calibration, strict", (dt_["t"], dt_["lib_prior"].astype(bool)),
+                    strict=(dt_["rule_fires"].astype(bool), dt_["added_at"]))
+                add("WP5: combined, detectors or library with per-topology calibration", (dt_["t"], dt_["det"].astype(bool) | dt_["lib_prior"].astype(bool)))
         else:
             add("Classic bad-data detection (SE-BDD, state estimation)", load(C.suffixed("se_residuals.npz"), "alarm"))
             add("ML: autoencoder, raw telemetry", load(C.suffixed("detector_alarms_raw.npz"), "AE"))

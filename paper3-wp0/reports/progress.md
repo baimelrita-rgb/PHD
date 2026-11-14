@@ -72,3 +72,7 @@
 - 4c Rural calibrated on its first 30 minutes (`semiurban_consolidation_cal30_rural.md`): not enough (0.184 false alarms with persistence).
 - 4d semi-synthetic split day (`split_day.md`, `comparison_split.md`, `statistics_split.md`). The attack model is calibrated on the measured real drift magnitudes (`drift_magnitude.md`). Tap-padded variant included. v1 results kept as `*_split_v1*`.
 - Reproduce: `python scripts/22a_drift_magnitude.py; python scripts/22_split_day.py; bash scripts/split_runs.sh; bash scripts/split_tappad_runs.sh` (then `P3_VARIANT=split python scripts/19_comparison.py` and `scripts/20_statistics.py` with and without the variant).
+
+## WP5 (per-topology online noise calibration)
+
+- `scripts/14_consolidation.py --topo-cal-s 300 --tag _tc`; runner `scripts/wp5_runs.sh`. 01-Basic library false alarms: 0.00124 -> 0.00056 on the recorded day, 0.01432 -> 0.00346 on the split day, detection unchanged (`comparison.md`, `comparison_split.md`, `statistics_tc.md`).

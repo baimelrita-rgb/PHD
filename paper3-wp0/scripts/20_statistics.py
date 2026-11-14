@@ -65,11 +65,13 @@ def outcomes(t, alarm, events, strict=None, settle=60.0):
 
 def main():
     ap = C.parser(__doc__)
+    ap.add_argument("--tag", default="", help="01-Basic consolidation run to use (e.g. _tc: WP5 per-topology calibration)")
     a = ap.parse_args()
+    cf = f"consolidation_fires{a.tag}.npz"
     methods = {
         "sherlock": {"classic": ("detector_alarms_physics.npz", "D1", None),
-                     "library (strict)": ("consolidation_fires.npz", "lib_prior", "strict"),
-                     "combined": ("consolidation_fires.npz", "comb", None)},
+                     "library (strict)": (cf, "lib_prior", "strict"),
+                     "combined": (cf, "comb", None)},
         "semiurban": {"classic": ("se_residuals.npz", "alarm", None),
                       "library (L = 3)": ("semiurban_fires.npz", "fires_p", None),
                       "combined": ("semiurban_fires.npz", "comb", None)},
@@ -137,8 +139,8 @@ def main():
         b += sum(1 for i in base if o[i] and not base[i]); c += sum(1 for i in base if base[i] and not o[i])
     trow.append(["pooled", "combined vs classic", b, c, f"{binomtest(b, b + c, 0.5).pvalue if b + c else 1.0:.3f}"])
     import json
-    (C.INTERIM / C.suffixed("mcnemar_pooled.json")).write_text(json.dumps({"b": b, "c": c, "pooled": pooled}))
-    other = C.INTERIM / "mcnemar_pooled_split.json"
+    (C.INTERIM / C.suffixed(f"mcnemar_pooled{a.tag}.json")).write_text(json.dumps({"b": b, "c": c, "pooled": pooled}))
+    other = C.INTERIM / f"mcnemar_pooled{a.tag}_split.json"
     if S.variant() == "" and other.exists():
         o = json.loads(other.read_text())
         B, Cc = b + o["b"], c + o["c"]
@@ -152,7 +154,7 @@ def main():
     body += "\n## Paired tests (exact McNemar)\n\n" + C.md_table(["grid", "comparison", "only the first detects", "only the classic detects", "p (two-sided)"], trow)
     body += ("\nReading: with 16 to 23 process-attack instances per grid, intervals are wide; a difference of a few instances "
              "is not significant on one grid alone. The pooled test is the paper's main paired evidence.\n")
-    C.write_report("statistics.md", body)
+    C.write_report(f"statistics{a.tag}.md", body)
     print(body[-1800:])
 
 

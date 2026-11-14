@@ -2,7 +2,7 @@
 
 **Self-consolidating intrusion detection for power grids**
 
-Status: experiments complete, including WP4 (confidence intervals, probabilistic error bound, Rural short calibration, additional semi-synthetic test day). Every number below is copied from a generated report in `reports/` (named in brackets). The method text is in `paper_report_methods.md`; the full chronology of attempts and decisions is in `decision_log.md` and `progress.md`.
+Status: experiments complete, including WP4 and WP5 (per-topology noise calibration; confidence intervals, probabilistic error bound, Rural short calibration, additional semi-synthetic test day). Every number below is copied from a generated report in `reports/` (named in brackets). The method text is in `paper_report_methods.md`; the full chronology of attempts and decisions is in `decision_log.md` and `progress.md`.
 
 ---
 
@@ -187,10 +187,25 @@ Physical changes enter as an AC power-flow delta on the nearest ground-truth sna
 
 - **Every visible drift-off is caught.** The three missed drift-offs per grid are the near-zero ones (about 0.0015 pu), which are invisible by construction.
 - **Partially observed grid (02-Semiurban).** The certified library is far more sensitive than SE-BDD at zero false alarms: 9 instances against 0, p = 0.004. SE-BDD's single global threshold (138 sigma) hides falsifications that the per-measurement certified margins expose.
-- **Fully observed grid (01-Basic).** The detectors already catch every visible attack, and the library adds false alarms (7.8 episodes per hour). They come from unmodified benign records in a topology that a benign "Separator Movement" enters and that is rare in the first half. The rule is sound against the model and envelope, but the real grid there deviates from the reconstructed model by more than the noise margin. Persistence 3 or 5 lowers the rate to 0.0100 or 0.0079.
+- **Fully observed grid (01-Basic).** The detectors already catch every visible attack, and the library adds false alarms (7.8 episodes per hour). They come from unmodified benign records in a topology that a benign "Separator Movement" enters and that is rare in the first half. The rule is sound against the model and envelope, but the real grid there deviates from the reconstructed model by more than the noise margin. Persistence 3 or 5 lowers the rate to 0.0100 or 0.0079. Per-topology online calibration (4.8) lowers it to 0.0035 with detection unchanged.
 - **Envelope coverage.** A benign command moves a transformer to a tap position never seen in the first half. With observed taps only, synthesis stops for the last 2 h. Padding the tap range by one step, with bounds re-validated (`linac_error_sherlock_split_v1_tappad.md`), restores certification: control-and-freeze 6/7, drift-off 4/7.
 - **Industroyer is 0 for every method on the split days.** Injected switching is physically consistent by construction. The real-day catches came partly from transients and side effects that a power-flow delta does not reproduce.
 - **Weak-attack sensitivity (v1, drift 0.005 to 0.05 pu, guessed before measuring the real magnitudes)** (`comparison_split_v1.md`): on 02-Semiurban, the library 7/7 and 7/7 against SE-BDD 0/7 and 0/7, at zero false alarms.
+
+### 4.8 Per-topology online noise calibration (WP5; `comparison.md`, `comparison_split.md`)
+
+Remedy for the false alarms in rarely seen topologies (4.7). When an alert's topology has fewer than 300 train records, its noise is calibrated online without labels:
+- calibration data: the first 300 s of records in that topology on which no detector alarms;
+- the grid-wide rule is synthesised with that noise and acts only after calibration;
+- a larger margin cannot break the certificate.
+
+| 01-Basic library (strict) | Recorded test day | Split day v2 |
+| --- | --- | --- |
+| false alarms per benign record, before / after | 0.00124 / 0.00056 | 0.01432 / 0.00346 |
+| false-alarm episodes per benign hour, before / after | 0.64 / 0.21 | 7.82 / 4.98 |
+| detection (CFC, drift-off, industroyer) | unchanged: 4/5, 4/4, 2/7 | unchanged: 4/7, 2/7, 0/7 |
+
+The remaining split-day false alarms are short runs of 2 to 6 records around benign operator actions, which are switching transients.
 
 ## 5. Synthesis and consolidation
 
@@ -215,14 +230,15 @@ Physical changes enter as an AC power-flow delta on the nearest ground-truth sna
 ## 7. Findings for the discussion
 
 1. **Per-measurement certified margins beat a global bad-data threshold under partial observability** (split day, 02-Semiurban: 9 instances against 0, zero false alarms). On a fully observed grid with a strong residual detector the library adds little and can add false alarms in rarely seen topologies.
-2. **The envelope must cover benign operating actions** (tap positions, topologies). Observed-only envelopes break when an operator does something new; padding with engineering ranges plus re-validated bounds fixes it.
-3. **ML on raw telemetry fails under benign operating change** (0.99988 and 0.85948 false alarms). Physics-informed features help, but do not fully generalise to unseen topologies (0.149 on Semiurban).
-4. **A safe threshold mined from history is a useless one.** CEGIS drives it below the operating limit on both grids. Synthesis must produce context and invariant rules, not thresholds.
-5. **The certificate and telemetry noise are separate guarantees.** One rule certified against physics fired on 31 % of benign records when its noise level was estimated from about 100 records. Noise calibration needs enough data and a per-kind floor.
-6. **Sherlock operates meshed and with planned de-energised islands.** A radial-only or train-only topology envelope is wrong: train topologies cover only 16 % of benign Semiurban test time. On-demand certification solves this.
-7. **Partial observability needs state estimation with load reactive power and Gauss-Newton correction.** Linear estimation alone hides small falsifications. Fixed load Q produced 72 to 86 sigma residuals on real telemetry.
-8. **What transfers between grids.** A detector's global threshold and the physics certificate transfer to a grid without training data; per-measurement noise margins do not (03-Rural).
-9. **Search must be concentrated where a rule can fire.** A joint search over all configurations under-tested topology-specific rules. The first consolidation results were optimistic and were corrected.
+2. **Noise must be calibrated per topology.** The certificate is relative to the model; in a topology never calibrated, the real grid can deviate from the reconstructed model by more than the noise margin. Five minutes of online, label-free calibration per new topology cuts library false alarms by a factor of 2 to 4 without losing detections (WP5).
+3. **The envelope must cover benign operating actions** (tap positions, topologies). Observed-only envelopes break when an operator does something new; padding with engineering ranges plus re-validated bounds fixes it.
+4. **ML on raw telemetry fails under benign operating change** (0.99988 and 0.85948 false alarms). Physics-informed features help, but do not fully generalise to unseen topologies (0.149 on Semiurban).
+5. **A safe threshold mined from history is a useless one.** CEGIS drives it below the operating limit on both grids. Synthesis must produce context and invariant rules, not thresholds.
+6. **The certificate and telemetry noise are separate guarantees.** One rule certified against physics fired on 31 % of benign records when its noise level was estimated from about 100 records. Noise calibration needs enough data and a per-kind floor.
+7. **Sherlock operates meshed and with planned de-energised islands.** A radial-only or train-only topology envelope is wrong: train topologies cover only 16 % of benign Semiurban test time. On-demand certification solves this.
+8. **Partial observability needs state estimation with load reactive power and Gauss-Newton correction.** Linear estimation alone hides small falsifications. Fixed load Q produced 72 to 86 sigma residuals on real telemetry.
+9. **What transfers between grids.** A detector's global threshold and the physics certificate transfer to a grid without training data; per-measurement noise margins do not (03-Rural).
+10. **Search must be concentrated where a rule can fire.** A joint search over all configurations under-tested topology-specific rules. The first consolidation results were optimistic and were corrected.
 
 ## 8. Threats to validity
 
@@ -250,6 +266,7 @@ python scripts/19_comparison.py      # comparison tables
 python scripts/20_statistics.py; python scripts/21_scenario_bound.py
 python scripts/22a_drift_magnitude.py; python scripts/22_split_day.py   # additional test day
 bash scripts/split_runs.sh; bash scripts/split_tappad_runs.sh
+bash scripts/wp5_runs.sh             # per-topology calibration; then 19 and 20 (--tag _tc), with and without P3_VARIANT=split
 P3_VARIANT=split python scripts/19_comparison.py; P3_VARIANT=split python scripts/20_statistics.py; python scripts/20_statistics.py
 ```
 
@@ -259,10 +276,10 @@ Seeds: base 7; robustness 8 and 9. Package versions: `reports/env.txt`. Each scr
 
 | Venue | Estimate |
 | --- | --- |
-| IEEE Transactions on Smart Grid | about 68 % |
-| International Journal of Electrical Power & Energy Systems | about 80 % |
+| IEEE Transactions on Smart Grid | about 71 % |
+| International Journal of Electrical Power & Energy Systems | about 82 % |
 
-Changes since the previous estimate (62 % and 76 %):
+Changes since the WP3 estimate (62 % and 76 %; 68 % and 80 % after WP4). WP5 removed most of the library's false alarms in rarely seen topologies, the main weakness WP4 exposed.
 - **Raised it:**
   - the paired advantage of combining the certified library with the classic detector is now statistically established (14 against 0, p = 0.00012 over 103 instances);
   - a second, independent test day with calibration redone on unseen data confirms the main pattern: on the partially observed grid the library is clearly more sensitive than SE-BDD at zero false alarms;
@@ -273,5 +290,5 @@ Changes since the previous estimate (62 % and 76 %):
   - 03-Rural shows that 30 minutes of calibration is not enough.
 
 What would raise the estimate further:
-- per-topology noise calibration when a new topology appears (the remedy for the 01-Basic split-day false alarms);
+- per-topology noise calibration (done in WP5: library false alarms down by a factor of 2.2 on the recorded day and 4.1 on the split day, with detection unchanged);
 - a real second recorded day (for example, a new Sherlock recording).

@@ -74,6 +74,10 @@ def main():
     ap.add_argument("--tag", default="", help="suffix for output files (robustness runs)")
     ap.add_argument("--margin-factor", type=float, default=Y.MARGIN_FACTOR)
     ap.add_argument("--alarms", default="detector_alarms_physics.npz")
+    ap.add_argument("--topo-cal-s", type=float, default=0.0,
+                    help="WP5: per-topology noise calibration. For a topology with fewer than --min-cfg-records train records, "
+                         "the first this-many seconds of test records in it without a detector alarm calibrate its noise; its "
+                         "grid-wide rule is synthesised with that noise and acts only after the calibration ends (0 = off)")
     ap.set_defaults(grid="sherlock")
     a = C.init(ap.parse_args())
     Y.MARGIN_FACTOR = a.margin_factor
@@ -116,6 +120,22 @@ def main():
         det |= al[d.strip()]
     eps = episodes(det, Tte, a.merge_s)
 
+    def topo_cal(T):
+        """Online noise calibration in an unfamiliar topology: residual maxima over the first --topo-cal-s seconds of
+        test records in T where no detector alarms (no labels). Returns (noise dict, time from which rules may act)."""
+        dt = float(np.median(np.diff(Tte)))
+        need = int(round(a.topo_cal_s / dt))
+        rows = [i for i, x in enumerate(cfg_te) if x == T and not det[i]][:need]
+        if len(rows) < need:
+            return None, np.inf
+        n = dict(noise_glob)
+        for kind, i in quantities:
+            if kind == "p" and not Y.LA.model(T).line_active[i]:
+                continue
+            co, cc = Y.invariant(T, kind, i)
+            n[(kind, i)] = max(n.get((kind, i), 0.0), float(np.max(np.abs(Y.residual(co, cc, Mte[rows])))))
+        return n, float(Tte[rows[-1]])
+
     library, lib_fire, log = {}, np.zeros(len(Tte), bool), []
     grid_done = set()
     for (s, e) in eps:
@@ -131,8 +151,18 @@ def main():
         T = Tc[0][0] if Tc else None
         added = []
         cands = []
+        arm = {}
         if T is not None and T not in grid_done:
-            cands.append(Y.synthesize_grid_invariants(T, noise_for(T), a.bound_budget, a.seed + len(log) * 100))
+            nz = noise_for(T)
+            if a.topo_cal_s > 0 and n_cfg_tr.get(T, 0) < a.min_cfg_records:
+                nz, arm_t = topo_cal(T)
+                if nz is None:
+                    nz, arm_t = noise_for(T), np.inf      # never calibrated: the rule never acts
+            else:
+                arm_t = -np.inf
+            cg = Y.synthesize_grid_invariants(T, nz, a.bound_budget, a.seed + len(log) * 100)
+            arm[id(cg)] = arm_t
+            cands.append(cg)
         st = Y.synthesize_state(Mte[before], Mte[alert]) if before.any() else None
         if st is not None:
             cands.append(st)
@@ -144,13 +174,16 @@ def main():
                 cert = Y.certify(cand, cfgs, delta, a.cert_budget, a.seed + len(log) * 100 + 60 + k)
             if cert["verdict"] == "certified":
                 key = cand.rule["name"]
-                library[key] = {"rule": cert["rule"], "added_at": float(ta), "family": cand.family}
-                f = fires_all(cert["rule"], Mte)
-                lib_fire |= f & (Tte >= ta)        # a rule only acts after it was learned
+                t_act = max(float(ta), arm.get(id(cand), -np.inf))   # learned at ta; with WP5 also after calibration
+                library[key] = {"rule": cert["rule"], "added_at": t_act, "family": cand.family}
+                f = fires_all(cert["rule"], Mte) & (Tte >= arm.get(id(cand), -np.inf))   # never inside its calibration window
+                lib_fire |= f & (Tte >= t_act)     # a rule only acts after it was learned (and calibrated)
                 library[key]["fires"] = f
             added.append(f"{cand.rule['name'][:50]}: {cert['verdict']}")
         entry["topology"] = T.label if T else "outside envelope"
         entry["action"] = "; ".join(added) or "no candidate"
+        if arm and np.isfinite(max(arm.values())) and max(arm.values()) > ta:
+            entry["action"] += f" (topology calibrated online; rule acts from {max(arm.values()) - Tte[0]:.0f} s)"
         log.append(entry)
         print(f"{ta - Tte[0]:8.0f} s  {entry['action'][:110]}")
     wall = time.time() - t0
