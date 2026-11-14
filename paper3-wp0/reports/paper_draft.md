@@ -64,9 +64,9 @@ Section II reviews related work, Section III states the problem and threat model
 
 Fig. 1 shows the loop. (1) Detectors watch the telemetry. (2) An alert opens a 60 s window. (3) If a rule in the library already fires within the window, the alert is covered and nothing is synthesised. (4) Otherwise candidate rules are synthesised from the window and the topology at the alert. (5) The physics oracle certifies or refutes each candidate; counterexamples refine margins. (6) Certified rules enter the library and act from the time they were learned.
 
-![Fig. 1](figures/fig1_loop.svg)
+![Fig. 1](figures/fig1_architecture.svg)
 
-*Fig. 1. The self-consolidation loop. Labels are never used inside it.*
+*Fig. 1. End-to-end architecture. Telemetry feeds detectors; an uncovered alert opens a 60 s window from which candidate rules are synthesised; the two-layer physics oracle certifies or refutes them, with counterexamples refining margins; certified rules enter the library, which is matched against live telemetry after a short online noise calibration per new topology. Labels are never used inside the loop.*
 
 ### B. Rule language
 
@@ -84,7 +84,11 @@ The envelope is explicit and documented per grid. Continuous parameters: per-loa
 
 **Robust encoding.** Each AC condition is replaced by the weakest linear condition it implies under a model-error bound $\delta_q$ per quantity $q$: a rule atom $m_q > c$ becomes $\hat m_q > c - \delta_q$, and likewise for operating limits. UNSAT then means: no benign counterexample exists *provided the linear-to-AC error stays within $\delta$*. The $\delta_q$ are 1.25 times the larger of the sample maximum and the worst case found by differential evolution on the error itself (500 power flows per topology and quantity) [linac_error_sherlock.md]. For linear atoms over several measurements a rule-specific bound on the atom expression is tighter than the sum of per-quantity bounds (0.287 against 0.538 MW for the power-balance rule [atom_bounds_linac_sherlock.md]). Box-implied constraints are pruned before solving; queries run in parallel over configurations. A SAT model counts as a refutation only when re-checked as a benign AC counterexample; UNSAT in the robust encoding is a certificate; otherwise the search verdict stands.
 
-**Probabilistic bound on the model error.** The adversarial search gives an empirical worst case, not a proof. We add a distribution-based guarantee [scenario_bound.md]: for $N$ = 20,000 independent benign states drawn uniformly over the envelope, every $\delta_q$ exceeds the sample maximum of the error, and by the scenario approach [7] a new benign state drawn the same way exceeds $\delta_q$ with probability at most $\epsilon = 1 - \beta^{1/N} = 3.45 \times 10^{-4}$ at confidence $1 - \beta = 0.999$. This bound is relative to the sampling distribution and is stated as such.
+**Probabilistic bound on the model error.** The adversarial search gives an empirical worst case, not a proof. We add a distribution-based guarantee [scenario_bound.md]: for $N$ = 20,000 independent benign states drawn uniformly over the envelope, every $\delta_q$ exceeds the sample maximum of the error, and by the scenario approach [7] a new benign state drawn the same way exceeds $\delta_q$ with probability at most $\epsilon = 1 - \beta^{1/N} = 3.45 \times 10^{-4}$ at confidence $1 - \beta = 0.999$. This bound is relative to the sampling distribution and is stated as such. Fig. 2 shows the three quantities per measured kind: the sample maximum, the adversarial worst case and the bound $\delta$ the exact layer uses.
+
+![Fig. 2](figures/fig2_bounds.svg)
+
+*Fig. 2. Validated model-error bounds on the 01-Basic grid: for each quantity, the largest linearised-AC error over 1,000 benign samples, the worst case found by differential evolution, and the bound $\delta$ = 1.25 × worst that the robust exact layer uses [linac_error_sherlock.md].*
 
 **Counterexample-guided refinement.** On a counterexample a threshold rule is tightened just past the counterexample value, and an invariant rule's margin is raised to the synthesis rule below with the updated oracle bound, for at most five rounds. The refinement trace is reported together with how much of the rule's original firing region remains, so that a rule refined into uselessness is visible (Section VI-A).
 
@@ -179,11 +183,11 @@ Three hand-written rules test the oracle before any synthesis (Table III). R1 is
 | R2: loading$_0$ > 83.7 % and downstream load < 0.919 MW | refuted | certified (336 UNSAT, 104 s total) |
 | R3: $\lvert \sum P_{hv} - \sum P_{load} - \sum P_{sto} + \sum P_{der} \rvert > m$ | certified | certified (336 UNSAT, 13 s total) |
 
-Two observations carry over to synthesis. First, calibrating R3's margin by sampling is unsafe: 2,000 samples gave a maximum benign residual of 0.3758 MW, and differential evolution found 0.6048 MW in the Sherlock envelope; the margin is therefore $1.5 \times$ the search maximum [rules_sherlock.json]. Second, **a safe threshold mined from history is a useless one**: CEGIS on R1 lowers $\tau$ from 0.93327 to 0.89998 pu, below the 0.90 pu operating limit, leaving 0.0000 of the original firing band [cegis_demo_linac_sherlock.md]. Synthesis must therefore produce context and invariant rules, not thresholds (Fig. 2).
+Two observations carry over to synthesis. First, calibrating R3's margin by sampling is unsafe: 2,000 samples gave a maximum benign residual of 0.3758 MW, and differential evolution found 0.6048 MW in the Sherlock envelope; the margin is therefore $1.5 \times$ the search maximum [rules_sherlock.json]. Second, **a safe threshold mined from history is a useless one**: CEGIS on R1 lowers $\tau$ from 0.93327 to 0.89998 pu, below the 0.90 pu operating limit, leaving 0.0000 of the original firing band [cegis_demo_linac_sherlock.md]. Synthesis must therefore produce context and invariant rules, not thresholds (Fig. 3).
 
-![Fig. 2](figures/fig2_cegis.svg)
+![Fig. 3](figures/fig3_cegis.svg)
 
-*Fig. 2. Counterexample-guided refinement of the mined threshold rule R1 on both grids: the threshold is driven below the 0.90 pu operating limit, leaving no firing region [cegis_demo_linac.md, cegis_demo_linac_sherlock.md].*
+*Fig. 3. Counterexample-guided refinement of the mined threshold rule R1 on both grids: the threshold is driven below the 0.90 pu operating limit, leaving no firing region [cegis_demo_linac.md, cegis_demo_linac_sherlock.md].*
 
 ### B. The certified rules
 
@@ -204,6 +208,12 @@ This section lists the rules the method produced on 01-Basic, in the form the li
 | 9 | `G@ties=S1+S2+S3;out=L7+L9;tap=0,0` (54 clauses) | G | later episode | meshed configuration |
 | 10 | `G@ties=S1+S2+S3;out=L8+L9;tap=0,0` (54 clauses) | G | later episode | meshed configuration |
 
+Fig. 4 shows the loop over the test day: when each rule was learned, which alerts were already covered, which candidates the oracle refused, and when the detectors and the library first fired on each attack.
+
+![Fig. 4](figures/fig4_timeline.svg)
+
+*Fig. 4. The self-consolidation loop on the 01-Basic test day. Top: attack windows by type, benign operator procedures, first alarms of the detectors and of the library (rules learned before the attack only), alert episodes (certified G or S rule, covered by the library) and refuted candidates. Bottom: library size [consolidation_tc_sherlock.md].*
+
 **Refuted candidates** (the oracle found a benign state that fires them): `S-line 4 out` and `S-line 11 out` (a line out of service alone is benign maintenance), `S-sgen_p.0 to zero` (refuted by search: a DER at zero output is benign) and `S-sgen_p.6 to zero ∧ sgen_p.12 to zero` (refuted by the exact layer) [consolidation_sherlock.md, synthesis_sherlock.md]. These refutations are the point of the gate: each would have been a plausible hand-written rule and a source of false alarms.
 
 **Single-measurement invariants synthesised from labelled alerts** (family P, offline synthesis study, 12 certified of 14 candidates [synthesis_sherlock.md]): `P-vm10@base`, margin 0.00722 pu (from a drift-off); `P-vm14@base`, 0.00209 pu, and `P-p11@base`, 0.00644 MW (from a control-and-freeze); `P-vm3`, `P-vm6`, `P-vm2@ties=S1+S2;out=L4+L11`, margins 0.00712, 0.00732, 0.00551 pu; `P-p1@ties=S1+S2;out=L4+L11`, 0.153 MW and, after a second alert, 0.0915 MW; `S-load_p.9 ∧ load_p.17 to zero`; `S-load_p.16 to zero`. The certified rules fired on at most 0.0003 of benign test records each.
@@ -212,9 +222,13 @@ This section lists the rules the method produced on 01-Basic, in the form the li
 
 ### C. Main comparison on the recorded test days
 
-![Fig. 3](figures/fig3_detection.svg)
+![Fig. 5](figures/fig5_detection.svg)
 
-*Fig. 3. Instances detected per attack type and method on the recorded test days and on the additional day of 02-Semiurban; false alarms per benign record in parentheses [comparison.md, comparison_split.md].*
+*Fig. 5. Instances detected per attack type and method on the recorded test days and on the additional day of 02-Semiurban, with false alarms per benign record [comparison.md, comparison_split.md].*
+
+![Fig. 6](figures/fig6_false_alarms.svg)
+
+*Fig. 6. False alarms per benign record on the three grids, log scale. Classic physics detectors and the certified library sit two to three orders of magnitude below machine-learning detectors on raw telemetry; on 03-Rural the library needs local noise calibration [comparison.md].*
 
 *Table IV. Detection per attack type (instances detected / instances), mean first-alarm delay over detected process attacks, and false alarms per benign record [comparison.md].*
 
@@ -274,9 +288,9 @@ Every visible drift-off is caught; the three misses per grid are the near-zero i
 | Combined | 27/61 = 0.44 [0.33, 0.57] | 49/103 = 0.48 [0.38, 0.57] |
 | Only combined / only classic detects | 5 / 0, p = 0.062 | 14 / 0, **p = 0.00012** |
 
-![Fig. 4](figures/fig4_pooled.svg)
+![Fig. 7](figures/fig7_pooled.svg)
 
-*Fig. 4. Pooled detection of process attacks with Wilson 95 % intervals [statistics.md].*
+*Fig. 7. Pooled detection of process attacks with Wilson 95 % intervals and the exact McNemar test of the combined system against the classic detector [statistics.md, statistics_split.md].*
 
 The combined system never loses an instance the classic detector catches. Per grid and day, the strongest paired evidence is on the partially observed grid.
 
@@ -285,7 +299,11 @@ The combined system never loses an instance the classic detector catches. Per gr
 - **Seeds 7, 8, 9** (oracle search, ML training): per-type detection identical on both grids; 01-Basic library false alarms 0.00115 to 0.00124 [comparison.md].
 - **Persistence** on the library: $L$ = 1, 3, 5 gives 0.00124, 0.00091, 0.00065 false alarms on 01-Basic with unchanged detection; on 02-Semiurban $L$ = 3 removes the industroyer transients (7/9 to 0/9) and cuts false alarms from 0.01586 to 0.00401.
 - **Margin factor**: at 1.25 the grid-wide rules cannot be certified on 01-Basic, because the robust bound (1.25 × oracle bound) is not below the margin, and the library is left with 3 state rules; 1.5 (default, fixed in advance) as reported; 2.0 gives the same detection at 0.00109 (01-Basic) and 0.00174 (02-Semiurban). The margin factor must exceed the bound safety factor; above that it trades false alarms for delay.
-- **Per-topology online calibration** (Section IV-G) on the recorded 01-Basic day: library false alarms 0.00124 to 0.00056 per record (0.64 to 0.21 episodes per hour), detection unchanged, now below D1's 0.85 episodes per hour [comparison.md].
+- **Per-topology online calibration** (Section IV-G) on the recorded 01-Basic day: library false alarms 0.00124 to 0.00056 per record (0.64 to 0.21 episodes per hour), detection unchanged, now below D1's 0.85 episodes per hour [comparison.md]. Fig. 8 summarises this and the Rural transfer.
+
+![Fig. 8](figures/fig8_calibration.svg)
+
+*Fig. 8. What calibration does. (a) 01-Basic: five minutes of label-free online calibration per unfamiliar topology cuts library false alarms by a factor of 2.2 on the recorded day and 4.1 on the additional day, with detection unchanged. (b) 03-Rural: the detector threshold transfers across grids, per-measurement noise floors do not, and 30 minutes of local data are not enough [comparison.md, comparison_split.md, semiurban_consolidation_*_rural.md].*
 - **Model error bounds**: all verdicts of the robust exact layer agree with the AC search layer on both grids; the scenario bound of Section IV-D holds for every quantity.
 
 ### H. Machine-learning detectors as a negative result
