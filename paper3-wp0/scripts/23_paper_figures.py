@@ -332,6 +332,31 @@ def fig8_calibration():
     save(fig, "fig8_calibration")
 
 
+# ---------------------------------------------------------------- Fig 9: realistic SCADA reporting
+def fig9_scada():
+    """red_team_sherlock.md (clean calibration), consolidation_tc_lat2/db1_sherlock.md (calibrated with artifacts)."""
+    rows = [("recorded telemetry", 0.00056, None), ("latency 0 to 1 s", 0.03464, None), ("latency 0 to 2 s", 0.06699, 0.01004),
+            ("latency 0 to 5 s", 0.06787, None), ("deadband 0.5 %", 0.17824, None), ("deadband 1 %", 0.26528, 0.00056), ("deadband 2 %", 0.37909, None)]
+    fig, ax = plt.subplots(figsize=(7.4, 2.7))
+    y = list(range(len(rows)))
+    for i_, (lab, a_, b_) in enumerate(rows):
+        ax.plot([1e-4, a_], [i_ - 0.17, i_ - 0.17], color=MUTED, lw=5, solid_capstyle="butt", zorder=2)
+        ax.text(a_ * 1.15, i_ - 0.17, f"{a_ * 100:.2f} %" if a_ >= 0.001 else f"{a_ * 100:.3f} %", va="center", fontsize=6.3, color=INK2)
+        if b_ is not None:
+            ax.plot([1e-4, b_], [i_ + 0.17, i_ + 0.17], color=ORANGE, lw=5, solid_capstyle="butt", zorder=2)
+            ax.text(b_ * 1.15, i_ + 0.17, f"{b_ * 100:.3f} %" if b_ < 0.001 else f"{b_ * 100:.2f} %", va="center", fontsize=6.3, color=INK2)
+    ax.set_yticks(y); ax.set_yticklabels([r[0] for r in rows], fontsize=7); ax.set_ylim(len(rows) - 0.4, -0.6); ax.tick_params(axis="y", length=0)
+    ax.set_xscale("log"); ax.set_xlim(1e-4, 1.5); ax.set_xticks([1e-4, 1e-3, 1e-2, 1e-1, 1]); ax.set_xticklabels(["0.01 %", "0.1 %", "1 %", "10 %", "100 %"], fontsize=7)
+    ax.set_xlabel("library false alarms per benign record, 01-Basic (log scale)", fontsize=7.2)
+    ax.xaxis.grid(True, color=GRID, lw=0.5); ax.set_axisbelow(True)
+    handles = [Line2D([], [], color=MUTED, lw=5, label="margins calibrated on clean telemetry"),
+               Line2D([], [], color=ORANGE, lw=5, label="margins calibrated on telemetry with the same artifact")]
+    fig.legend(handles=handles, fontsize=6.6, frameon=False, loc="lower center", ncol=2, bbox_to_anchor=(0.5, -0.17))
+    headline(fig, "Reporting artifacts break margins calibrated on clean data; calibrating on the same SCADA feed absorbs a deadband, not all latency",
+             "artifacts applied to every analog reading; switch, line and tap states unchanged")
+    save(fig, "fig9_scada")
+
+
 if __name__ == "__main__":
-    fig1_architecture(); fig2_oracle(); fig3_cegis(); fig4_timeline(); fig5_detection(); fig6_false_alarms(); fig7_pooled(); fig8_calibration()
+    fig1_architecture(); fig2_oracle(); fig3_cegis(); fig4_timeline(); fig5_detection(); fig6_false_alarms(); fig7_pooled(); fig8_calibration(); fig9_scada()
     print(sorted(p.name for p in OUT.iterdir() if p.suffix == ".png"))

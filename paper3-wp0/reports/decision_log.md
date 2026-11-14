@@ -147,3 +147,10 @@ Rules kept: every number from code; each script under 10 minutes; no tuning on t
 - **M9 external baseline.** `scripts/24_sherlock_metrics.py` scores our methods with the dataset paper's metrics; the five published IDS rows are copied from its Table 3.
 - **Pooling bug found and fixed:** after adding the strict rows, `20_statistics.py` pooled them into the method families a second time (68/169). Strict variants are now excluded from pooling; pooled numbers match the earlier ones (22/61, 25/61, 27/61; 35/103, 42/103, 49/103).
 - **Figures rebuilt** (`scripts/23_paper_figures.py`): Fig. 1 redrawn on a fixed grid in inches with four lanes (monitor, learn, certify, operate); every figure carries a one-line headline stating its message; Fig. 7 gains the paired-test panel across attack strengths.
+
+## Second review round and red team
+
+- **Search-validated rules re-checked.** The on-demand oracle certifies each Semiurban topology with 40 LHS states plus differential evolution (150 evaluations per round), too little for a strong claim. `scripts/18` now saves the certified rules; `scripts/25_validate_se_rules.py` draws 1,500 independent uniform benign states per rule. Result: no firing in 19,500 states. The 18 rerun reproduced every earlier number exactly.
+- **Cost instrumentation** added to `scripts/14` (per-candidate certification time, per-record evaluation time); the rerun reproduced every earlier number (library false alarms 0.00056).
+- **Red team.** `scripts/26_red_team.py`: SCADA artifacts on a library calibrated on clean telemetry (false alarms up to 38 %), and the stealth budget. Then `scripts/14 --artifact` reruns calibration, synthesis and evaluation with the artifact in both days. Deadband 1 %: false alarms 0.00056 (checked that margins and firings differ from the clean run; the rate coincides). Latency 0 to 2 s: 0.01004. Reported as a limitation: consistency rules need time-aligned telemetry.
+- **Submission rendering** moved into `scripts/27_render_paper.py`.

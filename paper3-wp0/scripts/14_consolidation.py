@@ -78,6 +78,9 @@ def main():
                     help="WP5: per-topology noise calibration. For a topology with fewer than --min-cfg-records train records, "
                          "the first this-many seconds of test records in it without a detector alarm calibrate its noise; its "
                          "grid-wide rule is synthesised with that noise and acts only after the calibration ends (0 = off)")
+    ap.add_argument("--artifact", default="", help="red team: SCADA reporting artifact applied to train AND test analog telemetry before "
+                    "calibration, synthesis and evaluation, e.g. latency:2 (lag 0..2 s per measurement) or deadband:0.01 (fraction of the training range); "
+                    "alert times stay those of the detectors on the recorded telemetry")
     ap.set_defaults(grid="sherlock")
     a = C.init(ap.parse_args())
     Y.MARGIN_FACTOR = a.margin_factor
@@ -86,8 +89,26 @@ def main():
     cidx = Y.config_index()
     delta = X.load_delta(C.bounds_path("linac"))
     delta.pop("linear_atoms", None)
-    Ttr, Mtr = records("train", a.train_step)
-    Tte, Mte = records("test", 1)
+    if a.artifact:
+        import importlib.util
+        sp = importlib.util.spec_from_file_location("rt26", Path(__file__).with_name("26_red_team.py"))
+        rt = importlib.util.module_from_spec(sp); sp.loader.exec_module(rt)
+        kind, val = a.artifact.split(":")
+        names_ = M.names()
+        cols_ = [i for i, n in enumerate(names_) if n.split(".")[0] in rt.ANALOG]
+        Ttr, Mtr = records("train", 1)
+        Tte, Mte = records("test", 1)
+        rng_ = np.random.default_rng(a.seed + 26)
+        if kind == "latency":
+            lag_tr = rt.latency(Mtr, cols_, int(val), np.random.default_rng(a.seed + 26))
+            Mtr, Mte = lag_tr, rt.latency(Mte, cols_, int(val), np.random.default_rng(a.seed + 26))   # same lag per measurement in both days
+        else:
+            ranges_ = np.nanmax(Mtr, axis=0) - np.nanmin(Mtr, axis=0)
+            Mtr, Mte = rt.deadband(Mtr, cols_, float(val), ranges_), rt.deadband(Mte, cols_, float(val), ranges_)
+        Ttr, Mtr = Ttr[::a.train_step], Mtr[::a.train_step]
+    else:
+        Ttr, Mtr = records("train", a.train_step)
+        Tte, Mte = records("test", 1)
     cfg_tr = [Y.record_config(m, cidx) for m in Mtr]
     cfg_te = [Y.record_config(m, cidx) for m in Mte]
 

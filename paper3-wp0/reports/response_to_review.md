@@ -18,3 +18,19 @@ Point-by-point response to `review_simulated.md`. Every new number comes from a 
 | m | Minor comments | Delay of the library alone stated (102 s vs 78 s); on-demand latency harmonised (4 to 10 s); tap-padded result cited with the v2 run; figure 6 label precision; rule list reformatted. | |
 
 Not yet done: a profile-agnostic pseudo-measurement run (M10), interval bounds for the Jacobian (M6, future work), state-transition rules for command attacks (M3, future work).
+
+---
+
+# Second review round (external review, 7.4/10, major revision) and red team
+
+| Point | What we did | Result |
+| --- | --- | --- |
+| Certification vs. search validation (critical) | Section IV-I states assumptions A1 to A4 and two propositions: proved rules (robust UNSAT) exclude every benign state of the envelope under the assumptions; search-validated rules get a measured scenario bound. Every Semiurban SE rule was re-checked on 1,500 fresh independent benign states (`scripts/25_validate_se_rules.py`). States what is not guaranteed and that every assumption failure is a false alarm, never a missed attack. | 13 rules, 19,500 states, 0 firing: per-rule firing probability at most 4.6e-3, pooled at most 3.5e-4, confidence 0.999; closest score 0.97 [se_rule_validation_semiurban.md]. Before, each rule rested on 40 samples plus a short search. |
+| Comparison with the state of the art | Table I positions the work against seven lines of prior work on six properties; entries checked against the cited papers; Imhotep-SMT added as [27]; references [11], [12] completed. | Text and table. |
+| Generalization | Discussion paragraph "How far the results generalise". | Text. |
+| Operational scalability | Certification and evaluation timed inside the loop (`scripts/14`, cost section). Section VI-J. | G rule 17.6 to 60.6 s; S rule 3.3 to 27.1 s; library evaluation 1.7 ms per record; Semiurban topology 5 to 10 s [consolidation_tc_sherlock.md]. |
+| Statistics presentation | Abstract reports the recorded days first and states which instances are injected (done in round 1). | Text. |
+| Internal notes, placeholders, references | `scripts/27_render_paper.py` builds the submission version: no header note, no report file names, "n/r" for unreported values; source keeps traceability. | `paper_submission.md`, `paper_draft.pdf`. |
+| Red team A (power systems): SCADA artifacts | Library replayed under latency and deadband (`scripts/26_red_team.py`); then the loop rerun with the artifact in training and test (`scripts/14 --artifact`). Section VI-I, Fig. 9. | Clean calibration: 3.5 % false alarms with 1 s latency, 27 % with 1 % deadband. Calibrated on the same feed: deadband fully absorbed (0.056 %), latency 2 s reduced to 1.0 %. New limitation stated. |
+| Red team B (security): stealth budget | Margins recovered from the stored rules. Section VI-I. | Voltage margins 0.0020 to 0.0264 pu, median 0.0073 pu, against real drift attacks of 0.036 to 0.38 pu. |
+| Red team C (machine learning): weak baselines | Answered by the published-IDS comparison (Table VII) and the physics-informed baseline; Holm correction noted in `red_team_review.md`. | Text. |
