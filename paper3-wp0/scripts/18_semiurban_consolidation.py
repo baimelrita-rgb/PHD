@@ -207,7 +207,7 @@ def main():
                  "train noise of a measurement is its train maximum, floored at the median over its measurement kind of the train 99.9th percentile (")
              + ", ".join(f"{k} {v:.2f}" for k, v in sorted(floor.items())) + f"). Oracle: {a.n_samples} sampled benign AC states plus "
              f"differential evolution ({a.budget} evaluations per round, at most 3 rounds of CEGIS on the margins). The residual "
-             ("needs AC power flows; with --prove the margins are then raised to 1.5 x the affine worst-case bound plus the validated "
+             + ("needs AC power flows; with --prove the margins are then raised to 1.5 x the affine worst-case bound plus the validated "
               "remainder (proved up to the remainder bound), otherwise only the search layer applies (AC-validated, not a formal certificate). "
               if a.prove else "needs AC power flows, so only the search layer applies (AC-validated, not a formal certificate). ") + "Topologies are "
              f"certified on demand when they first appear in the test telemetry (every {step} s). Wall time {wall:.0f} s.\n\n")
