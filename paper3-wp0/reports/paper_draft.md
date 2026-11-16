@@ -6,7 +6,7 @@
 
 ## Abstract
 
-Anomaly detectors on power-grid telemetry raise alerts, but each alert is consumed and forgotten: nothing durable, inspectable or auditable remains, and the next similar attack is detected, or missed, from scratch. Hand-written detection rules are durable but brittle, because benign operating changes (load variation, reconfiguration, tap changes, maintenance) trigger them. We propose a self-consolidating intrusion detection system that turns every alert into deterministic detection rules and admits a rule into a library only after a **physics oracle** has certified that no benign, physically feasible operating state triggers it. The oracle has a search layer (sampling and differential evolution over AC power flows) and an exact layer (an SMT solver over a linearised AC model, made robust by adversarially validated model-error bounds); counterexamples refine the rules. A rule is *proved* when the exact layer applies and *search-validated* otherwise; for search-validated rules we measure the false-alarm probability on independent benign states (at most 0.46 % per rule at confidence 0.999, no firing in 19,500 states). We evaluate on the public Sherlock dataset, on three distribution grids reconstructed from data and validated at the measurement noise floor: a fully observed 15-bus CIGRE grid, a 178-bus SimBench semi-urban grid with about 40 % of elements unmonitored, and a 99-bus rural grid used as a zero-training transfer target. On the recorded test days (61 process-attack instances), adding the certified library to a classic physics detector raises detection from 36 % to 44 %, with 5 instances caught only by the combination and none only by the detector (exact McNemar test, p = 0.062). Adding an independently calibrated semi-synthetic test day with 42 injected attacks gives 14 against 0 (p = 0.00012), and the result holds when the injected attack strength is halved or doubled. The gain is concentrated on the partially observed grid, where the library detects 11 of 21 injected attacks at zero false alarms against 2 for state-estimation bad-data detection. On the fully observed grid, scored with the dataset's own metrics, the combination detects 14 of 18 attacks at 10 false alarms, against 16 and 15 at 33 and 94 for the best published detectors. Attacks through valid switching commands stay physically consistent and are outside the reach of such rules, and under realistic reporting latency the margins require time-aligned telemetry. We also report what did not work: rules mined from history are refined into uselessness, learned detectors on raw telemetry alarm on 43 % to 99.99 % of benign records, and per-measurement margins need per-grid and per-topology noise calibration, which we provide online and without labels.
+Anomaly detectors on power-grid telemetry raise alerts, but each alert is consumed and forgotten: nothing durable, inspectable or auditable remains, and the next similar attack is detected, or missed, from scratch. Hand-written detection rules are durable but brittle, because benign operating changes (load variation, reconfiguration, tap changes, maintenance) trigger them. We propose a self-consolidating intrusion detection system that turns every alert into deterministic detection rules and admits a rule into a library only after a **physics oracle** has certified that no benign, physically feasible operating state triggers it. The oracle has a search layer (sampling and differential evolution over AC power flows) and an exact layer (an SMT solver over a linearised AC model, made robust by adversarially validated model-error bounds, or an affine worst-case bound for state-estimation residual rules); counterexamples refine the rules. We show why the exact layer is needed: on a partially observed grid, rules that passed 19,500 random benign states were refuted by benign states at the corners of the envelope, and only the worst-case bound made them sound. We evaluate on the public Sherlock dataset, on three distribution grids reconstructed from data and validated at the measurement noise floor: a fully observed 15-bus CIGRE grid, a 178-bus SimBench semi-urban grid with about 40 % of elements unmonitored, and a 99-bus rural grid used as a zero-training transfer target. On the recorded test days (61 process-attack instances), adding the certified library to a classic physics detector raises detection from 36 % to 44 %, with 5 instances caught only by the combination and none only by the detector (exact McNemar test, p = 0.062). Adding an independently calibrated semi-synthetic test day with 42 injected attacks gives 13 against 0 (p = 0.00024); the direction holds in each of five injection seeds (25 against 0 over 218 instances) and when the injected attack strength is halved or doubled. The gain is concentrated on the partially observed grid, where the proved library detects 10 of 21 injected attacks at zero false alarms against 2 for state-estimation bad-data detection. On the fully observed grid, scored with the dataset's own metrics, the combination detects 14 of 18 attacks at 10 false alarms, against 16 and 15 at 33 and 94 for the best published detectors. Under emulated SCADA latency and deadbands, margins reduced online by the observable reporting uncertainty keep the library at its clean false-alarm level. Attacks through valid switching commands stay physically consistent and are outside the reach of such rules, and a temporal accumulation of certified residuals failed to narrow the remaining stealth band; we report both.
 
 **Index Terms**: intrusion detection, cyber-physical security, power distribution grids, SMT solving, counterexample-guided synthesis, state estimation, SCADA.
 
@@ -157,9 +157,9 @@ The two certificate strengths of Section III promise different things, and the p
 
 ### A. Dataset
 
-Sherlock [14] (Zenodo record 18467070) provides, per scenario, an attack-free training day and a test day with attacks and benign operator procedures, as IEC 104 captures, IPAL process states at 1 Hz from the control-centre vantage point, ground-truth physical snapshots and labels. We use the process states as telemetry and the snapshots only to validate reconstructions and to measure attack anatomy. Table I summarises the three scenarios. Attack types: **control-and-freeze** (telemetry of an area frozen while the grid changes), **drift-off** (voltage readings drifted away from the truth), **industroyer** (valid switching and disconnection commands) and **arp-spoof-dos** (a network attack; excluded from the process-attack evaluation by a decision taken before the experiments, and reported separately).
+Sherlock [14] (Zenodo record 18467070) provides, per scenario, an attack-free training day and a test day with attacks and benign operator procedures, as IEC 104 captures, IPAL process states at 1 Hz from the control-centre vantage point, ground-truth physical snapshots and labels. We use the process states as telemetry and the snapshots only to validate reconstructions and to measure attack anatomy. Table II summarises the three scenarios. Attack types: **control-and-freeze** (telemetry of an area frozen while the grid changes), **drift-off** (voltage readings drifted away from the truth), **industroyer** (valid switching and disconnection commands) and **arp-spoof-dos** (a network attack; excluded from the process-attack evaluation by a decision taken before the experiments, and reported separately).
 
-*Table I. Scenarios.*
+*Table II. Scenarios.*
 
 | | 01-Basic | 02-Semiurban | 03-Rural |
 | --- | --- | --- | --- |
@@ -177,7 +177,7 @@ The download contains no grid model. Each grid was reconstructed from data and v
 - **02-Semiurban**: SimBench 1-MV-semiurb--2-sw plus 56 RTU groups, each a new bus with a 0.63 MVA transformer, a DER unit and a storage unit, found from the IEC 104 point map and bus power balances (maximum balance error 5.69e-5 MW).
 - **03-Rural**: exactly SimBench 1-MV-rural--2-sw; fitted transformers match SimBench (vk 11.99 % against 12.00 %).
 
-*Table II. Reconstruction accuracy against ground truth (100 random snapshots; mean / maximum absolute error).*
+*Table III. Reconstruction accuracy against ground truth (100 random snapshots; mean / maximum absolute error).*
 
 | Grid | Bus voltage, pu | Line P, MW | Transformer P, MW |
 | --- | --- | --- | --- |
@@ -206,9 +206,9 @@ Per attack instance: detected if any alarm falls in [start, recovery]; first-ala
 
 ### A. The oracle separates sound rules from mined ones
 
-Three hand-written rules test the oracle before any synthesis (Table III). R1 is a naive voltage threshold mined from a narrow training envelope; R2 a context rule (line loading above the training 99th percentile *and* downstream load below the 1st percentile); R3 the active-power balance of the grid with a margin calibrated by search.
+Three hand-written rules test the oracle before any synthesis (Table IV). R1 is a naive voltage threshold mined from a narrow training envelope; R2 a context rule (line loading above the training 99th percentile *and* downstream load below the 1st percentile); R3 the active-power balance of the grid with a margin calibrated by search.
 
-*Table III. Oracle verdicts, robust exact layer with the linearised AC model [oracle_exact_linac*.md, oracle_search*.md]. All verdicts agree with the AC search layer.*
+*Table IV. Oracle verdicts, robust exact layer with the linearised AC model [oracle_exact_linac*.md, oracle_search*.md]. All verdicts agree with the AC search layer.*
 
 | Rule | Reference CIGRE MV (16 configurations) | Sherlock 01-Basic (336 configurations) |
 | --- | --- | --- |
@@ -261,7 +261,7 @@ Fig. 4 shows the loop over the test day: when each rule was learned, which alert
 
 *Fig. 6. False alarms per benign record on the three grids, log scale. Classic physics detectors and the certified library sit two to three orders of magnitude below machine-learning detectors on raw telemetry; on 03-Rural the library needs local noise calibration [comparison.md].*
 
-*Table IV. Detection per attack type (instances detected / instances), mean first-alarm delay over detected process attacks, and false alarms per benign record [comparison.md].*
+*Table V. Detection per attack type (instances detected / instances), mean first-alarm delay over detected process attacks, and false alarms per benign record [comparison.md].*
 
 | Grid | Method | CFC | drift-off | industroyer | delay s | FA / record |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -274,9 +274,9 @@ Fig. 4 shows the loop over the test day: when each rule was learned, which alert
 | 02-Semiurban | SE-BDD | 3/5 | 4/9 | 0/9 | 261 | 0.00000 |
 | 02-Semiurban | AE, raw telemetry | 5/5 | 9/9 | 9/9 | 19 | **0.85948** |
 | 02-Semiurban | AE, SE-residual features | 4/5 | 6/9 | 7/9 | 121 | 0.14888 |
-| 02-Semiurban | Certified library, single record | 5/5 | 7/9 | 7/9 | 123 | 0.01586 |
-| 02-Semiurban | Certified library, L = 3 | **4/5** | **6/9** | 0/9 | **124** | 0.00401 |
-| 02-Semiurban | Combined: SE-BDD or library (L = 3) | 4/5 | 6/9 | 0/9 | 124 | 0.00401 |
+| 02-Semiurban | Certified library (proved), single record | 5/5 | 6/9 | 7/9 | 112 | 0.00889 |
+| 02-Semiurban | Certified library (proved), L = 3 | **4/5** | **6/9** | 0/9 | 165 | **0.00017** |
+| 02-Semiurban | Combined: SE-BDD or library (L = 3) | 4/5 | 6/9 | 0/9 | 165 | 0.00017 |
 
 On the fully observed grid the library alone, under strict accounting, catches 4 of 4 drift-offs including the one D1 misses (D1: 3 of 4), and the combination adds one industroyer instance and cuts the mean delay from 77 to 68 s. The library alone is slower than D1 (102 s against 78 s): an invariant rule fires only once the falsification exceeds its margin. On the partially observed grid the library with persistence, now proved, detects more than SE-BDD (control-and-freeze 4/5 against 3/5, drift-off 6/9 against 4/9) at 0.00017 false alarms per record. With the earlier search-validated margins the same detections came with 0.00401 false alarms; the proof costs no detection here and removes most false alarms. All 13 test topologies (12 unseen in training) were proved on demand, with a latency of 120 s median and 160 s maximum on a shared 4-core machine [semiurban_consolidation_semiurban.md, semiurban_consolidation_search_semiurban.md]. Strict accounting changes nothing here: every detected instance occurred in a topology whose rule was certified before the attack began [comparison.md]. Industroyer, which changes the grid through valid commands and keeps the telemetry consistent, is caught by physics-consistency rules only through switching transients (single-record mode, 7/9 at 0.009 false alarms) or through state rules when the resulting state is outside the envelope.
 
@@ -294,7 +294,7 @@ The physics certificate itself needs no local data; the library's noise term nee
 
 Sherlock has one test day per scenario. For a second, independent test, each recorded training day (12 h, attack free) of 01-Basic and 02-Semiurban is split at its midpoint; every calibration (envelope, D1, SE-BDD, ML, noise) is redone on the first half, and 21 process attacks per grid are injected into the second half, modelled on the measured anatomy of the real ones [attack_anatomy.md, drift_magnitude.md, split_day.md]: drift-off ramps whose final offset and bus count are drawn from the real instances of the same grid (bimodal: 0.036 to 0.39 pu on 1 to 6 buses, or about 0.0015 pu), control-and-freeze on an area of 3 or 10 buses, often with a line opened behind the freeze, and industroyer as a line opened or generators disconnected. Physical changes enter as an AC power-flow delta on the nearest ground-truth snapshot, so recorded noise and model mismatch are kept. A first model with guessed drift magnitudes (0.005 to 0.05 pu), run before the real ones were measured, is reported as a weak-attack sensitivity case; the measured model is the main result. The choice follows the anatomy, not the detection numbers (the weak model favoured the library more).
 
-*Table V. Split day, measured attack model [comparison_split.md].*
+*Table VI. Split day, measured attack model [comparison_split.md].*
 
 | Grid | Method | CFC | drift-off | industroyer | FA / record |
 | --- | --- | --- | --- | --- | --- |
@@ -304,34 +304,34 @@ Sherlock has one test day per scenario. For a second, independent test, each rec
 | 01-Basic | Combined (per-topology calibration) | 7/7 | 4/7 | 0/7 | 0.00425 |
 | 02-Semiurban | SE-BDD | 1/7 | 1/7 | 0/7 | 0.00000 |
 | 02-Semiurban | AE, SE-residual features | 7/7 | 3/7 | 0/7 | 0.05913 |
-| 02-Semiurban | Certified library, L = 3 | **7/7** | **4/7** | 0/7 | **0.00000** |
+| 02-Semiurban | Certified library (proved), L = 3 | **6/7** | **4/7** | 0/7 | **0.00000** |
 
-Every drift-off with a visible magnitude is caught (4 of 4 per grid); the three misses per grid are the near-zero instances (about 0.0015 pu). On the partially observed grid the library detects 11 of 21 at zero false alarms where SE-BDD detects 2 (9 discordant against 0, p = 0.004): one threshold at 138 sigma hides what per-measurement margins expose. On the fully observed grid D1 already catches every visible attack, and the library's false alarms came from benign records in a topology rare in the first half, where the real grid deviates from the reconstructed model by more than the training noise; online per-topology calibration (Section IV-G) cuts them from 0.0143 to 0.0035 per record with detection unchanged, and the remainder are runs of 2 to 6 records around benign operator actions. Industroyer is 0 for every method: injected switching is physically consistent by construction, and the real-day catches came partly from transients a power-flow delta does not reproduce. Finally, a benign command moved a transformer to a tap position unseen in the first half, after which synthesis stopped for two hours; padding the tap range by one step, with bounds re-validated for the padded envelope, restored certification: control-and-freeze 6/7 and drift-off 4/7, at 0.0181 false alarms per record without and 0.0043 with per-topology calibration [consolidation_sherlock_split_tappad.md, consolidation_tc_sherlock_split_tappad.md].
+Every drift-off with a visible magnitude is caught (4 of 4 per grid); the three misses per grid are the near-zero instances (about 0.0015 pu). On the partially observed grid the proved library detects 10 of 21 at zero false alarms where SE-BDD detects 2 (8 discordant against 0, p = 0.008): one threshold at 138 sigma hides what per-measurement margins expose. On the fully observed grid D1 already catches every visible attack, and the library's false alarms came from benign records in a topology rare in the first half, where the real grid deviates from the reconstructed model by more than the training noise; online per-topology calibration (Section IV-G) cuts them from 0.0143 to 0.0035 per record with detection unchanged, and the remainder are runs of 2 to 6 records around benign operator actions. Industroyer is 0 for every method: injected switching is physically consistent by construction, and the real-day catches came partly from transients a power-flow delta does not reproduce. Finally, a benign command moved a transformer to a tap position unseen in the first half, after which synthesis stopped for two hours; padding the tap range by one step, with bounds re-validated for the padded envelope, restored certification: control-and-freeze 6/7 and drift-off 4/7, at 0.0181 false alarms per record without and 0.0043 with per-topology calibration [consolidation_sherlock_split_tappad.md, consolidation_tc_sherlock_split_tappad.md].
 
-**Sensitivity to the injected attack strength.** The injected attacks were regenerated with the measured drift magnitudes halved and doubled, with the same seed, so the instances differ only in magnitude, and every calibration was rerun (Table V-a). The paired result does not depend on the attack model.
+**Sensitivity to the injected attack strength.** The injected attacks were regenerated with the measured drift magnitudes halved and doubled, with the same seed, so the instances differ only in magnitude, and every calibration was rerun (Table VI-a). The paired result does not depend on the attack model.
 
-*Table V-a. Additional day, combined system against the classic detector: instances detected only by one side, and the exact McNemar p-value [statistics_split*.md, statistics_pooled_split_d*.md, statistics_split_v1.md].*
+*Table VI-a. Additional day, combined system against the classic detector: instances detected only by one side, and the exact McNemar p-value [statistics_split*.md, statistics_pooled_split_d*.md, statistics_split_v1.md].*
 
 | Injected drift magnitude | 01-Basic D1 drift-off | 02-Semiurban SE-BDD / library, drift-off | Additional day alone | Pooled with recorded days |
 | --- | --- | --- | --- | --- |
 | guessed, 0.005 to 0.05 pu (v1) | 7/7 | 0/7 / 7/7 | 16 / 0, p < 0.001 | ⟨·⟩ |
 | 0.5 × measured | 4/7 | 1/7 / 4/7 | 9 / 0, p = 0.004 | 14 / 0, p = 0.00012 |
-| 1 × measured (main) | 4/7 | 1/7 / 4/7 | 9 / 0, p = 0.004 | 14 / 0, p = 0.00012 |
+| 1 × measured (main) | 4/7 | 1/7 / 4/7 | 8 / 0, p = 0.008 | 13 / 0, p = 0.00024 |
 | 2 × measured | 7/7 | 4/7 / 5/7 | 7 / 0, p = 0.016 | 12 / 0, p = 0.00049 |
 
 Stronger drifts help the detectors more than the library: the classic detectors' thresholds are crossed by large drifts, while the library already caught every visible drift at 1×. The gap narrows but never reverses, and the classic detector never catches an instance the combined system misses.
 
 ### F. Uncertainty and paired tests
 
-*Table VI. Pooled over process attacks [statistics.md, statistics_split.md]. Wilson 95 % intervals; exact McNemar test for combined against classic (D1 or SE-BDD).*
+*Table VII. Pooled over process attacks [statistics.md, statistics_split.md]. Wilson 95 % intervals; exact McNemar test for combined against classic (D1 or SE-BDD).*
 
 | | Recorded test days (61 instances) | Recorded days plus split day (103 instances) |
 | --- | --- | --- |
 | Classic detector | 22/61 = 0.36 [0.25, 0.49] | 35/103 = 0.34 [0.26, 0.44] |
-| Certified library | 25/61 = 0.41 [0.30, 0.54] | 42/103 = 0.41 [0.32, 0.50] |
-| Combined | 27/61 = 0.44 [0.33, 0.57] | 49/103 = 0.48 [0.38, 0.57] |
-| Only combined / only classic detects | 5 / 0, p = 0.062 | 14 / 0, **p = 0.00012** |
-| Same, strict accounting (rules certified before the attack) | 5 / 0, p = 0.062 | 14 / 0, p = 0.00012 |
+| Certified library | 25/61 = 0.41 [0.30, 0.54] | 41/103 = 0.40 [0.31, 0.49] |
+| Combined | 27/61 = 0.44 [0.33, 0.57] | 48/103 = 0.47 [0.37, 0.56] |
+| Only combined / only classic detects | 5 / 0, p = 0.062 | 13 / 0, **p = 0.00024** |
+| Same, strict accounting (rules certified before the attack) | 5 / 0, p = 0.062 | 13 / 0, p = 0.00024 |
 
 ![](figures/fig7_pooled.svg)
 
@@ -341,12 +341,24 @@ The combined system never loses an instance the classic detector catches. Per gr
 
 ### G. Robustness and ablations
 
-- **Seeds 7, 8, 9** (oracle search, ML training): per-type detection identical on both grids; 01-Basic library false alarms 0.00115 to 0.00124 [comparison.md].
-- **Persistence** on the library: $L$ = 1, 3, 5 gives 0.00124, 0.00091, 0.00065 false alarms on 01-Basic with unchanged detection; on 02-Semiurban $L$ = 3 removes the industroyer transients (7/9 to 0/9) and cuts false alarms from 0.01586 to 0.00401.
-- **Margin factor**: at 1.25 the grid-wide rules cannot be certified on 01-Basic, because the robust bound (1.25 × oracle bound) is not below the margin, and the library is left with 3 state rules; 1.5 (default, fixed in advance) as reported; 2.0 gives the same detection at 0.00109 (01-Basic) and 0.00174 (02-Semiurban). The margin factor must exceed the bound safety factor; above that it trades false alarms for delay.
+- **Seeds 7, 8, 9** (oracle search, ML training): per-type detection identical on both grids; 01-Basic library false alarms 0.00115 to 0.00124 [comparison.md]. The 02-Semiurban seed and margin-factor ablations were run with the earlier search-validated margins, before the proof; detection per type matched the proved run.
+- **Injection seeds** for the additional day (attack times, targets and magnitudes redrawn, every calibration rerun): the combined system catches more than the classic detector in every seed and never fewer: 8, 3, 6, 5 and 3 instances only it detects against 0, pooled 25 against 0 over 218 injected instances (Table VIII). The library alone detects about as much as the classic detector (79 against 80 of 218); the gain comes from complementarity, not from a stronger single detector. The seeds share one benign base day, so the pooled test is descriptive [seed_summary.md].
+- **Persistence** on the library: $L$ = 1, 3, 5 gives 0.00124, 0.00091, 0.00065 false alarms on 01-Basic with unchanged detection; on 02-Semiurban (proved margins) $L$ = 3 removes the industroyer transients (7/9 to 0/9) and cuts false alarms from 0.00889 to 0.00017.
+- **Margin factor**: at 1.25 the grid-wide rules cannot be certified on 01-Basic, because the robust bound (1.25 × oracle bound) is not below the margin, and the library is left with 3 state rules; 1.5 (default, fixed in advance) as reported; 2.0 gives the same detection at 0.00109 (01-Basic) and 0.00174 (02-Semiurban, search-validated margins). The margin factor must exceed the bound safety factor; above that it trades false alarms for delay.
 - **Per-topology online calibration** (Section IV-G) on the recorded 01-Basic day: library false alarms 0.00124 to 0.00056 per record (0.64 to 0.21 episodes per hour), detection unchanged, now below D1's 0.85 episodes per hour [comparison.md]. Fig. 8 summarises this and the Rural transfer.
 
 - **Model error bounds**: all verdicts of the robust exact layer agree with the AC search layer on both grids; the scenario bound of Section IV-D holds for every quantity.
+
+*Table VIII. Additional day with five injection seeds: process attacks detected, pooled over 01-Basic and 02-Semiurban, and the exact McNemar test of combined against classic [seed_summary.md].*
+
+| Seed | Classic | Certified library | Combined | Only combined / only classic | McNemar p |
+| --- | --- | --- | --- | --- | --- |
+| 7 (main) | 13/42 | 16/42 | 21/42 | 8 / 0 | 0.0078 |
+| 8 | 12/43 | 10/43 | 15/43 | 3 / 0 | 0.2500 |
+| 9 | 17/45 | 19/45 | 23/45 | 6 / 0 | 0.0312 |
+| 10 | 21/44 | 19/44 | 26/44 | 5 / 0 | 0.0625 |
+| 11 | 17/44 | 15/44 | 20/44 | 3 / 0 | 0.2500 |
+| All seeds (descriptive) | 80/218 | 79/218 | 105/218 | 25 / 0 | 5.96e-08 |
 
 ![](figures/fig8_calibration.svg)
 
@@ -354,9 +366,9 @@ The combined system never loses an instance the classic detector catches. Per gr
 
 ### H. Comparison with published IDSs on the same test day
 
-The dataset paper [14] evaluated five published process-aware IDSs on the 01-Basic test day with its own metrics: an *alarm* is a continuous run of alarm records; an attack counts as detected if an alarm *starts* inside it (all 18 attacks, arp-spoof included); alarms starting in the recovery phase are ignored; every other alarm start is a false alarm, of which those during or within 120 s after a benign procedure are given in brackets. We scored our methods the same way (Table VII). The published numbers were obtained after filtering measurements affected by switching and maintenance; ours use the unfiltered telemetry.
+The dataset paper [14] evaluated five published process-aware IDSs on the 01-Basic test day with its own metrics: an *alarm* is a continuous run of alarm records; an attack counts as detected if an alarm *starts* inside it (all 18 attacks, arp-spoof included); alarms starting in the recovery phase are ignored; every other alarm start is a false alarm, of which those during or within 120 s after a benign procedure are given in brackets. We scored our methods the same way (Table IX). The published numbers were obtained after filtering measurements affected by switching and maintenance; ours use the unfiltered telemetry.
 
-*Table VII. 01-Basic test day, metrics of the dataset paper [sherlock_metrics.md]. Published rows copied from Table 3 of [14].*
+*Table IX. 01-Basic test day, metrics of the dataset paper [sherlock_metrics.md]. Published rows copied from Table 3 of [14].*
 
 | IDS | Detected attacks | False alarms (at benign events) | Mean time to detection, s |
 | --- | --- | --- | --- |
@@ -369,6 +381,8 @@ The dataset paper [14] evaluated five published process-aware IDSs on the 01-Bas
 | Certified library (ours) | 11/18 | 6 (5) | 70.2 |
 | Certified library with per-topology calibration (ours) | 11/18 | **2 (1)** | 70.2 |
 | Combined: detectors or library (ours) | 14/18 | 10 (9) | 69.5 |
+
+**Rerunning a published IDS on identical, unfiltered data.** To separate the effect of measurement filtering from the detector, we ran SIMPLE from the dataset group's open IPAL IDS framework (its five components with the framework's default parameters, any-component alarm) on exactly our training and test files, with every numeric and Boolean state field and no filtering [published_ids_sherlock.md]. It alarms on 100 % of benign records (to five decimals) and inside all 16 process attacks: the unfiltered telemetry of a day with benign switching and maintenance contains values never seen in training, and SIMPLE's range and histogram components flag them all. By the dataset metric this is a single alarm that starts at the beginning of the day, so 0 of 18 detected and 1 false alarm, which shows that the metric rewards alarm starts, not alarm coverage. The published 16/18 therefore depends on the measurement filtering, which is a form of the benign knowledge the certification gate encodes explicitly. GECO_SENTENCE
 
 The two published systems that detect most attacks pay for it with 33 and 94 false alarms on the day, most of them at benign operator procedures, which is exactly the failure the certification gate is designed to prevent. The combined system detects 14 of 18 at 10 false alarms; the calibrated library alone detects 11 of 18 at 2.
 
@@ -386,7 +400,7 @@ Sherlock's telemetry is a synchronous snapshot of a steady-state co-simulation. 
 
 ### J. Cost and scalability
 
-On 01-Basic, certifying a grid-wide rule (54 to 58 clauses; search layer plus robust exact layer over 336 configurations, 4 cores) took 17.6 to 60.6 s; a state rule 6.0 to 27.1 s when certified and 3.3 to 4.0 s when refuted by search. Evaluating the whole final library (10 rules, 446 clauses) on one telemetry record takes 1.7 ms in unoptimised Python on one core, against a 1 s reporting interval [consolidation_tc_sherlock.md]. On 02-Semiurban (178 buses), certifying a topology's rule on demand took 5 to 10 s (median 5 s), and the library adds to the SE-BDD detector only a comparison of 559 residuals with their margins, since the state estimate is already computed [semiurban_consolidation_semiurban.md]. The library grows with the number of topologies met, not with the number of alerts: 10 rules for 22 alert episodes on 01-Basic, 13 topologies in a day on 02-Semiurban. When the model or envelope changes, every affected rule must be re-certified at these costs; re-certifying the whole 01-Basic library sequentially takes about 4.6 minutes (the sum of the measured certification times).
+On 01-Basic, certifying a grid-wide rule (54 to 58 clauses; search layer plus robust exact layer over 336 configurations, 4 cores) took 17.6 to 60.6 s; a state rule 6.0 to 27.1 s when certified and 3.3 to 4.0 s when refuted by search. Evaluating the whole final library (10 rules, 446 clauses) on one telemetry record takes 1.7 ms in unoptimised Python on one core, against a 1 s reporting interval [consolidation_tc_sherlock.md]. On 02-Semiurban (178 buses), certifying and proving a topology's rule on demand took a median of 120 s (at most 160 s), of which the search layer alone took 5 to 10 s, and the library adds to the SE-BDD detector only a comparison of 559 residuals with their margins, since the state estimate is already computed [semiurban_consolidation_semiurban.md]. The library grows with the number of topologies met, not with the number of alerts: 10 rules for 22 alert episodes on 01-Basic, 13 topologies in a day on 02-Semiurban. When the model or envelope changes, every affected rule must be re-certified at these costs; re-certifying the whole 01-Basic library sequentially takes about 4.6 minutes (the sum of the measured certification times).
 
 ### K. Machine-learning detectors as a negative result
 
@@ -408,13 +422,13 @@ Autoencoders on raw telemetry raise alarms on 0.99988 (01-Basic), 0.85948 (02-Se
 
 **Can the loop be poisoned?** The online per-topology calibration uses the first 300 s in a new topology on which no detector alarms. An attacker who falsifies telemetry below the detector threshold during exactly those 300 s would inflate the noise term and widen the margins of that topology's rule. The effect is bounded: the margin can only grow, so the rule stays certified and fires on a subset of what it fired on before; the attacker gains stealth, never a false alarm. Restricting calibration to topologies entered through a logged operator procedure, or capping the calibrated noise at a multiple of the training noise, would close this gap.
 
-**Limitations and threats to validity.** (1) One recorded test day per grid and 4 to 9 instances per attack type; intervals are wide, and the second test day is semi-synthetic: its attacks are injected and cannot reproduce network-level side effects (no industroyer catches for any method there). (2) The exact-layer certificate is relative to a linear model with empirical error bounds; the scenario bound is relative to a uniform sampling of the envelope, not a worst case; on the partially observed grid the certificate is search-validated only. (3) The grids are reconstructions, validated at the noise floor, not the original simulator scenarios. (4) The library learns and is evaluated on the same test day in time order; the strict accounting bounds the optimism. (5) The split-day attack model was revised once, after measuring the real attacks; both versions are reported. (6) The telemetry is simulator-synchronous; realistic reporting needs the reporting-robust margins of Section VI-I, evaluated here on emulated, not recorded, artifacts. (7) Attacks through valid commands that leave the state inside the envelope (a set-point change, a redundant command) leave no trace in a static snapshot and need state-transition or command-context rules, which this paper does not synthesise.
+**Limitations and threats to validity.** (1) One recorded test day per grid and 4 to 9 instances per attack type; intervals are wide, and the second test day is semi-synthetic: its attacks are injected and cannot reproduce network-level side effects (no industroyer catches for any method there). (2) The exact-layer certificate is relative to a linear model with empirical error bounds; the scenario bound is relative to a uniform sampling of the envelope, not a worst case; on the partially observed grid the residual remainder $\delta$ is likewise validated by search, not proved. (3) The grids are reconstructions, validated at the noise floor, not the original simulator scenarios. (4) The library learns and is evaluated on the same test day in time order; the strict accounting bounds the optimism. (5) The split-day attack model was revised once, after measuring the real attacks; both versions are reported. (6) The telemetry is simulator-synchronous; realistic reporting needs the reporting-robust margins of Section VI-I, evaluated here on emulated, not recorded, artifacts. (7) Attacks through valid commands that leave the state inside the envelope (a set-point change, a redundant command) leave no trace in a static snapshot and need state-transition or command-context rules, which this paper does not synthesise.
 
 ---
 
 ## VIII. Conclusion
 
-We presented a self-consolidating intrusion detection system for distribution grids in which detector alerts become deterministic rules, and rules become operational only after a physics oracle certifies that no benign feasible operating state fires them. On three grids reconstructed from the Sherlock dataset the oracle refuted rules mined from history and plausible-but-wrong state rules, certified physically grounded ones in seconds, and the resulting library, replayed without labels, caught attacks the detectors missed. Pooled over 103 attack instances across recorded and independently calibrated test days, combining the library with a classic detector detected 48 % of instances against 34 %, never losing an instance (14 against 0, p = 0.00012). The main practical lesson is that the certificate covers physics, not noise, and that noise must be calibrated per grid and per topology; we showed that this can be done online, without labels, from five minutes of data. Future work includes rules over state transitions and command context for attacks that stay inside the envelope, a formal rather than empirical error bound for the linear layer, and evaluation on a second recorded day per grid as such data become public.
+We presented a self-consolidating intrusion detection system for distribution grids in which detector alerts become deterministic rules, and rules become operational only after a physics oracle certifies that no benign feasible operating state fires them. On three grids reconstructed from the Sherlock dataset the oracle refuted rules mined from history and plausible-but-wrong state rules, certified physically grounded ones in seconds, and the resulting library, replayed without labels, caught attacks the detectors missed. Pooled over 103 attack instances across recorded and independently calibrated test days, combining the library with a classic detector detected 47 % of instances against 34 %, never losing an instance (13 against 0, p = 0.00024), and the direction held in each of five injection seeds (25 against 0 over 218 injected instances). The main practical lesson is that the certificate covers physics, not noise, and that noise must be calibrated per grid and per topology; we showed that this can be done online, without labels, from five minutes of data. Future work includes rules over state transitions and command context for attacks that stay inside the envelope, a formal rather than empirical error bound for the linear layer, and evaluation on a second recorded day per grid as such data become public.
 
 ---
 

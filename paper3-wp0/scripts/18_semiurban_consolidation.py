@@ -205,9 +205,11 @@ def main():
              f"({MARGIN_FACTOR} x max(train noise, oracle bound)); " + (
                  f"noise per measurement = per-kind floor transferred from {a.noise_from} (" if a.noise_from else
                  "train noise of a measurement is its train maximum, floored at the median over its measurement kind of the train 99.9th percentile (")
-             + ", ".join(f"{k} {v:.2f}" for k, v in sorted(floor.items())) + "). Oracle: {a.n_samples} sampled benign AC states plus "
+             + ", ".join(f"{k} {v:.2f}" for k, v in sorted(floor.items())) + f"). Oracle: {a.n_samples} sampled benign AC states plus "
              f"differential evolution ({a.budget} evaluations per round, at most 3 rounds of CEGIS on the margins). The residual "
-             "needs AC power flows, so only the search layer applies (AC-validated, not a formal certificate). Topologies are "
+             ("needs AC power flows; with --prove the margins are then raised to 1.5 x the affine worst-case bound plus the validated "
+              "remainder (proved up to the remainder bound), otherwise only the search layer applies (AC-validated, not a formal certificate). "
+              if a.prove else "needs AC power flows, so only the search layer applies (AC-validated, not a formal certificate). ") + "Topologies are "
              f"certified on demand when they first appear in the test telemetry (every {step} s). Wall time {wall:.0f} s.\n\n")
     body += C.md_table(["quantity", "value"], [
         ["topologies certified on demand", sum(1 for v in library.values() if v[1]["verdict"].startswith(("certified", "proved")))],

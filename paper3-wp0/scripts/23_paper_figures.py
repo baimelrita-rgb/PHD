@@ -224,10 +224,10 @@ def fig5_detection():
                    ("certified library, strict\nFA 0.00124", [[4, 5], [4, 4], [2, 7]]), ("detectors + library\nFA 0.00171", [[5, 5], [4, 4], [3, 7]])],
           "(a) 01-Basic, recorded day")
     panel(axs[1], [("SE-BDD\nFA 0.00000", [[3, 5], [4, 9], [0, 9]]), ("autoencoder, SE features\nFA 0.149", [[4, 5], [6, 9], [7, 9]]),
-                   ("certified library, L = 3\nFA 0.00401", [[4, 5], [6, 9], [0, 9]]), ("certified library, 1 record\nFA 0.0159", [[5, 5], [7, 9], [7, 9]])],
+                   ("certified library, L = 3\nFA 0.00017", [[4, 5], [6, 9], [0, 9]]), ("certified library, 1 record\nFA 0.0089", [[5, 5], [6, 9], [7, 9]])],
           "(b) 02-Semiurban, recorded day")
     panel(axs[2], [("SE-BDD\nFA 0.00000", [[1, 7], [1, 7], [0, 7]]), ("autoencoder, SE features\nFA 0.059", [[7, 7], [3, 7], [0, 7]]),
-                   ("certified library, L = 3\nFA 0.00000", [[7, 7], [4, 7], [0, 7]]), ("certified library, 1 record\nFA 0.0042", [[7, 7], [6, 7], [0, 7]])],
+                   ("certified library, L = 3\nFA 0.00000", [[6, 7], [4, 7], [0, 7]]), ("certified library, 1 record\nFA 0.0042", [[6, 7], [6, 7], [0, 7]])],
           "(c) 02-Semiurban, additional day")
     handles = [Line2D([], [], marker="s", ls="", color=c, ms=7, label=t) for t, c in (("control-and-freeze", BLUE), ("drift-off", ORANGE), ("industroyer", AQUA))]
     fig.tight_layout(rect=(0, 0.08, 1, 1))
@@ -241,7 +241,7 @@ def fig6_false_alarms():
     """comparison.md (three grids). Zero rates are drawn at the left edge and labelled 0."""
     rows = [("01-Basic", [("D1 residual test", 0.00059, BLUE), ("certified library, strict", 0.00124, ORANGE), ("library + per-topology calibration", 0.00056, ORANGE),
                           ("autoencoder, physics features", 0.00100, MUTED), ("autoencoder, raw telemetry", 0.99988, MUTED)]),
-            ("02-Semiurban", [("SE-BDD", 0.0, BLUE), ("certified library, L = 3", 0.00401, ORANGE), ("autoencoder, SE features", 0.14888, MUTED), ("autoencoder, raw telemetry", 0.85948, MUTED)]),
+            ("02-Semiurban", [("SE-BDD", 0.0, BLUE), ("certified library, L = 3", 0.00017, ORANGE), ("autoencoder, SE features", 0.14888, MUTED), ("autoencoder, raw telemetry", 0.85948, MUTED)]),
             ("03-Rural (zero training)", [("SE-BDD, transferred threshold", 0.00017, BLUE), ("library, transferred noise floors", 0.723, ORANGE), ("library, 30 min calibration", 0.184, ORANGE),
                                          ("autoencoder, SE features (30 min)", 0.14358, MUTED), ("autoencoder, raw (30 min)", 0.43249, MUTED)])]
     fig, axs = plt.subplots(3, 1, figsize=(7.4, 4.2), sharex=True, gridspec_kw={"height_ratios": [5, 4, 5], "hspace": 0.35})
@@ -269,7 +269,7 @@ def fig7_pooled():
     """(a) statistics.md, statistics_split.md; (b) statistics.md, statistics_split*.md, statistics_pooled_split_d*.md."""
     fig, (ax, bx) = plt.subplots(1, 2, figsize=(7.4, 2.7), gridspec_kw={"width_ratios": [1, 1.15], "wspace": 0.55})
     data = [("recorded test days\n61 instances", [(22, 61, .25, .49), (25, 61, .30, .54), (27, 61, .33, .57)]),
-            ("recorded + additional\nday, 103 instances", [(35, 103, .26, .44), (42, 103, .32, .50), (49, 103, .38, .57)])]
+            ("recorded + additional\nday, 103 instances", [(35, 103, .26, .44), (41, 103, .31, .49), (48, 103, .37, .56)])]
     cols = [BLUE, ORANGE, AQUA]; names = ["classic detector", "certified library", "combined"]
     for g, (lab, rows) in enumerate(data):
         for k, (a, n, lo, hi) in enumerate(rows):
@@ -284,7 +284,7 @@ def fig7_pooled():
     ax.legend(fontsize=6.3, frameon=False, loc="upper left", ncol=3, bbox_to_anchor=(-0.02, 1.13), handlelength=1.0, columnspacing=0.8)
     ax.set_title("(a) detection rate with Wilson 95 % intervals", loc="left", fontsize=7.6, color=INK, pad=16)
     rows = [("recorded test days", 5, 0, "p = 0.062"), ("+ additional day, 0.5 × drift", 14, 0, "p = 0.00012"),
-            ("+ additional day, 1 × drift (main)", 14, 0, "p = 0.00012"), ("+ additional day, 2 × drift", 12, 0, "p = 0.00049")]
+            ("+ additional day, 1 × drift (main)", 13, 0, "p = 0.00024"), ("+ additional day, 2 × drift", 12, 0, "p = 0.00049")]
     for i_, (lab, b_, c_, pv) in enumerate(rows):
         bx.barh(i_, b_, height=0.55, color=AQUA, zorder=2)
         bx.barh(i_, -c_ if c_ else -0.0, height=0.55, color=BLUE, zorder=2)

@@ -2,7 +2,7 @@
 <!-- grid: semiurban -->
 # WP2-b: on-demand certification and rule library on 02-Semiurban
 
-Rule per topology: some monitored measurement's state-estimation residual exceeds its margin (1.5 x max(train noise, oracle bound)); train noise of a measurement is its train maximum, floored at the median over its measurement kind of the train 99.9th percentile (load_p 0.16, load_q 0.34, p_from 1.64, sgen_p 0.16, storage_p 0.16, trafo_p_hv 0.47, vm_pu 2.50). Oracle: {a.n_samples} sampled benign AC states plus differential evolution (150 evaluations per round, at most 3 rounds of CEGIS on the margins). The residual needs AC power flows, so only the search layer applies (AC-validated, not a formal certificate). Topologies are certified on demand when they first appear in the test telemetry (every 5 s). Wall time 141 s.
+Rule per topology: some monitored measurement's state-estimation residual exceeds its margin (1.5 x max(train noise, oracle bound)); train noise of a measurement is its train maximum, floored at the median over its measurement kind of the train 99.9th percentile (load_p 0.16, load_q 0.34, p_from 1.64, sgen_p 0.16, storage_p 0.16, trafo_p_hv 0.47, vm_pu 2.50). Oracle: 40 sampled benign AC states plus differential evolution (150 evaluations per round, at most 3 rounds of CEGIS on the margins). The residual needs AC power flows, so only the search layer applies (AC-validated, not a formal certificate). Topologies are certified on demand when they first appear in the test telemetry (every 5 s). Wall time 141 s.
 
 | quantity | value |
 | --- | --- |
