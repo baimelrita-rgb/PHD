@@ -334,26 +334,30 @@ def fig8_calibration():
 
 # ---------------------------------------------------------------- Fig 9: realistic SCADA reporting
 def fig9_scada():
-    """red_team_sherlock.md (clean calibration), consolidation_tc_lat2/db1_sherlock.md (calibrated with artifacts)."""
-    rows = [("recorded telemetry", 0.00056, None), ("latency 0 to 1 s", 0.03464, None), ("latency 0 to 2 s", 0.06699, 0.01004),
-            ("latency 0 to 5 s", 0.06787, None), ("deadband 0.5 %", 0.17824, None), ("deadband 1 %", 0.26528, 0.00056), ("deadband 2 %", 0.37909, None)]
-    fig, ax = plt.subplots(figsize=(7.4, 2.7))
-    y = list(range(len(rows)))
-    for i_, (lab, a_, b_) in enumerate(rows):
-        ax.plot([1e-4, a_], [i_ - 0.17, i_ - 0.17], color=MUTED, lw=5, solid_capstyle="butt", zorder=2)
-        ax.text(a_ * 1.15, i_ - 0.17, f"{a_ * 100:.2f} %" if a_ >= 0.001 else f"{a_ * 100:.3f} %", va="center", fontsize=6.3, color=INK2)
-        if b_ is not None:
-            ax.plot([1e-4, b_], [i_ + 0.17, i_ + 0.17], color=ORANGE, lw=5, solid_capstyle="butt", zorder=2)
-            ax.text(b_ * 1.15, i_ + 0.17, f"{b_ * 100:.3f} %" if b_ < 0.001 else f"{b_ * 100:.2f} %", va="center", fontsize=6.3, color=INK2)
-    ax.set_yticks(y); ax.set_yticklabels([r[0] for r in rows], fontsize=7); ax.set_ylim(len(rows) - 0.4, -0.6); ax.tick_params(axis="y", length=0)
+    """robust_margins_sherlock.md: library acting from the time each rule was learned; lag per reading drawn once (seed + 26)."""
+    rows = [("recorded telemetry", 0.00056, None, 0.00056), ("latency 0 to 1 s", 0.03464, None, 0.00053), ("latency 0 to 2 s", 0.03473, 0.00795, 0.00053),
+            ("latency 0 to 5 s", 0.06881, None, 0.00041), ("deadband 0.5 %", 0.17824, None, 0.00047), ("deadband 1 %", 0.26528, 0.00056, 0.00047),
+            ("deadband 2 %", 0.37909, None, 0.00047)]
+    fig, ax = plt.subplots(figsize=(7.4, 3.1))
+    off = {0: -0.26, 1: 0.0, 2: 0.26}
+    cols = [MUTED, ORANGE, AQUA]
+    for i_, (lab, a_, b_, c_) in enumerate(rows):
+        for k, v in enumerate((a_, b_, c_)):
+            if v is None:
+                continue
+            y = i_ + off[k]
+            ax.plot([1e-4, v], [y, y], color=cols[k], lw=4.2, solid_capstyle="butt", zorder=2)
+            ax.text(v * 1.15, y, f"{v * 100:.3f} %" if v < 0.001 else f"{v * 100:.2f} %", va="center", fontsize=5.9, color=INK2)
+    ax.set_yticks(range(len(rows))); ax.set_yticklabels([r[0] for r in rows], fontsize=7); ax.set_ylim(len(rows) - 0.45, -0.55); ax.tick_params(axis="y", length=0)
     ax.set_xscale("log"); ax.set_xlim(1e-4, 1.5); ax.set_xticks([1e-4, 1e-3, 1e-2, 1e-1, 1]); ax.set_xticklabels(["0.01 %", "0.1 %", "1 %", "10 %", "100 %"], fontsize=7)
     ax.set_xlabel("library false alarms per benign record, 01-Basic (log scale)", fontsize=7.2)
     ax.xaxis.grid(True, color=GRID, lw=0.5); ax.set_axisbelow(True)
-    handles = [Line2D([], [], color=MUTED, lw=5, label="margins calibrated on clean telemetry"),
-               Line2D([], [], color=ORANGE, lw=5, label="margins calibrated on telemetry with the same artifact")]
-    fig.legend(handles=handles, fontsize=6.6, frameon=False, loc="lower center", ncol=2, bbox_to_anchor=(0.5, -0.17))
-    headline(fig, "Reporting artifacts break margins calibrated on clean data; calibrating on the same SCADA feed absorbs a deadband, not all latency",
-             "artifacts applied to every analog reading; switch, line and tap states unchanged")
+    handles = [Line2D([], [], color=MUTED, lw=4.2, label="plain margins, calibrated on clean telemetry"),
+               Line2D([], [], color=ORANGE, lw=4.2, label="plain margins, calibrated on the same feed"),
+               Line2D([], [], color=AQUA, lw=4.2, label="reporting-robust margins (clean calibration)")]
+    fig.legend(handles=handles, fontsize=6.4, frameon=False, loc="lower center", ncol=3, bbox_to_anchor=(0.5, -0.15))
+    headline(fig, "Reporting-robust margins keep false alarms at the clean level under latency and deadbands",
+             "detection with detectors: 12/16 in every robust case; artifacts on every analog reading")
     save(fig, "fig9_scada")
 
 
