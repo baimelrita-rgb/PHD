@@ -22,6 +22,7 @@ from p3 import common as C
 from p3 import envelope as E
 from p3 import sherlock_io as S
 
+RESUME = [False]
 FW = Path(os.environ.get("IPAL_IDS", "/home/user/ext/ipal_ids_framework"))
 PY = Path(os.environ.get("IPAL_PY", "/home/user/ext/ipalenv/bin/python"))
 
@@ -41,7 +42,7 @@ def configs(num, boo, work):
               "SteadyTime": base("SteadyTime", features=feats, preprocessors=[], trainon=1.0, **{"save-training": None, "allow-none": True, "threshold": 1.0, "discrete_threshold": 10, "adjust": True}),
               "ExistsIDS": base("ExistsIDS", exclude=[], threshold=10),
               "DecimalPlaces": base("DecimalPlaces")}
-    geco = {"GeCo": base("GeCo", ignore=[f"state;{k}" for k in boo], max_formel_length=3, threshold_factor=1.1, cusum_factor=2, cpus=4, refit=False, resume=False)}
+    geco = {"GeCo": base("GeCo", ignore=[f"state;{k}" for k in boo], max_formel_length=3, threshold_factor=1.1, cusum_factor=2, cpus=4, refit=False, resume=RESUME[0])}
     return {"SIMPLE": simple, "GeCo": geco}
 
 
@@ -75,8 +76,10 @@ def main():
     ap = C.parser(__doc__)
     ap.add_argument("--ids", default="SIMPLE,GeCo")
     ap.add_argument("--timeout", type=int, default=7200)
+    ap.add_argument("--resume", action="store_true", help="GeCo: continue training from the saved model")
     ap.set_defaults(grid="sherlock")
     a = C.init(ap.parse_args())
+    RESUME[0] = a.resume
     import importlib.util
     sp = importlib.util.spec_from_file_location("s24", Path(__file__).with_name("24_sherlock_metrics.py"))
     s24 = importlib.util.module_from_spec(sp); sp.loader.exec_module(s24)
@@ -86,6 +89,8 @@ def main():
     num, boo = numeric_keys(train)
     cfgs = configs(num, boo, work)
     ev = S.load_events(root, "test")
+    store = C.INTERIM / C.suffixed("published_rows.json")
+    saved = json.loads(store.read_text()) if store.exists() else {}
     rows = []
     for name in a.ids.split(","):
         out, sec, err = run(name, cfgs[name], train, test, work, a.timeout)
@@ -103,6 +108,10 @@ def main():
         np.savez_compressed(C.interim(f"published_{name}.npz"), t=T, alarm=A)
         rows.append([name, det, fa, ttd, f"{rate:.5f} ({pdet}/{len(pa)} process attacks)", f"{sec:.0f}", ""])
         print(rows[-1])
+    for r in rows:
+        saved[r[0]] = r
+    store.write_text(json.dumps(saved))
+    rows = list(saved.values())
     body = "# Improvement B1: published IDSs on identical data\n\n" + __doc__.split("\n\n", 1)[1] + "\n\n"
     body += f"Training file `{train.name}`, test file `{test.name}`, {len(num)} numeric and {len(boo)} Boolean state fields.\n\n"
     body += C.md_table(["IDS", "detected attacks (dataset metric)", "false alarms (at benign events)", "mean TTD s",
