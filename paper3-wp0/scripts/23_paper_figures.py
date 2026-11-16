@@ -267,7 +267,7 @@ def fig6_false_alarms():
 # ---------------------------------------------------------------- Fig 7: pooled detection with CIs
 def fig7_pooled():
     """(a) statistics.md, statistics_split.md; (b) statistics.md, statistics_split*.md, statistics_pooled_split_d*.md."""
-    fig, (ax, bx) = plt.subplots(1, 2, figsize=(7.4, 2.7), gridspec_kw={"width_ratios": [1, 1.15], "wspace": 0.55})
+    fig, (ax, bx) = plt.subplots(1, 2, figsize=(7.4, 2.7), gridspec_kw={"width_ratios": [1, 1.15], "wspace": 0.62})
     data = [("recorded test days\n61 instances", [(22, 61, .25, .49), (25, 61, .30, .54), (27, 61, .33, .57)]),
             ("recorded + additional\nday, 103 instances", [(35, 103, .26, .44), (41, 103, .31, .49), (48, 103, .37, .56)])]
     cols = [BLUE, ORANGE, AQUA]; names = ["classic detector", "certified library", "combined"]
@@ -283,8 +283,8 @@ def fig7_pooled():
     ax.yaxis.grid(True, color=GRID, lw=0.5); ax.set_axisbelow(True)
     ax.legend(fontsize=6.3, frameon=False, loc="upper left", ncol=3, bbox_to_anchor=(-0.02, 1.13), handlelength=1.0, columnspacing=0.8)
     ax.set_title("(a) detection rate with Wilson 95 % intervals", loc="left", fontsize=7.6, color=INK, pad=16)
-    rows = [("recorded test days", 5, 0, "p = 0.062"), ("+ additional day, 0.5 × drift", 14, 0, "p = 0.00012"),
-            ("+ additional day, 1 × drift (main)", 13, 0, "p = 0.00024"), ("+ additional day, 2 × drift", 12, 0, "p = 0.00049")]
+    rows = [("recorded test days", 5, 0, "p = 0.062"), ("+ add. day, drift 0.5 ×", 13, 0, "p = 0.00024"),
+            ("+ add. day, drift 1 × (main)", 13, 0, "p = 0.00024"), ("+ add. day, drift 2 ×", 10, 0, "p = 0.0020")]
     for i_, (lab, b_, c_, pv) in enumerate(rows):
         bx.barh(i_, b_, height=0.55, color=AQUA, zorder=2)
         bx.barh(i_, -c_ if c_ else -0.0, height=0.55, color=BLUE, zorder=2)

@@ -315,11 +315,11 @@ Every drift-off with a visible magnitude is caught (4 of 4 per grid); the three 
 | Injected drift magnitude | 01-Basic D1 drift-off | 02-Semiurban SE-BDD / library, drift-off | Additional day alone | Pooled with recorded days |
 | --- | --- | --- | --- | --- |
 | guessed, 0.005 to 0.05 pu (v1) | 7/7 | 0/7 / 7/7 | 16 / 0, p < 0.001 | ⟨·⟩ |
-| 0.5 × measured | 4/7 | 1/7 / 4/7 | 9 / 0, p = 0.004 | 14 / 0, p = 0.00012 |
+| 0.5 × measured | 4/7 | 1/7 / 4/7 | 8 / 0, p = 0.008 | 13 / 0, p = 0.00024 |
 | 1 × measured (main) | 4/7 | 1/7 / 4/7 | 8 / 0, p = 0.008 | 13 / 0, p = 0.00024 |
-| 2 × measured | 7/7 | 4/7 / 5/7 | 7 / 0, p = 0.016 | 12 / 0, p = 0.00049 |
+| 2 × measured | 7/7 | 4/7 / 4/7 | 5 / 0, p = 0.062 | 10 / 0, p = 0.0020 |
 
-Stronger drifts help the detectors more than the library: the classic detectors' thresholds are crossed by large drifts, while the library already caught every visible drift at 1×. The gap narrows but never reverses, and the classic detector never catches an instance the combined system misses.
+Stronger drifts help the detectors more than the library: the classic detectors' thresholds are crossed by large drifts, while the library already caught every visible drift at 1×. At 2× the additional day alone is no longer significant (5 against 0, p = 0.062); the gap narrows but never reverses, and the classic detector never catches an instance the combined system misses.
 
 ### F. Uncertainty and paired tests
 
