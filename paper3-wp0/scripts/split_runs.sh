@@ -14,6 +14,6 @@ if [ "${1:-all}" != "sherlock" ]; then
   run scripts/16a_semiurban_envelope.py --grid semiurban
   run scripts/17_se_bdd.py --grid semiurban
   run scripts/13_ml_detectors.py --grid semiurban --features physics
-  run scripts/18_semiurban_consolidation.py --grid semiurban
+  run scripts/18_semiurban_consolidation.py --grid semiurban --prove
 fi
 echo "=== ALL DONE $(date +%H:%M:%S)" >> $LOG
