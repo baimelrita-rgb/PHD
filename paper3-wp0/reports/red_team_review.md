@@ -77,4 +77,4 @@ A deadband is fully absorbed by calibration. Latency is reduced by a factor of 6
 | A, power systems | SCADA artifacts drown clean-calibrated margins | resolved by reporting-robust margins (clean false-alarm level under every emulated artifact) [robust_margins_sherlock.md] |
 | B, security | stealth band below the margins | CUSUM failed its criterion; the band is set by model fidelity, stated as a limitation [cusum_tc_sherlock.md] |
 | B, formal methods | search-validated SE rules are not a certificate | confirmed: benign corner counterexamples in every topology; replaced by an affine worst-case proof [se_rule_proof_semiurban.md, semiurban_consolidation_semiurban.md] |
-| C, machine learning | published IDSs not run on identical data | SIMPLE rerun on identical unfiltered data; GeCo in `published_ids_sherlock.md` |
+| C, machine learning | published IDSs not run on identical data | SIMPLE rerun on identical unfiltered data (alarms continuously); GeCo did not finish training in 6 h |
