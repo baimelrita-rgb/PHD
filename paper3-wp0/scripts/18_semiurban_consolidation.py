@@ -44,6 +44,9 @@ def residual_of_state(s, obs_pos, x, cfg, iters):
     return out
 
 
+PROVE = {"on": False, "n": 150, "budget": 100}
+
+
 def certify_topology(cfg, noise, obs, obs_pos, n_samples, budget, seed, iters, max_rounds=3):
     s = SE.se(cfg)
     t0 = time.time()
@@ -66,7 +69,21 @@ def certify_topology(cfg, noise, obs, obs_pos, n_samples, budget, seed, iters, m
         st = O.de_maximize(lambda x, m: score(x, m, cfg), cfg, E.full(), budget, seed + rnd)
         rounds.append(st["best"])
         if st["best"] <= 0:
-            return margin, {"verdict": "certified (search)", "rounds": rounds, "seconds": time.time() - t0}
+            info = {"verdict": "certified (search)", "rounds": rounds, "seconds": time.time() - t0}
+            if PROVE["on"]:
+                from p3 import se_proof as SP
+                opos = [obs_pos[nm] for nm in s.names]
+                ab = SP.affine_bound(cfg, s, margin[opos], iters, PROVE["n"], PROVE["budget"], seed + 77)
+                cex = SP.corner_check(cfg, s, margin[opos], ab, iters)
+                info["corner_cex"] = sum(1 for _, sc in cex if sc > 1.0)
+                info["corner_checked"] = len(cex)
+                new = margin.copy()
+                new[opos] = np.fmax(margin[opos], MARGIN_FACTOR * np.fmax(noise[opos], ab["bound"]))
+                info["raised"] = int(np.sum(new[opos] > margin[opos] * (1 + 1e-12)))
+                margin = new
+                info["verdict"] = "proved (affine bound)"
+                info["seconds"] = time.time() - t0
+            return margin, info
         r = residual_of_state(s, obs_pos, st["best_x"], cfg, iters)
         bound = np.fmax(bound, np.abs(r))
         margin = MARGIN_FACTOR * np.fmax(noise, bound)
@@ -86,9 +103,11 @@ def main():
     ap.add_argument("--noise-mode", default="perkind", choices=["perkind", "global"],
                     help="with --noise-from: perkind = transferred per-kind floors; global = every margin at least the transferred SE-BDD threshold")
     ap.add_argument("--margin-factor", type=float, default=MARGIN_FACTOR)
+    ap.add_argument("--prove", action="store_true", help="affine worst-case bound (src/p3/se_proof.py): margins raised by the synthesis rule to 1.5 x max(noise, proven bound); counterexamples at box corners counted first")
     ap.set_defaults(grid="semiurban")
     a = C.init(ap.parse_args())
     globals()["MARGIN_FACTOR"] = a.margin_factor
+    PROVE["on"] = a.prove
     t0 = time.time()
     d = np.load(C.interim("se_residuals.npz"), allow_pickle=True)
     obs = list(d["obs"]); obs_pos = {n: k for k, n in enumerate(obs)}
@@ -146,10 +165,11 @@ def main():
         if cfg not in library:
             margin, info = certify_topology(cfg, noise, obs, obs_pos, a.n_samples, a.budget, a.seed + len(library) * 10, a.iters)
             library[cfg] = (margin, info, t)
-            log.append([f"{t - Tte[0]:.0f}", cfg.label[:70], info["verdict"], f"{info['seconds']:.0f}", len(info["rounds"])])
+            log.append([f"{t - Tte[0]:.0f}", cfg.label[:70], info["verdict"], f"{info['seconds']:.0f}", len(info["rounds"]),
+                        f"{info.get('corner_cex', '')}/{info.get('corner_checked', '')}" if PROVE["on"] else "", info.get("raised", "")])
             print(log[-1])
         margin, info, _ = library[cfg]
-        if info["verdict"].startswith("certified"):
+        if info["verdict"].startswith(("certified", "proved")):
             fires[k] = bool(np.nanmax(np.abs(Rte[k]) / margin) > 1.0) if np.isfinite(Rte[k]).any() else False
     wall = time.time() - t0
     L = int(d["L"])
@@ -190,14 +210,15 @@ def main():
              "needs AC power flows, so only the search layer applies (AC-validated, not a formal certificate). Topologies are "
              f"certified on demand when they first appear in the test telemetry (every {step} s). Wall time {wall:.0f} s.\n\n")
     body += C.md_table(["quantity", "value"], [
-        ["topologies certified on demand", sum(1 for v in library.values() if v[1]["verdict"].startswith("certified"))],
-        ["topologies refuted after CEGIS", sum(1 for v in library.values() if not v[1]["verdict"].startswith("certified"))],
+        ["topologies certified on demand", sum(1 for v in library.values() if v[1]["verdict"].startswith(("certified", "proved")))],
+        ["topologies refuted after CEGIS", sum(1 for v in library.values() if not v[1]["verdict"].startswith(("certified", "proved")))],
         ["certification latency per topology, s (median / max)", f"{np.median([v[1]['seconds'] for v in library.values()]):.0f} / {max(v[1]['seconds'] for v in library.values()):.0f}"],
         ["library false alarm rate, benign test records (single record)", f"{fires[benign].mean():.5f}"],
         [f"library false alarm rate with the detector's persistence filter (L = {L} records)", f"{fires_p[benign].mean():.5f}"],
         ["SE-BDD detector false alarm rate, benign test records", f"{det[benign].mean():.5f}"],
     ])
-    body += "\nOn-demand certification log:\n\n" + C.md_table(["time s", "topology", "verdict", "compute s", "rounds"], log)
+    body += "\nOn-demand certification log:\n\n" + C.md_table(["time s", "topology", "verdict", "compute s", "rounds",
+                                                            "benign corner counterexamples to the search-based margins (found / checked)", "margins raised"], log)
     types = sorted(per)
     body += "\nDetection per attack type (strict = the topology's rule was certified before the attack started, so no credit for a rule certified during the attack itself):\n\n" + C.md_table(
         ["type", "instances", "SE-BDD detector", "certified library (single record)", f"library with persistence L = {L}", "detector or library with persistence", f"library L = {L}, strict"],

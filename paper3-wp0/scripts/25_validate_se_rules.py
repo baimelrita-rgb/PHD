@@ -64,7 +64,7 @@ def main():
     a = C.init(ap.parse_args())
     d = pickle.loads((C.INTERIM / C.suffixed("semiurban_rules.pkl")).read_bytes())
     G.update(d)
-    jobs = [(k, a.n, a.seed + 7000 + k) for k, (_, _, v) in enumerate(d["rules"]) if v.startswith("certified")]
+    jobs = [(k, a.n, a.seed + 7000 + k) for k, (_, _, v) in enumerate(d["rules"]) if v.startswith(("certified", "proved"))]
     with get_context("fork").Pool(a.workers) as pool:
         res = sorted(pool.map(check, jobs))
     rows, tot_ok, tot_fire = [], 0, 0
