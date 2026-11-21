@@ -1,0 +1,76 @@
+day,target,comparison,detected_only_by,event,type,topology,topology_class,channel,residual_sigma,threshold_first,threshold_second,first_alarm_s,reason
+recorded,0.25,B_top vs C_top,C_top,18,control-and-freeze,ties=none;out=L20+L53+L114+L115+L116+L117+L119+L120,new in test,p_from.89,335.635,1106.555,92.213,88,
+recorded,0.25,B_top vs C_top,C_top,32,drift-off,ties=none;out=L4+L7+L42+L53+L109+L115+L116+L117,new in test,trafo_p_hv.37,3.639,21.560,1.797,79,
+recorded,0.25,B vs C,C,18,control-and-freeze,ties=none;out=L20+L53+L114+L115+L116+L117+L119+L120,new in test,p_from.89,335.635,1106.555,92.213,88,
+recorded,0.25,B vs C,C,32,drift-off,ties=none;out=L4+L7+L42+L53+L109+L115+L116+L117,new in test,trafo_p_hv.37,3.639,21.560,1.797,79,
+recorded,1.0,B_top vs C_top,B_top,30,industroyer,ties=none;out=L4+L7+L42+L53+L109+L115+L116+L117,new in test,load_p.28,1.447,0.113,1.030,14,waiting for physics rule
+recorded,1.0,B vs C,B,30,industroyer,ties=none;out=L4+L7+L42+L53+L109+L115+L116+L117,new in test,load_p.28,1.447,0.113,1.030,14,waiting for physics rule
+split,0.5,B_top vs C_top,B_top,12,control-and-freeze,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,vm_pu.23,14.722,14.703,38.316,322,physics floor above residual
+split,0.5,B vs C,B,2,drift-off,ties=none;out=L21+L71+L113+L114+L115+L119+L120,new in test,load_p.73,0.095,0.084,13.745,290,physics floor above residual
+split,0.5,B vs C,B,12,control-and-freeze,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,vm_pu.23,13.427,11.762,38.316,292,physics floor above residual
+split,0.25,B_top vs C_top,B_top,12,control-and-freeze,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,vm_pu.23,14.722,14.703,38.316,322,physics floor above residual
+split,0.25,B vs C,B,12,control-and-freeze,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,vm_pu.23,14.722,14.703,38.316,322,physics floor above residual
+split,1.0,B_top vs C_top,B_top,2,drift-off,ties=none;out=L21+L71+L113+L114+L115+L119+L120,new in test,load_p.73,0.540,0.042,13.745,70,physics floor above residual
+split,1.0,B_top vs C_top,B_top,12,control-and-freeze,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,vm_pu.25,6.072,5.871,31.014,157,physics floor above residual
+split,1.0,B vs C,B,2,drift-off,ties=none;out=L21+L71+L113+L114+L115+L119+L120,new in test,load_p.73,0.540,0.042,13.745,70,physics floor above residual
+split,1.0,B vs C,B,12,control-and-freeze,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,vm_pu.25,6.072,5.871,31.014,157,physics floor above residual
+split,1.0,B vs C,C,19,industroyer,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,trafo_p_hv.0,61.854,35.459,22.162,292,
+split_s8,0.5,B_top vs C_top,B_top,2,industroyer,ties=none;out=L21+L71+L113+L114+L115+L119+L120,new in test,load_p.73,0.450,0.105,13.750,4,physics floor above residual
+split_s8,0.5,B_top vs C_top,B_top,3,drift-off,ties=none;out=L21+L71+L113+L114+L115+L119+L120,new in test,load_p.73,0.234,0.105,13.750,40,physics floor above residual
+split_s8,0.5,B_top vs C_top,B_top,10,control-and-freeze,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,vm_pu.56,12.669,11.035,37.397,235,physics floor above residual
+split_s8,0.5,B_top vs C_top,B_top,18,control-and-freeze,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,load_p.28,0.068,0.059,0.424,265,physics floor above residual
+split_s8,0.5,B vs C,B,2,industroyer,ties=none;out=L21+L71+L113+L114+L115+L119+L120,new in test,load_p.73,0.450,0.084,13.750,4,physics floor above residual
+split_s8,0.5,B vs C,B,3,drift-off,ties=none;out=L21+L71+L113+L114+L115+L119+L120,new in test,load_p.73,0.234,0.084,13.750,40,physics floor above residual
+split_s8,0.5,B vs C,B,5,control-and-freeze,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,vm_pu.143,9.160,8.828,39.490,295,physics floor above residual
+split_s8,0.5,B vs C,B,10,control-and-freeze,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,vm_pu.56,10.264,8.828,37.397,215,physics floor above residual
+split_s8,0.5,B vs C,B,18,control-and-freeze,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,load_p.28,0.058,0.047,0.424,250,physics floor above residual
+split_s8,0.25,B_top vs C_top,B_top,2,industroyer,ties=none;out=L21+L71+L113+L114+L115+L119+L120,new in test,load_p.73,0.450,0.105,13.750,4,physics floor above residual
+split_s8,0.25,B_top vs C_top,B_top,3,drift-off,ties=none;out=L21+L71+L113+L114+L115+L119+L120,new in test,load_p.73,0.234,0.105,13.750,40,physics floor above residual
+split_s8,0.25,B_top vs C_top,B_top,10,control-and-freeze,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,vm_pu.56,12.669,11.035,37.397,235,physics floor above residual
+split_s8,0.25,B_top vs C_top,B_top,18,control-and-freeze,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,load_p.28,0.068,0.059,0.424,265,physics floor above residual
+split_s8,0.25,B vs C,B,2,industroyer,ties=none;out=L21+L71+L113+L114+L115+L119+L120,new in test,load_p.73,0.450,0.105,13.750,4,physics floor above residual
+split_s8,0.25,B vs C,B,3,drift-off,ties=none;out=L21+L71+L113+L114+L115+L119+L120,new in test,load_p.73,0.234,0.105,13.750,40,physics floor above residual
+split_s8,0.25,B vs C,B,10,control-and-freeze,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,vm_pu.56,12.669,11.035,37.397,235,physics floor above residual
+split_s8,0.25,B vs C,B,18,control-and-freeze,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,load_p.28,0.068,0.059,0.424,265,physics floor above residual
+split_s8,1.0,B_top vs C_top,B_top,2,industroyer,ties=none;out=L21+L71+L113+L114+L115+L119+L120,new in test,load_p.73,0.450,0.042,13.750,4,physics floor above residual
+split_s8,1.0,B_top vs C_top,B_top,3,drift-off,ties=none;out=L21+L71+L113+L114+L115+L119+L120,new in test,load_p.73,0.234,0.042,13.750,40,physics floor above residual
+split_s8,1.0,B_top vs C_top,B_top,5,control-and-freeze,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,load_p.28,0.033,0.023,0.424,105,physics floor above residual
+split_s8,1.0,B_top vs C_top,B_top,10,control-and-freeze,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,vm_pu.56,6.301,4.414,37.397,185,physics floor above residual
+split_s8,1.0,B_top vs C_top,B_top,18,control-and-freeze,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,load_p.28,0.025,0.023,0.424,90,physics floor above residual
+split_s8,1.0,B_top vs C_top,B_top,20,drift-off,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,load_q.89,0.321,0.314,10.336,38,physics floor above residual
+split_s8,1.0,B vs C,B,3,drift-off,ties=none;out=L21+L71+L113+L114+L115+L119+L120,new in test,load_p.73,0.234,0.042,13.750,40,physics floor above residual
+split_s8,1.0,B vs C,B,5,control-and-freeze,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,load_p.28,0.033,0.023,0.424,105,physics floor above residual
+split_s8,1.0,B vs C,B,10,control-and-freeze,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,vm_pu.56,6.301,4.414,37.397,185,physics floor above residual
+split_s8,1.0,B vs C,B,18,control-and-freeze,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,load_p.28,0.025,0.023,0.424,90,physics floor above residual
+split_s8,1.0,B vs C,B,20,drift-off,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,load_q.89,0.321,0.314,10.336,38,physics floor above residual
+split_s9,0.5,B vs C,B,4,control-and-freeze,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,vm_pu.163,9.798,8.828,36.735,215,physics floor above residual
+split_s9,1.0,B_top vs C_top,B_top,4,control-and-freeze,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,vm_pu.163,6.289,4.414,36.735,30,physics floor above residual
+split_s9,1.0,B_top vs C_top,B_top,9,drift-off,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,vm_pu.173,5.620,5.485,36.802,553,physics floor above residual
+split_s9,1.0,B vs C,B,4,control-and-freeze,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,vm_pu.163,6.289,4.414,36.735,30,physics floor above residual
+split_s9,1.0,B vs C,B,9,drift-off,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,vm_pu.173,5.620,5.485,36.802,553,physics floor above residual
+split_s10,0.5,B_top vs C_top,B_top,1,industroyer,ties=none;out=L21+L71+L109+L113+L114+L115+L119+L120,new in test,load_p.73,0.515,0.105,13.849,5,waiting for physics rule
+split_s10,0.5,B vs C,B,0,control-and-freeze,ties=none;out=L21+L71+L113+L114+L115+L116+L119+L120,seen in calibration,vm_pu.153,9.137,8.828,37.198,350,physics floor above residual
+split_s10,0.5,B vs C,B,1,industroyer,ties=none;out=L21+L71+L109+L113+L114+L115+L119+L120,new in test,load_p.73,0.515,0.084,13.849,5,waiting for physics rule
+split_s10,0.25,B_top vs C_top,B_top,1,industroyer,ties=none;out=L21+L71+L109+L113+L114+L115+L119+L120,new in test,load_p.73,0.515,0.105,13.849,5,waiting for physics rule
+split_s10,0.25,B vs C,B,1,industroyer,ties=none;out=L21+L71+L109+L113+L114+L115+L119+L120,new in test,load_p.73,0.515,0.105,13.849,5,waiting for physics rule
+split_s10,1.0,B_top vs C_top,B_top,1,industroyer,ties=none;out=L21+L71+L109+L113+L114+L115+L119+L120,new in test,load_p.73,0.515,0.042,13.849,5,waiting for physics rule
+split_s10,1.0,B vs C,B,1,industroyer,ties=none;out=L21+L71+L109+L113+L114+L115+L119+L120,new in test,load_p.73,0.515,0.042,13.849,5,waiting for physics rule
+split_s11,0.5,B_top vs C_top,B_top,3,industroyer,ties=none;out=L21+L71+L113+L114+L115+L119+L120,new in test,load_p.73,0.689,0.105,13.750,4,physics floor above residual
+split_s11,0.5,B vs C,B,0,control-and-freeze,ties=none;out=L21+L71+L113+L114+L115+L116+L119+L120,seen in calibration,vm_pu.145,9.280,8.974,39.692,360,physics floor above residual
+split_s11,0.5,B vs C,B,3,industroyer,ties=none;out=L21+L71+L113+L114+L115+L119+L120,new in test,load_p.73,0.689,0.084,13.750,4,physics floor above residual
+split_s11,0.25,B_top vs C_top,B_top,3,industroyer,ties=none;out=L21+L71+L113+L114+L115+L119+L120,new in test,load_p.73,0.689,0.105,13.750,4,physics floor above residual
+split_s11,0.25,B vs C,B,3,industroyer,ties=none;out=L21+L71+L113+L114+L115+L119+L120,new in test,load_p.73,0.689,0.105,13.750,4,physics floor above residual
+split_s11,1.0,B_top vs C_top,B_top,0,control-and-freeze,ties=none;out=L21+L71+L113+L114+L115+L116+L119+L120,seen in calibration,vm_pu.145,5.071,4.487,39.692,50,physics floor above residual
+split_s11,1.0,B_top vs C_top,B_top,2,industroyer,ties=none;out=L21+L71+L103+L113+L114+L115+L119+L120,new in test,load_p.73,0.144,0.042,13.757,15,waiting for physics rule
+split_s11,1.0,B_top vs C_top,B_top,3,industroyer,ties=none;out=L21+L71+L113+L114+L115+L119+L120,new in test,load_p.73,0.689,0.042,13.750,4,physics floor above residual
+split_s11,1.0,B_top vs C_top,B_top,12,control-and-freeze,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,vm_pu.141,5.028,4.658,31.415,81,physics floor above residual
+split_s11,1.0,B_top vs C_top,B_top,19,control-and-freeze,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,vm_pu.143,4.576,4.414,33.139,274,physics floor above residual
+split_s11,1.0,B_top vs C_top,B_top,20,drift-off,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,load_q.89,0.321,0.314,8.710,53,physics floor above residual
+split_s11,1.0,B_top vs C_top,C_top,18,industroyer,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,p_from.125,26.454,24.675,18.506,77,
+split_s11,1.0,B vs C,B,0,control-and-freeze,ties=none;out=L21+L71+L113+L114+L115+L116+L119+L120,seen in calibration,vm_pu.145,5.071,4.487,39.692,50,physics floor above residual
+split_s11,1.0,B vs C,B,2,industroyer,ties=none;out=L21+L71+L103+L113+L114+L115+L119+L120,new in test,load_p.73,0.144,0.042,13.757,15,waiting for physics rule
+split_s11,1.0,B vs C,B,3,industroyer,ties=none;out=L21+L71+L113+L114+L115+L119+L120,new in test,load_p.73,0.689,0.042,13.750,4,physics floor above residual
+split_s11,1.0,B vs C,B,12,control-and-freeze,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,vm_pu.141,5.028,4.658,31.415,81,physics floor above residual
+split_s11,1.0,B vs C,B,19,control-and-freeze,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,vm_pu.143,4.576,4.414,33.139,274,physics floor above residual
+split_s11,1.0,B vs C,B,20,drift-off,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,load_q.89,0.321,0.314,8.710,53,physics floor above residual
+split_s11,1.0,B vs C,C,18,industroyer,ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120,new in test,sgen_p.122,4.803,6.755,4.222,52,
