@@ -57,7 +57,9 @@ K_GRID = a36.K_GRID
 TARGETS = [0.5, 0.25, 1.0]
 N_GRID = [60, 120, 240, 360, 720]          # records of 5 s: 5, 10, 20, 30, 60 minutes
 OUT = C.ROOT / "reports" / "topo"
-SUFFIX = [""]          # "_fix": bounds with the remainder correction of scripts/42
+SUFFIX = [""]
+TAG = [""]             # post-hoc sensitivity runs (e.g. "_n240"): separate freeze and result files
+NMIN_OVERRIDE = [None]          # "_fix": bounds with the remainder correction of scripts/42
 DAYS = ["recorded", "split", "split_s8", "split_s9", "split_s10", "split_s11"]
 
 
@@ -210,6 +212,8 @@ def calibrate(calib):
     noise_g = a36.noise_from(sb["train_R"][:h], kinds)
     floor = kind_floor(Rtr[:h], kinds)
     n_min, nmin_detail = choose_nmin(Rtr[:h], est_c)
+    if NMIN_OVERRIDE[0] is not None:
+        n_min = NMIN_OVERRIDE[0]
     loc, cnt_est = local_noise(Rtr[:h], est_c, kinds, floor, n_min)
     topo_sel = []
     for c in sel_c:
@@ -243,8 +247,9 @@ def calibrate(calib):
               "fallback": "noise of B (per channel, all estimation records) for topologies with fewer than n_min estimation records or new in the test day",
               "pick": pick, "curves": curves}
     OUT.mkdir(parents=True, exist_ok=True)
-    (OUT / f"frozen_P2_{calib}.json").write_text(json.dumps(frozen, indent=1))
-    pickle.dump({"noise_g": noise_g, "loc": loc, "floor": floor}, open(C.INTERIM / f"topo_noise_{calib}.pkl", "wb"))
+    frozen["n_min_override (post hoc sensitivity)"] = NMIN_OVERRIDE[0]
+    (OUT / f"frozen_P2_{calib}{TAG[0]}.json").write_text(json.dumps(frozen, indent=1))
+    pickle.dump({"noise_g": noise_g, "loc": loc, "floor": floor}, open(C.INTERIM / f"topo_noise_{calib}{TAG[0]}.pkl", "wb"))
     print(json.dumps({k: frozen[k] for k in ("n_min", "local_topologies", "estimation_counts", "pick", "windows")}, indent=1))
 
 
@@ -252,8 +257,8 @@ def calibrate(calib):
 def test_day(day):
     sb, obs, kinds, cc = load_day(day)
     calib = calib_of(day)
-    fr = json.loads((OUT / f"frozen_P2_{calib}.json").read_text())
-    nz = pickle.load(open(C.INTERIM / f"topo_noise_{calib}.pkl", "rb"))
+    fr = json.loads((OUT / f"frozen_P2_{calib}{TAG[0]}.json").read_text())
+    nz = pickle.load(open(C.INTERIM / f"topo_noise_{calib}{TAG[0]}.pkl", "rb"))
     assert hashlib.sha256(np.ascontiguousarray(sb["train_R"]).tobytes()).hexdigest()[:16] == fr["train_hash"]
     T, Rabs, L, det = sb["test_t"], np.abs(sb["test_R"]), int(sb["L"]), sb["alarm"].astype(bool)
     n_obs = len(obs); order, bounds = cc["order"], cc["bounds"]
@@ -351,7 +356,7 @@ def test_day(day):
             curve.append([day, var, k, sum(out.values()), len(out), eps, hrs])
     res = {"rows": rows, "pairs": pairs, "onesided": onesided, "classes": cls, "curve": curve,
            "n_topologies": len(order), "n_new": len(cc["new"]), "n_local": sum(1 for c in order if c in nz["loc"])}
-    (OUT / f"result_{day}{SUFFIX[0]}.json").write_text(json.dumps(res, default=lambda o: o if not isinstance(o, np.generic) else o.item()))
+    (OUT / f"result_{day}{SUFFIX[0]}{TAG[0]}.json").write_text(json.dumps(res, default=lambda o: o if not isinstance(o, np.generic) else o.item()))
     for r in rows:
         if r["scope"] == "whole test day":
             print(day, r["variant"], r["target"], r["k"], f"{r['detected']}/{r['instances']}", r["fa_episodes"], f"{r['benign_hours']:.1f}")
@@ -363,11 +368,14 @@ def main():
     ap.add_argument("--calib", default="recorded")
     ap.add_argument("--day", default="recorded")
     ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--nmin", type=int, default=None, help="POST HOC sensitivity: override N_MIN (separate files)")
     ap.add_argument("--fix", action="store_true", help="use the bounds corrected by scripts/42 (k and noise stay frozen)")
     ap.set_defaults(grid="semiurban")
     a = C.init(ap.parse_args())
     if a.fix:
         SUFFIX[0] = "_fix"
+    if a.nmin is not None:
+        NMIN_OVERRIDE[0] = a.nmin; TAG[0] = f"_n{a.nmin}"
     if a.phase == "prepare":
         prepare(a.workers)
     elif a.phase == "calibrate":

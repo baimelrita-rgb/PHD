@@ -1,0 +1,27 @@
+{
+ "phase": "reproduce",
+ "states": 208,
+ "fails": [
+  {
+   "topology": "ties=none;out=L20+L114+L115+L116+L117+L119+L120",
+   "construction": "corner of channel load_p.28 (stored-rule affine), sign +1, pulled to 1.0",
+   "ac": "converged",
+   "voltage_pu": [
+    0.9529784169645085,
+    1.025
+   ],
+   "max_loading_pct": 98.14629522083689,
+   "channel": "p_from.101",
+   "residual": 4.354153418119289,
+   "affine_prediction": 0.6204495948775736,
+   "remainder": 3.733703823241715,
+   "box": 0.6434182094451998,
+   "delta_aug": 2.2001519547288413,
+   "delta_fix": 2.2001519547288413,
+   "bound": 2.843570164174041,
+   "margin": 4.265355246261062,
+   "score": 1.0208184703808822
+  }
+ ],
+ "max_score": 1.0208184703808822
+}
