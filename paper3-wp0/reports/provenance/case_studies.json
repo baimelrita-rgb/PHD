@@ -1,0 +1,76 @@
+{
+ "11": {
+  "rule": "G@ties=S1+S2;out=L4+L11;tap=0,0",
+  "source_episode_start": 19744.0,
+  "source_episode_len": 9.0,
+  "source_label": "control center:Separator Movement",
+  "source_label_window": [
+   19736.36853170395,
+   19773.40567111969
+  ],
+  "source_detectors": {
+   "D1": 8,
+   "AE": 10
+  },
+  "topology_before": "ties=S2;out=L4;tap=0,0",
+  "topology_alert": "ties=S1+S2;out=L4+L11;tap=0,0",
+  "act": 19866.925960063934,
+  "event": "industroyer:industroyer",
+  "event_window": [
+   24207.342049121857,
+   24455.398477315903
+  ],
+  "first_fire_s_after_start": 5.6579508781433105,
+  "event_topology": "ties=S1+S2;out=L4+L11;tap=0,0",
+  "top_quantity": [
+   "p_from.10",
+   4.601596958938618,
+   -0.030627294193026483,
+   0.00665579677366851,
+   0.00443719784911234,
+   6.209247831416055e-06
+  ],
+  "quantities_over_margin": [
+   "p_from.10"
+  ],
+  "D1_in_event": false,
+  "AE_in_event": false
+ },
+ "23": {
+  "rule": "G@ties=S1+S2;out=L11;tap=-1,0",
+  "source_episode_start": 37608.0,
+  "source_episode_len": 3.0,
+  "source_label": "control center:trafostep",
+  "source_label_window": [
+   37600.33110618591,
+   37630.41509747505
+  ],
+  "source_detectors": {
+   "D1": 2,
+   "AE": 4
+  },
+  "topology_before": "ties=S1+S2;out=L11;tap=0,0",
+  "topology_alert": "ties=S1+S2;out=L11;tap=-1,0",
+  "act": 37694.910054683685,
+  "event": "drift-off:drift-off",
+  "event_window": [
+   38792.389988422394,
+   39320.04160904884
+  ],
+  "first_fire_s_after_start": 60.6100115776062,
+  "event_topology": "ties=S1+S2;out=L11;tap=-1,0",
+  "top_quantity": [
+   "p_from.14",
+   137.03571451408033,
+   -0.007502319228679612,
+   5.4747182187376076e-05,
+   1.2336162877807635e-05,
+   3.649812145825072e-05
+  ],
+  "quantities_over_margin": [
+   "p_from.14"
+  ],
+  "D1_in_event": false,
+  "AE_in_event": false
+ }
+}
