@@ -74,6 +74,10 @@ def main():
     ap.add_argument("--tag", default="", help="suffix for output files (robustness runs)")
     ap.add_argument("--margin-factor", type=float, default=Y.MARGIN_FACTOR)
     ap.add_argument("--alarms", default="detector_alarms_physics.npz")
+    ap.add_argument("--causal", action="store_true",
+                    help="chronological activation: synthesis starts when the alert window ends (and the single synthesis "
+                         "worker is free); a rule acts only after its synthesis and certification compute time (wall clock, "
+                         "this machine) and any calibration window have elapsed")
     ap.add_argument("--topo-cal-s", type=float, default=0.0,
                     help="WP5: per-topology noise calibration. For a topology with fewer than --min-cfg-records train records, "
                          "the first this-many seconds of test records in it without a detector alarm calibrate its noise; its "
@@ -159,6 +163,7 @@ def main():
 
     library, lib_fire, log = {}, np.zeros(len(Tte), bool), []
     cert_times = []
+    worker_free = -np.inf          # --causal: time at which the single synthesis worker becomes free
     grid_done = set()
     for (s, e) in eps:
         ta = Tte[s]
@@ -174,6 +179,8 @@ def main():
         added = []
         cands = []
         arm = {}
+        t_work0 = time.time()
+        t_start = max(float(ta) + a.alert_s, worker_free)   # --causal: the alert window must be over first
         if T is not None and T not in grid_done:
             nz = noise_for(T)
             if a.topo_cal_s > 0 and n_cfg_tr.get(T, 0) < a.min_cfg_records:
@@ -195,15 +202,22 @@ def main():
                 grid_done.add(T)
             else:
                 cert = Y.certify(cand, cfgs, delta, a.cert_budget, a.seed + len(log) * 100 + 60 + k)
+            t_ready = t_start + (time.time() - t_work0)       # synthesis + certification compute so far in this episode
             if cert["verdict"] == "certified":
                 key = cand.rule["name"]
-                t_act = max(float(ta), arm.get(id(cand), -np.inf))   # learned at ta; with WP5 also after calibration
-                library[key] = {"rule": cert["rule"], "added_at": t_act, "family": cand.family}
+                if a.causal:
+                    t_act = max(t_ready, arm.get(id(cand), -np.inf))
+                else:
+                    t_act = max(float(ta), arm.get(id(cand), -np.inf))   # learned at ta; with WP5 also after calibration
+                library[key] = {"rule": cert["rule"], "added_at": t_act, "family": cand.family,
+                                "timing": [float(ta), float(ta) + a.alert_s, t_ready, float(arm.get(id(cand), -np.inf)), t_act]}
                 f = fires_all(cert["rule"], Mte) & (Tte >= arm.get(id(cand), -np.inf))   # never inside its calibration window
                 lib_fire |= f & (Tte >= t_act)     # a rule only acts after it was learned (and calibrated)
                 library[key]["fires"] = f
             cert_times.append((cand.family, cert["verdict"], time.time() - t_c, len(R.clauses(cand.rule))))
             added.append(f"{cand.rule['name'][:50]}: {cert['verdict']}")
+        if a.causal:
+            worker_free = t_start + (time.time() - t_work0)
         entry["topology"] = T.label if T else "outside envelope"
         entry["action"] = "; ".join(added) or "no candidate"
         if arm and np.isfinite(max(arm.values())) and max(arm.values()) > ta:
@@ -269,7 +283,10 @@ def main():
                        [[k, v[0], v[1], v[2], v[3]] for k, v in sorted(per.items())])
     np.savez_compressed(C.interim(f"consolidation_fires{a.tag}.npz"), t=Tte, det=det, lib_prior=lib_fire, lib_all=lib_all,
                         added_at=np.array([v["added_at"] for v in library.values()]),
-                        rule_fires=np.array([v["fires"] for v in library.values()]).reshape(len(library), len(Tte)))
+                        rule_fires=np.array([v["fires"] for v in library.values()]).reshape(len(library), len(Tte)),
+                        rule_names=np.array(list(library.keys())),
+                        rule_timing=np.array([v["timing"] for v in library.values()]).reshape(len(library), 5),
+                        timing_cols=np.array(["alert start", "synthesis window end", "synthesis + certification done", "calibration done", "acts from"]))
     body += "\n## Cost (scalability)\n\n" + C.md_table(["family", "verdict", "certification wall s", "clauses"], [[f, v, f"{t:.1f}", n] for f, v, t, n in cert_times])
     body += (f"\nEvaluating the final library ({len(library)} rules, "
              f"{sum(len(R.clauses(v['rule'])) for v in library.values())} clauses) on one telemetry record: {eval_us:.0f} microseconds "
