@@ -1,0 +1,910 @@
+{
+ "variant": "recorded",
+ "calibration": "recorded",
+ "kB": 10.0,
+ "kC": 1.25,
+ "n_topologies": 13,
+ "n_new": 12,
+ "results": {
+  "A: SE-BDD, global threshold": {
+   "k": null,
+   "out": {
+    "1": false,
+    "2": false,
+    "6": true,
+    "7": false,
+    "8": false,
+    "10": false,
+    "12": true,
+    "14": true,
+    "15": true,
+    "16": true,
+    "18": true,
+    "19": false,
+    "21": false,
+    "24": false,
+    "25": false,
+    "27": true,
+    "29": false,
+    "30": false,
+    "31": false,
+    "32": false,
+    "34": false,
+    "35": false,
+    "36": false
+   },
+   "delay": {
+    "6": 287.7464051246643,
+    "12": 186.84821033477783,
+    "14": 492.7340524196625,
+    "15": 75.73214960098267,
+    "16": 402.82865595817566,
+    "18": 87.73025465011597,
+    "27": 296.76374650001526
+   },
+   "recovery_first": 0,
+   "eps": 0,
+   "hours": 7.966666666666667,
+   "rate": 0.0,
+   "active": null,
+   "per": {
+    "control-and-freeze": [
+     3,
+     5
+    ],
+    "drift-off": [
+     4,
+     9
+    ],
+    "industroyer": [
+     0,
+     9
+    ]
+   }
+  },
+  "B: per-channel, k = 1.5": {
+   "k": 1.5,
+   "out": {
+    "1": false,
+    "2": false,
+    "6": true,
+    "7": true,
+    "8": true,
+    "10": false,
+    "12": true,
+    "14": true,
+    "15": true,
+    "16": true,
+    "18": true,
+    "19": false,
+    "21": false,
+    "24": false,
+    "25": false,
+    "27": true,
+    "29": false,
+    "30": false,
+    "31": false,
+    "32": true,
+    "34": false,
+    "35": false,
+    "36": false
+   },
+   "delay": {
+    "6": 82.7464051246643,
+    "7": 158.73712038993835,
+    "8": 68.82102942466736,
+    "12": 76.84821033477783,
+    "14": 337.7340524196625,
+    "15": 70.73214960098267,
+    "16": 82.82865595817566,
+    "18": 87.73025465011597,
+    "27": 91.76374650001526,
+    "32": 178.75691556930542
+   },
+   "recovery_first": 0,
+   "eps": 4,
+   "hours": 7.966666666666667,
+   "rate": 0.00400976290097629,
+   "active": 0.9794029159916686,
+   "per": {
+    "control-and-freeze": [
+     4,
+     5
+    ],
+    "drift-off": [
+     6,
+     9
+    ],
+    "industroyer": [
+     0,
+     9
+    ]
+   }
+  },
+  "C0: stored proved library, k = 1.5 (+cert latency)": {
+   "k": 1.5,
+   "out": {
+    "1": false,
+    "2": false,
+    "6": true,
+    "7": true,
+    "8": true,
+    "10": false,
+    "12": true,
+    "14": true,
+    "15": true,
+    "16": true,
+    "18": true,
+    "19": false,
+    "21": false,
+    "24": false,
+    "25": false,
+    "27": true,
+    "29": false,
+    "30": false,
+    "31": false,
+    "32": true,
+    "34": false,
+    "35": false,
+    "36": false
+   },
+   "delay": {
+    "6": 102.7464051246643,
+    "7": 303.73712038993835,
+    "8": 68.82102942466736,
+    "12": 96.84821033477783,
+    "14": 482.7340524196625,
+    "15": 70.73214960098267,
+    "16": 107.82865595817566,
+    "18": 87.73025465011597,
+    "27": 111.76374650001526,
+    "32": 218.75691556930542
+   },
+   "recovery_first": 0,
+   "eps": 0,
+   "hours": 7.966666666666667,
+   "rate": 0.0,
+   "active": 0.952094422587364,
+   "per": {
+    "control-and-freeze": [
+     4,
+     5
+    ],
+    "drift-off": [
+     6,
+     9
+    ],
+    "industroyer": [
+     0,
+     9
+    ]
+   }
+  },
+  "C: per-channel + physics check (corner-augmented), k = 1.5": {
+   "k": 1.5,
+   "out": {
+    "1": false,
+    "2": false,
+    "6": true,
+    "7": true,
+    "8": true,
+    "10": false,
+    "12": true,
+    "14": true,
+    "15": true,
+    "16": true,
+    "18": true,
+    "19": false,
+    "21": false,
+    "24": false,
+    "25": false,
+    "27": true,
+    "29": false,
+    "30": false,
+    "31": false,
+    "32": true,
+    "34": false,
+    "35": false,
+    "36": false
+   },
+   "delay": {
+    "6": 107.7464051246643,
+    "7": 373.73712038993835,
+    "8": 68.82102942466736,
+    "12": 96.84821033477783,
+    "14": 482.7340524196625,
+    "15": 70.73214960098267,
+    "16": 127.82865595817566,
+    "18": 87.73025465011597,
+    "27": 126.76374650001526,
+    "32": 218.75691556930542
+   },
+   "recovery_first": 0,
+   "eps": 0,
+   "hours": 7.966666666666667,
+   "rate": 0.0,
+   "active": 0.9614672529507059,
+   "per": {
+    "control-and-freeze": [
+     4,
+     5
+    ],
+    "drift-off": [
+     6,
+     9
+    ],
+    "industroyer": [
+     0,
+     9
+    ]
+   }
+  },
+  "B: per-channel, calibrated k = 10": {
+   "k": 10.0,
+   "out": {
+    "1": false,
+    "2": false,
+    "6": true,
+    "7": true,
+    "8": false,
+    "10": false,
+    "12": true,
+    "14": false,
+    "15": true,
+    "16": true,
+    "18": false,
+    "19": false,
+    "21": false,
+    "24": false,
+    "25": false,
+    "27": true,
+    "29": false,
+    "30": false,
+    "31": false,
+    "32": false,
+    "34": false,
+    "35": false,
+    "36": false
+   },
+   "delay": {
+    "6": 172.7464051246643,
+    "7": 593.7371203899384,
+    "12": 126.84821033477783,
+    "15": 70.73214960098267,
+    "16": 192.82865595817566,
+    "27": 191.76374650001526
+   },
+   "recovery_first": 0,
+   "eps": 1,
+   "hours": 7.966666666666667,
+   "rate": 0.00017433751743375174,
+   "active": 0.9794029159916686,
+   "per": {
+    "control-and-freeze": [
+     2,
+     5
+    ],
+    "drift-off": [
+     4,
+     9
+    ],
+    "industroyer": [
+     0,
+     9
+    ]
+   }
+  },
+  "C: per-channel + physics check, calibrated k = 1.25": {
+   "k": 1.25,
+   "out": {
+    "1": false,
+    "2": false,
+    "6": true,
+    "7": true,
+    "8": true,
+    "10": false,
+    "12": true,
+    "14": true,
+    "15": true,
+    "16": true,
+    "18": true,
+    "19": false,
+    "21": false,
+    "24": false,
+    "25": false,
+    "27": true,
+    "29": false,
+    "30": false,
+    "31": false,
+    "32": true,
+    "34": false,
+    "35": false,
+    "36": false
+   },
+   "delay": {
+    "6": 107.7464051246643,
+    "7": 373.73712038993835,
+    "8": 68.82102942466736,
+    "12": 96.84821033477783,
+    "14": 477.7340524196625,
+    "15": 70.73214960098267,
+    "16": 127.82865595817566,
+    "18": 87.73025465011597,
+    "27": 126.76374650001526,
+    "32": 218.75691556930542
+   },
+   "recovery_first": 0,
+   "eps": 1,
+   "hours": 7.966666666666667,
+   "rate": 0.00017433751743375174,
+   "active": 0.9614672529507059,
+   "per": {
+    "control-and-freeze": [
+     4,
+     5
+    ],
+    "drift-off": [
+     6,
+     9
+    ],
+    "industroyer": [
+     0,
+     9
+    ]
+   }
+  }
+ },
+ "impact": [
+  {
+   "topology": "ties=none;out=L20+L113+L114+L115+L116+L117+L119+L120",
+   "known_before_test": true,
+   "compute_s": 226.350665807724,
+   "channels": 553,
+   "raised_at_1.5": 249,
+   "raised_at_k1.25": 251,
+   "median_ratio": 0.47962414386569635,
+   "rejected": false
+  },
+  {
+   "topology": "ties=none;out=L20+L72+L113+L114+L115+L116+L117+L119+L120",
+   "known_before_test": false,
+   "compute_s": 67.4432384967804,
+   "channels": 535,
+   "raised_at_1.5": 235,
+   "raised_at_k1.25": 238,
+   "median_ratio": 0.42755030975635305,
+   "rejected": false
+  },
+  {
+   "topology": "ties=none;out=L20+L114+L115+L116+L117+L119+L120",
+   "known_before_test": false,
+   "compute_s": 71.95960903167725,
+   "channels": 554,
+   "raised_at_1.5": 249,
+   "raised_at_k1.25": 251,
+   "median_ratio": 0.477981528789683,
+   "rejected": false
+  },
+  {
+   "topology": "ties=none;out=L20+L53+L114+L115+L116+L117+L119+L120",
+   "known_before_test": false,
+   "compute_s": 70.64692950248718,
+   "channels": 553,
+   "raised_at_1.5": 249,
+   "raised_at_k1.25": 251,
+   "median_ratio": 0.486650852145148,
+   "rejected": false
+  },
+  {
+   "topology": "ties=none;out=L20+L44+L53+L114+L115+L116+L117+L119+L120",
+   "known_before_test": false,
+   "compute_s": 68.71975088119507,
+   "channels": 549,
+   "raised_at_1.5": 244,
+   "raised_at_k1.25": 245,
+   "median_ratio": 0.4656596923559238,
+   "rejected": false
+  },
+  {
+   "topology": "ties=none;out=L20+L53+L109+L115+L116+L117+L119+L120",
+   "known_before_test": false,
+   "compute_s": 60.40223050117493,
+   "channels": 553,
+   "raised_at_1.5": 247,
+   "raised_at_k1.25": 252,
+   "median_ratio": 0.4730332037447107,
+   "rejected": false
+  },
+  {
+   "topology": "ties=none;out=L53+L88+L109+L115+L116+L117+L119+L120",
+   "known_before_test": false,
+   "compute_s": 90.6740837097168,
+   "channels": 553,
+   "raised_at_1.5": 247,
+   "raised_at_k1.25": 252,
+   "median_ratio": 0.49590806003613347,
+   "rejected": false
+  },
+  {
+   "topology": "ties=none;out=L20+L53+L109+L115+L116+L117+L120",
+   "known_before_test": false,
+   "compute_s": 60.19052767753601,
+   "channels": 553,
+   "raised_at_1.5": 249,
+   "raised_at_k1.25": 257,
+   "median_ratio": 0.5001003952629443,
+   "rejected": false
+  },
+  {
+   "topology": "ties=none;out=L20+L53+L109+L115+L116+L117",
+   "known_before_test": false,
+   "compute_s": 64.79991412162781,
+   "channels": 554,
+   "raised_at_1.5": 265,
+   "raised_at_k1.25": 273,
+   "median_ratio": 0.7343131282252247,
+   "rejected": false
+  },
+  {
+   "topology": "ties=none;out=L20+L42+L53+L109+L115+L116+L117",
+   "known_before_test": false,
+   "compute_s": 73.76004481315613,
+   "channels": 553,
+   "raised_at_1.5": 254,
+   "raised_at_k1.25": 262,
+   "median_ratio": 0.5534250384610817,
+   "rejected": false
+  },
+  {
+   "topology": "ties=none;out=L42+L53+L109+L115+L116+L117",
+   "known_before_test": false,
+   "compute_s": 88.22001504898071,
+   "channels": 554,
+   "raised_at_1.5": 261,
+   "raised_at_k1.25": 264,
+   "median_ratio": 0.5754134086247413,
+   "rejected": false
+  },
+  {
+   "topology": "ties=none;out=L4+L7+L42+L53+L109+L115+L116+L117",
+   "known_before_test": false,
+   "compute_s": 74.07619094848633,
+   "channels": 548,
+   "raised_at_1.5": 253,
+   "raised_at_k1.25": 260,
+   "median_ratio": 0.4927143411037537,
+   "rejected": false
+  },
+  {
+   "topology": "ties=none;out=L4+L7+L21+L42+L53+L109+L115+L116+L117",
+   "known_before_test": false,
+   "compute_s": 63.40208196640015,
+   "channels": 525,
+   "raised_at_1.5": 217,
+   "raised_at_k1.25": 236,
+   "median_ratio": 0.40617925484354406,
+   "rejected": false
+  }
+ ],
+ "example": null,
+ "checks": [
+  [
+   "regression (stored-rule corners)",
+   "ties=none;out=L20+L113+L114+L115+L116+L117+L119+L120",
+   "1.5",
+   "0/16",
+   "0/16",
+   "0.30"
+  ],
+  [
+   "regression (stored-rule corners)",
+   "ties=none;out=L20+L113+L114+L115+L116+L117+L119+L120",
+   "1.25",
+   "0/16",
+   "0/16",
+   "0.30"
+  ],
+  [
+   "regression (stored-rule corners)",
+   "ties=none;out=L20+L72+L113+L114+L115+L116+L117+L119+L120",
+   "1.5",
+   "0/16",
+   "0/16",
+   "0.33"
+  ],
+  [
+   "regression (stored-rule corners)",
+   "ties=none;out=L20+L72+L113+L114+L115+L116+L117+L119+L120",
+   "1.25",
+   "0/16",
+   "0/16",
+   "0.33"
+  ],
+  [
+   "regression (stored-rule corners)",
+   "ties=none;out=L20+L114+L115+L116+L117+L119+L120",
+   "1.5",
+   "1/16",
+   "1/16",
+   "1.02"
+  ],
+  [
+   "regression (stored-rule corners)",
+   "ties=none;out=L20+L114+L115+L116+L117+L119+L120",
+   "1.25",
+   "1/16",
+   "1/16",
+   "1.02"
+  ],
+  [
+   "regression (stored-rule corners)",
+   "ties=none;out=L20+L53+L114+L115+L116+L117+L119+L120",
+   "1.5",
+   "0/16",
+   "0/16",
+   "0.43"
+  ],
+  [
+   "regression (stored-rule corners)",
+   "ties=none;out=L20+L53+L114+L115+L116+L117+L119+L120",
+   "1.25",
+   "0/16",
+   "0/16",
+   "0.43"
+  ],
+  [
+   "regression (stored-rule corners)",
+   "ties=none;out=L20+L44+L53+L114+L115+L116+L117+L119+L120",
+   "1.5",
+   "0/16",
+   "0/16",
+   "0.45"
+  ],
+  [
+   "regression (stored-rule corners)",
+   "ties=none;out=L20+L44+L53+L114+L115+L116+L117+L119+L120",
+   "1.25",
+   "0/16",
+   "0/16",
+   "0.45"
+  ],
+  [
+   "regression (stored-rule corners)",
+   "ties=none;out=L20+L53+L109+L115+L116+L117+L119+L120",
+   "1.5",
+   "0/16",
+   "0/16",
+   "0.51"
+  ],
+  [
+   "regression (stored-rule corners)",
+   "ties=none;out=L20+L53+L109+L115+L116+L117+L119+L120",
+   "1.25",
+   "0/16",
+   "0/16",
+   "0.51"
+  ],
+  [
+   "regression (stored-rule corners)",
+   "ties=none;out=L53+L88+L109+L115+L116+L117+L119+L120",
+   "1.5",
+   "0/16",
+   "0/16",
+   "0.47"
+  ],
+  [
+   "regression (stored-rule corners)",
+   "ties=none;out=L53+L88+L109+L115+L116+L117+L119+L120",
+   "1.25",
+   "0/16",
+   "0/16",
+   "0.56"
+  ],
+  [
+   "regression (stored-rule corners)",
+   "ties=none;out=L20+L53+L109+L115+L116+L117+L120",
+   "1.5",
+   "1/16",
+   "0/16",
+   "0.53"
+  ],
+  [
+   "regression (stored-rule corners)",
+   "ties=none;out=L20+L53+L109+L115+L116+L117+L120",
+   "1.25",
+   "1/16",
+   "0/16",
+   "0.53"
+  ],
+  [
+   "regression (stored-rule corners)",
+   "ties=none;out=L20+L53+L109+L115+L116+L117",
+   "1.5",
+   "8/16",
+   "0/16",
+   "0.51"
+  ],
+  [
+   "regression (stored-rule corners)",
+   "ties=none;out=L20+L53+L109+L115+L116+L117",
+   "1.25",
+   "8/16",
+   "0/16",
+   "0.51"
+  ],
+  [
+   "regression (stored-rule corners)",
+   "ties=none;out=L20+L42+L53+L109+L115+L116+L117",
+   "1.5",
+   "6/16",
+   "0/16",
+   "0.55"
+  ],
+  [
+   "regression (stored-rule corners)",
+   "ties=none;out=L20+L42+L53+L109+L115+L116+L117",
+   "1.25",
+   "6/16",
+   "0/16",
+   "0.56"
+  ],
+  [
+   "regression (stored-rule corners)",
+   "ties=none;out=L42+L53+L109+L115+L116+L117",
+   "1.5",
+   "0/16",
+   "0/16",
+   "0.48"
+  ],
+  [
+   "regression (stored-rule corners)",
+   "ties=none;out=L42+L53+L109+L115+L116+L117",
+   "1.25",
+   "0/16",
+   "0/16",
+   "0.48"
+  ],
+  [
+   "regression (stored-rule corners)",
+   "ties=none;out=L4+L7+L42+L53+L109+L115+L116+L117",
+   "1.5",
+   "8/16",
+   "0/16",
+   "0.40"
+  ],
+  [
+   "regression (stored-rule corners)",
+   "ties=none;out=L4+L7+L42+L53+L109+L115+L116+L117",
+   "1.25",
+   "8/16",
+   "0/16",
+   "0.40"
+  ],
+  [
+   "regression (stored-rule corners)",
+   "ties=none;out=L4+L7+L21+L42+L53+L109+L115+L116+L117",
+   "1.5",
+   "0/16",
+   "0/16",
+   "0.62"
+  ],
+  [
+   "regression (stored-rule corners)",
+   "ties=none;out=L4+L7+L21+L42+L53+L109+L115+L116+L117",
+   "1.25",
+   "0/16",
+   "0/16",
+   "0.62"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L20+L113+L114+L115+L116+L117+L119+L120",
+   "1.5",
+   "",
+   "0/128",
+   "0.53"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L20+L113+L114+L115+L116+L117+L119+L120",
+   "1.25",
+   "",
+   "0/128",
+   "0.53"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L20+L72+L113+L114+L115+L116+L117+L119+L120",
+   "1.5",
+   "",
+   "0/128",
+   "0.53"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L20+L72+L113+L114+L115+L116+L117+L119+L120",
+   "1.25",
+   "",
+   "0/128",
+   "0.53"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L20+L114+L115+L116+L117+L119+L120",
+   "1.5",
+   "",
+   "0/128",
+   "0.53"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L20+L114+L115+L116+L117+L119+L120",
+   "1.25",
+   "",
+   "0/128",
+   "0.53"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L20+L53+L114+L115+L116+L117+L119+L120",
+   "1.5",
+   "",
+   "0/128",
+   "0.53"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L20+L53+L114+L115+L116+L117+L119+L120",
+   "1.25",
+   "",
+   "0/128",
+   "0.53"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L20+L44+L53+L114+L115+L116+L117+L119+L120",
+   "1.5",
+   "",
+   "0/128",
+   "0.53"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L20+L44+L53+L114+L115+L116+L117+L119+L120",
+   "1.25",
+   "",
+   "0/128",
+   "0.53"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L20+L53+L109+L115+L116+L117+L119+L120",
+   "1.5",
+   "",
+   "0/128",
+   "0.53"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L20+L53+L109+L115+L116+L117+L119+L120",
+   "1.25",
+   "",
+   "0/128",
+   "0.53"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L53+L88+L109+L115+L116+L117+L119+L120",
+   "1.5",
+   "",
+   "0/128",
+   "0.49"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L53+L88+L109+L115+L116+L117+L119+L120",
+   "1.25",
+   "",
+   "0/128",
+   "0.56"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L20+L53+L109+L115+L116+L117+L120",
+   "1.5",
+   "",
+   "0/128",
+   "0.62"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L20+L53+L109+L115+L116+L117+L120",
+   "1.25",
+   "",
+   "0/128",
+   "0.62"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L20+L53+L109+L115+L116+L117",
+   "1.5",
+   "",
+   "0/128",
+   "0.65"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L20+L53+L109+L115+L116+L117",
+   "1.25",
+   "",
+   "0/128",
+   "0.65"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L20+L42+L53+L109+L115+L116+L117",
+   "1.5",
+   "",
+   "0/128",
+   "0.58"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L20+L42+L53+L109+L115+L116+L117",
+   "1.25",
+   "",
+   "0/128",
+   "0.58"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L42+L53+L109+L115+L116+L117",
+   "1.5",
+   "",
+   "0/128",
+   "0.56"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L42+L53+L109+L115+L116+L117",
+   "1.25",
+   "",
+   "0/128",
+   "0.56"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L4+L7+L42+L53+L109+L115+L116+L117",
+   "1.5",
+   "",
+   "0/128",
+   "0.69"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L4+L7+L42+L53+L109+L115+L116+L117",
+   "1.25",
+   "",
+   "0/128",
+   "0.69"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L4+L7+L21+L42+L53+L109+L115+L116+L117",
+   "1.5",
+   "",
+   "0/128",
+   "0.65"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L4+L7+L21+L42+L53+L109+L115+L116+L117",
+   "1.25",
+   "",
+   "0/128",
+   "0.65"
+  ]
+ ],
+ "L": 3,
+ "th": 170.44593811035156
+}
