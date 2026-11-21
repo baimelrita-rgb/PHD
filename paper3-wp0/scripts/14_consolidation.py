@@ -74,6 +74,10 @@ def main():
     ap.add_argument("--tag", default="", help="suffix for output files (robustness runs)")
     ap.add_argument("--margin-factor", type=float, default=Y.MARGIN_FACTOR)
     ap.add_argument("--alarms", default="detector_alarms_physics.npz")
+    ap.add_argument("--provenance", action="store_true",
+                    help="structured provenance log (episode, topology, inputs of every candidate, covering rule) and, AFTER the "
+                         "loop, a counterfactual G rule per certified G rule: same topology, model, noise and template, a fixed seed "
+                         "that does not depend on the episode, certified and evaluated from the same activation time")
     ap.add_argument("--causal", action="store_true",
                     help="chronological activation: synthesis starts when the alert window ends (and the single synthesis "
                          "worker is free); a rule acts only after its synthesis and certification compute time (wall clock, "
@@ -171,6 +175,7 @@ def main():
         entry = {"t": float(ta), "len_s": float(Tte[e] - Tte[s])}
         if lib_fire[alert].any():
             entry["action"] = "covered by library"
+            entry["covered_by"] = [k_ for k_, v_ in library.items() if (v_["fires"][alert] & (Tte[alert] >= v_["added_at"])).any()]
             log.append(entry)
             continue
         before = (Tte >= ta - 40) & (Tte < ta - 10)
@@ -191,10 +196,16 @@ def main():
                 arm_t = -np.inf
             cg = Y.synthesize_grid_invariants(T, nz, a.bound_budget, a.seed + len(log) * 100)
             arm[id(cg)] = arm_t
+            prov_g = {"topology": T, "noise": dict(nz), "synth_seed": a.seed + len(log) * 100, "cert_seed": a.seed + len(log) * 100 + 50,
+                      "parts_pre": [dict(x) for x in cg.info["parts"]]}
             cands.append(cg)
         st = Y.synthesize_state(Mte[before], Mte[alert]) if before.any() else None
         if st is not None:
             cands.append(st)
+            if a.provenance:
+                idx_p = M.index(); bm, am = np.median(Mte[before], axis=0), np.median(Mte[alert], axis=0)
+                entry["state_inputs"] = {at["meas"]: [float(bm[idx_p[at["meas"]]]), float(am[idx_p[at["meas"]]])] for at in st.rule["atoms"]}
+                entry["state_windows"] = [float(ta - 40), float(ta - 10), float(ta), float(ta + a.alert_s)]
         for k, cand in enumerate(cands):
             t_c = time.time()
             if cand.family == "G":
@@ -214,6 +225,9 @@ def main():
                 f = fires_all(cert["rule"], Mte) & (Tte >= arm.get(id(cand), -np.inf))   # never inside its calibration window
                 lib_fire |= f & (Tte >= t_act)     # a rule only acts after it was learned (and calibrated)
                 library[key]["fires"] = f
+                library[key]["episode"] = len(log)
+                if cand.family == "G":
+                    library[key]["prov"] = prov_g; library[key]["parts_cert"] = cert.get("parts")
             cert_times.append((cand.family, cert["verdict"], time.time() - t_c, len(R.clauses(cand.rule))))
             added.append(f"{cand.rule['name'][:50]}: {cert['verdict']}")
         if a.causal:
@@ -225,6 +239,24 @@ def main():
         log.append(entry)
         print(f"{ta - Tte[0]:8.0f} s  {entry['action'][:110]}")
     wall = time.time() - t0
+    if a.provenance:     # counterfactual G rules, outside the timed loop
+        import pickle
+        cf = {}
+        for key, v in library.items():
+            if v["family"] != "G":
+                continue
+            pg = v["prov"]
+            alt = Y.synthesize_grid_invariants(pg["topology"], pg["noise"], a.bound_budget, a.seed + 777)
+            ca = Y.certify_grid(alt, cfgs, delta, a.cert_budget, a.seed + 777 + 50)
+            fa_ = fires_all(ca["rule"], Mte) if ca["verdict"] == "certified" else np.zeros(len(Tte), bool)
+            same = Y.synthesize_grid_invariants(pg["topology"], pg["noise"], a.bound_budget, pg["synth_seed"])
+            cf[key] = {"verdict": ca["verdict"], "fires": fa_, "parts_alt": ca.get("parts"), "parts_orig": v.get("parts_cert"),
+                       "same_seed_identical": len(same.info["parts"]) == len(pg["parts_pre"]) and all(
+                           abs(x["margin"] - y["margin"]) < 1e-12 and x["quantity"] == y["quantity"] for x, y in zip(same.info["parts"], pg["parts_pre"]))}
+        (C.INTERIM / C.suffixed(f"provenance{a.tag}.pkl")).write_bytes(pickle.dumps({
+            "episodes": log, "t": Tte, "rules": {k: {kk: vv for kk, vv in v.items() if kk != "fires"} for k, v in library.items()},
+            "fires": {k: v["fires"] for k, v in library.items()}, "counterfactual": cf, "det_names": a.detectors,
+            "alert_s": a.alert_s, "merge_s": a.merge_s}))
     # evaluation cost of the final library per telemetry record (all rules, every record)
     idx_ = M.index(); t_e = time.time(); n_e = min(len(Mte), 5000)
     for m in Mte[:n_e]:
