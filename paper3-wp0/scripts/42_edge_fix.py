@@ -35,7 +35,7 @@ from p3 import se_proof as SP
 from p3 import state_est as SE
 
 _sp = importlib.util.spec_from_file_location("a36", Path(__file__).with_name("36_semiurban_abc.py"))
-a36 = importlib.util.module_from_spec(_sp); _sp.loader.exec_module(a36)
+a36 = importlib.util.module_from_spec(_sp); sys.modules["a36"] = a36; _sp.loader.exec_module(a36)
 OUT = C.ROOT / "reports" / "topo"
 LEVELS = (1.0, 0.8, 0.6, 0.4, 0.3, 0.2)
 DAYS = ["recorded", "split", "split_s8", "split_s9", "split_s10", "split_s11"]

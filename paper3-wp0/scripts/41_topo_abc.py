@@ -51,7 +51,7 @@ from p3 import common as C
 from p3 import sherlock_io as S
 
 _sp = importlib.util.spec_from_file_location("a36", Path(__file__).with_name("36_semiurban_abc.py"))
-a36 = importlib.util.module_from_spec(_sp); _sp.loader.exec_module(a36)
+a36 = importlib.util.module_from_spec(_sp); sys.modules["a36"] = a36; _sp.loader.exec_module(a36)
 
 K_GRID = a36.K_GRID
 TARGETS = [0.5, 0.25, 1.0]
