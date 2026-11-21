@@ -1,0 +1,21 @@
+{
+ "process attack types": [
+  "control-and-freeze:control-and-freeze",
+  "drift-off:drift-off",
+  "industroyer:industroyer"
+ ],
+ "attack window": "start to recovery (end if no recovery)",
+ "benign records": "more than 60 s from any non-benign event window (start - 60 s to recovery + 60 s)",
+ "false-alarm episode": "maximal run of consecutive alarmed benign records",
+ "01-Basic": "1 Hz records; combined = D1 or AE (alert source) or library rules active at the time; classic = D1",
+ "02-Semiurban / 03-Rural": "every 5th record (5 s); persistence L = 3 records for SE-BDD and library; classic = SE-BDD",
+ "strict (paper)": "01-Basic: rule learned before attack start; SE grids: topology first met before attack start",
+ "strict (+cert latency)": "SE grids: topology first met + measured certification compute time before attack start",
+ "Sherlock alarm-start metric": "computed separately in scripts/24 (Table IX); not used here",
+ "post hoc choices": [
+  "03-Rural noise mode 'global' (margins floored at the transferred SE-BDD threshold), chosen after the per-kind transfer gave 0.723 false alarms",
+  "01-Basic split day: tap range padded after an unseen tap position stopped synthesis",
+  "02-Semiurban: margins raised to the affine bound after corner counterexamples (gate of 80 % had failed)",
+  "additional-day attack model v2 after measuring real attack magnitudes"
+ ]
+}
