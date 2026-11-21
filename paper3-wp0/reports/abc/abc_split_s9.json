@@ -1,0 +1,521 @@
+{
+ "variant": "split_s9",
+ "calibration": "split",
+ "kB": 4.0,
+ "kC": 4.0,
+ "n_topologies": 6,
+ "n_new": 5,
+ "results": {
+  "A: SE-BDD, global threshold": {
+   "k": null,
+   "out": {
+    "0": false,
+    "1": false,
+    "2": true,
+    "3": false,
+    "4": false,
+    "5": false,
+    "6": true,
+    "7": false,
+    "8": false,
+    "9": false,
+    "10": false,
+    "11": false,
+    "12": false,
+    "13": true,
+    "14": false,
+    "15": false,
+    "16": false,
+    "17": false,
+    "18": false,
+    "19": true,
+    "20": false
+   },
+   "delay": {
+    "2": 462.10315442085266,
+    "6": 11.499719381332397,
+    "13": 114.9108018875122,
+    "19": 228.46058130264282
+   },
+   "recovery_first": 0,
+   "eps": 0,
+   "hours": 2.6375,
+   "rate": 0.0,
+   "active": null,
+   "per": {
+    "control-and-freeze": [
+     1,
+     7
+    ],
+    "drift-off": [
+     3,
+     7
+    ],
+    "industroyer": [
+     0,
+     7
+    ]
+   }
+  },
+  "B: per-channel, k = 1.5": {
+   "k": 1.5,
+   "out": {
+    "0": false,
+    "1": true,
+    "2": true,
+    "3": false,
+    "4": true,
+    "5": true,
+    "6": true,
+    "7": false,
+    "8": true,
+    "9": true,
+    "10": true,
+    "11": false,
+    "12": true,
+    "13": true,
+    "14": false,
+    "15": true,
+    "16": false,
+    "17": false,
+    "18": false,
+    "19": true,
+    "20": true
+   },
+   "delay": {
+    "1": 4.454388618469238,
+    "2": 7.103154420852661,
+    "4": 29.64190673828125,
+    "5": 32.83548307418823,
+    "6": 11.499719381332397,
+    "8": 388.0135905742645,
+    "9": 433.3044686317444,
+    "10": 49.64816117286682,
+    "12": 14.211616516113281,
+    "13": 14.910801887512207,
+    "15": 13.294129610061646,
+    "19": 3.4605813026428223,
+    "20": 167.15392446517944
+   },
+   "recovery_first": 0,
+   "eps": 16,
+   "hours": 2.6375,
+   "rate": 0.09636650868878358,
+   "active": 1.0,
+   "per": {
+    "control-and-freeze": [
+     7,
+     7
+    ],
+    "drift-off": [
+     6,
+     7
+    ],
+    "industroyer": [
+     0,
+     7
+    ]
+   }
+  },
+  "C0: stored proved library, k = 1.5 (+cert latency)": {
+   "k": 1.5,
+   "out": {
+    "0": false,
+    "1": true,
+    "2": true,
+    "3": false,
+    "4": false,
+    "5": true,
+    "6": true,
+    "7": false,
+    "8": false,
+    "9": false,
+    "10": true,
+    "11": false,
+    "12": true,
+    "13": true,
+    "14": false,
+    "15": true,
+    "16": false,
+    "17": false,
+    "18": false,
+    "19": true,
+    "20": true
+   },
+   "delay": {
+    "1": 49.45438861846924,
+    "2": 107.10315442085266,
+    "5": 187.83548307418823,
+    "6": 11.499719381332397,
+    "10": 49.64816117286682,
+    "12": 14.211616516113281,
+    "13": 34.91080188751221,
+    "15": 13.294129610061646,
+    "19": 53.46058130264282,
+    "20": 192.15392446517944
+   },
+   "recovery_first": 0,
+   "eps": 0,
+   "hours": 2.6375,
+   "rate": 0.0,
+   "active": 0.9641203703703703,
+   "per": {
+    "control-and-freeze": [
+     6,
+     7
+    ],
+    "drift-off": [
+     4,
+     7
+    ],
+    "industroyer": [
+     0,
+     7
+    ]
+   }
+  },
+  "C: per-channel + physics check (corner-augmented), k = 1.5": {
+   "k": 1.5,
+   "out": {
+    "0": false,
+    "1": true,
+    "2": true,
+    "3": false,
+    "4": false,
+    "5": true,
+    "6": true,
+    "7": false,
+    "8": false,
+    "9": false,
+    "10": true,
+    "11": false,
+    "12": true,
+    "13": true,
+    "14": false,
+    "15": true,
+    "16": false,
+    "17": false,
+    "18": false,
+    "19": true,
+    "20": true
+   },
+   "delay": {
+    "1": 64.45438861846924,
+    "2": 127.10315442085266,
+    "5": 237.83548307418823,
+    "6": 11.499719381332397,
+    "10": 49.64816117286682,
+    "12": 14.211616516113281,
+    "13": 39.91080188751221,
+    "15": 13.294129610061646,
+    "19": 63.46058130264282,
+    "20": 192.15392446517944
+   },
+   "recovery_first": 0,
+   "eps": 0,
+   "hours": 2.6375,
+   "rate": 0.0,
+   "active": 0.9807870370370371,
+   "per": {
+    "control-and-freeze": [
+     6,
+     7
+    ],
+    "drift-off": [
+     4,
+     7
+    ],
+    "industroyer": [
+     0,
+     7
+    ]
+   }
+  },
+  "B: per-channel, calibrated k = 4": {
+   "k": 4.0,
+   "out": {
+    "0": false,
+    "1": true,
+    "2": true,
+    "3": false,
+    "4": false,
+    "5": true,
+    "6": true,
+    "7": false,
+    "8": false,
+    "9": false,
+    "10": true,
+    "11": false,
+    "12": true,
+    "13": true,
+    "14": false,
+    "15": true,
+    "16": false,
+    "17": false,
+    "18": false,
+    "19": true,
+    "20": true
+   },
+   "delay": {
+    "1": 4.454388618469238,
+    "2": 47.10315442085266,
+    "5": 87.83548307418823,
+    "6": 11.499719381332397,
+    "10": 79.64816117286682,
+    "12": 14.211616516113281,
+    "13": 19.910801887512207,
+    "15": 13.294129610061646,
+    "19": 33.46058130264282,
+    "20": 342.15392446517944
+   },
+   "recovery_first": 0,
+   "eps": 7,
+   "hours": 2.6375,
+   "rate": 0.04160084254870985,
+   "active": 1.0,
+   "per": {
+    "control-and-freeze": [
+     6,
+     7
+    ],
+    "drift-off": [
+     4,
+     7
+    ],
+    "industroyer": [
+     0,
+     7
+    ]
+   }
+  },
+  "C: per-channel + physics check, calibrated k = 4": {
+   "k": 4.0,
+   "out": {
+    "0": false,
+    "1": true,
+    "2": true,
+    "3": false,
+    "4": false,
+    "5": true,
+    "6": true,
+    "7": false,
+    "8": false,
+    "9": false,
+    "10": true,
+    "11": false,
+    "12": true,
+    "13": true,
+    "14": false,
+    "15": true,
+    "16": false,
+    "17": false,
+    "18": false,
+    "19": true,
+    "20": true
+   },
+   "delay": {
+    "1": 74.45438861846924,
+    "2": 127.10315442085266,
+    "5": 237.83548307418823,
+    "6": 11.499719381332397,
+    "10": 79.64816117286682,
+    "12": 14.211616516113281,
+    "13": 39.91080188751221,
+    "15": 13.294129610061646,
+    "19": 73.46058130264282,
+    "20": 342.15392446517944
+   },
+   "recovery_first": 0,
+   "eps": 0,
+   "hours": 2.6375,
+   "rate": 0.0,
+   "active": 0.9807870370370371,
+   "per": {
+    "control-and-freeze": [
+     6,
+     7
+    ],
+    "drift-off": [
+     4,
+     7
+    ],
+    "industroyer": [
+     0,
+     7
+    ]
+   }
+  }
+ },
+ "impact": [
+  {
+   "topology": "ties=none;out=L21+L71+L113+L114+L115+L116+L119+L120",
+   "known_before_test": true,
+   "compute_s": 71.87458920478821,
+   "channels": 553,
+   "raised_at_1.5": 299,
+   "raised_at_k4": 234,
+   "median_ratio": 1.612165227529357,
+   "rejected": false
+  },
+  {
+   "topology": "ties=none;out=L21+L71+L113+L114+L115+L119+L120",
+   "known_before_test": false,
+   "compute_s": 74.13476872444153,
+   "channels": 554,
+   "raised_at_1.5": 310,
+   "raised_at_k4": 239,
+   "median_ratio": 1.884634551369924,
+   "rejected": false
+  },
+  {
+   "topology": "ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120",
+   "known_before_test": false,
+   "compute_s": 105.40280652046204,
+   "channels": 553,
+   "raised_at_1.5": 296,
+   "raised_at_k4": 227,
+   "median_ratio": 1.5014235823962165,
+   "rejected": false
+  },
+  {
+   "topology": "ties=none;out=L21+L71+L80+L83+L113+L114+L115+L119+L120",
+   "known_before_test": false,
+   "compute_s": 85.53604102134705,
+   "channels": 522,
+   "raised_at_1.5": 259,
+   "raised_at_k4": 196,
+   "median_ratio": 0.9909205927846867,
+   "rejected": false
+  },
+  {
+   "topology": "ties=none;out=L21+L71+L80+L113+L114+L115+L118+L119+L120",
+   "known_before_test": false,
+   "compute_s": 89.78969597816467,
+   "channels": 550,
+   "raised_at_1.5": 295,
+   "raised_at_k4": 227,
+   "median_ratio": 1.5142988810916724,
+   "rejected": false
+  },
+  {
+   "topology": "ties=none;out=L21+L65+L71+L80+L113+L114+L115+L119+L120",
+   "known_before_test": false,
+   "compute_s": 49.1930091381073,
+   "channels": 550,
+   "raised_at_1.5": 293,
+   "raised_at_k4": 225,
+   "median_ratio": 1.4960954950654843,
+   "rejected": false
+  }
+ ],
+ "example": {
+  "event": "4",
+  "type": "control-and-freeze:control-and-freeze",
+  "t_rel": 229.64190673828125,
+  "channel": "vm_pu.163",
+  "residual_sigma": 10.34851360321045,
+  "B_margin": 4.070252180099487,
+  "C_margin": 36.73498592063942,
+  "noise": 2.713501453399658
+ },
+ "checks": [
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L21+L71+L113+L114+L115+L116+L119+L120",
+   "1.5",
+   "",
+   "0/128",
+   "0.53"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L21+L71+L113+L114+L115+L116+L119+L120",
+   "4",
+   "",
+   "0/128",
+   "0.53"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L21+L71+L113+L114+L115+L119+L120",
+   "1.5",
+   "",
+   "0/128",
+   "0.49"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L21+L71+L113+L114+L115+L119+L120",
+   "4",
+   "",
+   "0/128",
+   "0.45"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120",
+   "1.5",
+   "",
+   "0/128",
+   "0.53"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L21+L71+L80+L113+L114+L115+L119+L120",
+   "4",
+   "",
+   "0/128",
+   "0.53"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L21+L71+L80+L83+L113+L114+L115+L119+L120",
+   "1.5",
+   "",
+   "0/128",
+   "0.53"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L21+L71+L80+L83+L113+L114+L115+L119+L120",
+   "4",
+   "",
+   "0/128",
+   "0.53"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L21+L71+L80+L113+L114+L115+L118+L119+L120",
+   "1.5",
+   "",
+   "0/128",
+   "0.53"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L21+L71+L80+L113+L114+L115+L118+L119+L120",
+   "4",
+   "",
+   "0/128",
+   "0.53"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L21+L65+L71+L80+L113+L114+L115+L119+L120",
+   "1.5",
+   "",
+   "0/128",
+   "0.53"
+  ],
+  [
+   "hold-out (random vertices + corners of channels 33-64)",
+   "ties=none;out=L21+L65+L71+L80+L113+L114+L115+L119+L120",
+   "4",
+   "",
+   "0/128",
+   "0.53"
+  ]
+ ],
+ "L": 3,
+ "th": 138.17539978027344
+}
